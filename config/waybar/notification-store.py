@@ -73,7 +73,7 @@ class Store:
     def status(self):
         count = self.db.execute('SELECT COUNT(*) FROM notifications WHERE unread=1 AND dismissed=0').fetchone()[0]
         healthy = time.time() - float(self.metadata('heartbeat') or 0) < 20
-        return {'text': '󰂚' + (f' {count}' if count else ''),
+        return {'text': '󰂚' + (f' <span size="6144">{count}</span>' if count else ''),
                 'class': 'offline' if not healthy else ('unread' if count else 'empty'),
                 'tooltip': (f'{count} unread notifications' if count else 'Notifications') +
                            ('\nNotification capture is not running' if not healthy else '')}
