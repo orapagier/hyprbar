@@ -1,0 +1,93 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 24,
+  "margin-top": 2,
+  "margin-left": 10,
+  "margin-right": 10,
+  "margin-bottom": 0,
+  "spacing": 3,
+  "reload_style_on_change": true,
+  "modules-left": ["hyprland/workspaces", "custom/media"],
+  "modules-center": ["clock"],
+  "modules-right": ["custom/notifications", "pulseaudio", "network", "bluetooth", "battery", "tray"],
+
+  "custom/media": {
+    "exec": "python3 \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/media.py\"",
+    "return-type": "json",
+    "restart-interval": 5,
+    "exec-on-event": false,
+    "hide-empty-text": true,
+    "format": "{text}"
+  },
+
+  "custom/notifications": {
+    "exec": "python3 \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/notification-status.py\" --watch",
+    "return-type": "json",
+    "restart-interval": 5,
+    "exec-on-event": false,
+    "on-click": "\"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/notifications-menu.sh\""
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-on": "󰂯",
+    "format-off": "󰂲",
+    "format-disabled": "󰂲",
+    "format-no-controller": "󰂲",
+    "format-connected": "󰂱",
+    "tooltip-format": "Bluetooth · {status}",
+    "tooltip-format-no-controller": "Bluetooth is unavailable",
+    "tooltip-format-connected": "Bluetooth · {num_connections} connected\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}",
+    "on-click": "\"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/bluetooth-menu.sh\""
+  },
+
+  "clock": {
+    "format": "{:%b %d   %I:%M %p   %a}",
+    "tooltip-format": "{:%A, %B %d, %Y}\nClick to open calendar",
+    "on-click": "\"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/ph-calendar.sh\""
+  },
+
+  "pulseaudio": {
+    "format": "♪ {volume}%",
+    "format-muted": "♪ muted",
+    "on-click": "\"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/audio-menu.sh\""
+  },
+
+  "network": {
+    "format-wifi": "{icon} ",
+    "format-icons": [
+      "\udb82\udd2f",   // 󰤯 empty
+      "\udb82\udd1f",   // 󰤟 1 bar
+      "\udb82\udd22",   // 󰤢 2 bars
+      "\udb82\udd25",   // 󰤥 3 bars
+      "\udb82\udd28"    // 󰤨 full
+    ],
+    "format-ethernet": "\udb80\ude00",        // 󰈀 ethernet
+    "format-disconnected": "\udb82\udd2e",    // 󰤮 wifi off (outline)
+    "format-disabled": "\udb82\udd2d",        // 󰤭 wifi off
+    "tooltip-format-wifi": "{essid} · {signalStrength}%",
+    "tooltip-format-ethernet": "Ethernet · {ifname}",
+    "tooltip-format-disconnected": "Offline",
+    "tooltip-format-disabled": "Wi-Fi turned off",
+    "on-click": "\"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/wifi-menu.sh\""
+  },
+
+  "battery": {
+    "states": { "warning": 30, "critical": 15 },
+    "format": "{icon} {capacity}%",
+    "format-charging": "{icon} {capacity}%",
+    "format-plugged": "\udb80\udc85 {capacity}%",
+    "format-icons": {
+      "default": [
+        "\udb80\udc7a", "\udb80\udc7b", "\udb80\udc7c", "\udb80\udc7d", "\udb80\udc7e",
+        "\udb80\udc7f", "\udb80\udc80", "\udb80\udc81", "\udb80\udc82", "\udb80\udc79"
+      ],
+      "charging": [
+        "\udb82\udc9c", "\udb80\udc86", "\udb80\udc87", "\udb80\udc88", "\udb82\udc9d",
+        "\udb80\udc89", "\udb82\udc9e", "\udb80\udc8a", "\udb80\udc8b", "\udb80\udc85"
+      ]
+    }
+  }
+}

@@ -1,0 +1,21 @@
+name: Configuration checks
+on: [push, pull_request]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck python3-gi python3-cairo python3-dbus \
+            gir1.2-gtk-3.0 gir1.2-gtklayershell-0.1 gir1.2-playerctl-2.0 libfftw3-double3
+      - name: Check shell scripts
+        run: |
+          bash -n setup.sh
+          shellcheck setup.sh config/hypr/wallpaper-start.sh
+      - name: Test installer in isolated home directories
+        run: /usr/bin/python3 -m unittest discover -s tests -v
+      - name: Test media and panel backends without a display
+        run: /usr/bin/python3 -m unittest discover -s config/waybar/tests -v
