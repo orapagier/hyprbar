@@ -10,7 +10,13 @@
   "reload_style_on_change": true,
   "modules-left": ["hyprland/workspaces", "custom/media"],
   "modules-center": ["clock"],
-  "modules-right": ["custom/notifications", "pulseaudio", "network", "bluetooth", "battery", "tray"],
+  "modules-right": ["custom/notifications", "pulseaudio", "network", "bluetooth", "battery", "tray", "custom/power"],
+
+  "custom/power": {
+    "format": "󰐥",
+    "tooltip-format": "Power options",
+    "on-click": "\"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/power-menu.sh\""
+  },
 
   "custom/media": {
     "exec": "python3 \"${XDG_CONFIG_HOME:-$HOME/.config}/waybar/media.py\"",

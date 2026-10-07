@@ -381,7 +381,7 @@ hl.layer_rule({
 -- Blur only the painted panel, leaving the clear surrounding pixels untouched.
 hl.layer_rule({
     name  = "waybar-popdown-glass",
-    match = { namespace = "^(calendar-menu|wifi-menu|audio-menu|bluetooth-menu|notifications-menu)$" },
+    match = { namespace = "^(calendar-menu|wifi-menu|audio-menu|bluetooth-menu|notifications-menu|power-menu)$" },
 
     blur         = true,
     blur_popups  = true,

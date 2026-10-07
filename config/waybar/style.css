@@ -60,6 +60,7 @@ tooltip {
 #clock,
 #custom-media,
 #custom-notifications,
+#custom-power,
 #pulseaudio,
 #network,
 #bluetooth,
@@ -100,6 +101,7 @@ tooltip {
 }
 
 #custom-notifications,
+#custom-power,
 #bluetooth {
   font-family: "GoMono Nerd Font", "DejaVu Sans";
   font-size: 15px;
@@ -113,6 +115,17 @@ tooltip {
 }
 #custom-notifications.unread { color: #f9e2af; }
 #custom-notifications.offline { color: #585b70; }
+
+#custom-power {
+  color: #f38ba8;
+  background-color: rgba(243, 139, 168, 0.18);
+  border-color: rgba(243, 139, 168, 0.26);
+}
+
+#custom-power:hover {
+  background-color: rgba(243, 139, 168, 0.30);
+}
+
 #bluetooth {
   color: #b4befe;
   background-color: rgba(180, 190, 254, 0.20);

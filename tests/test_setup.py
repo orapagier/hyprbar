@@ -129,7 +129,7 @@ class InstallerTests(unittest.TestCase):
                     self.assertEqual(len(paths), 1)
                     self.assertTrue(Path(paths[0]).is_file(), command)
                     count += 1
-        self.assertEqual(count, 7)
+        self.assertEqual(count, 8)
 
     def test_unit_path_escaping(self):
         spec = importlib.util.spec_from_file_location('installer', ROOT / 'tools/install_configs.py')

@@ -7,7 +7,7 @@ configuration, and seven wallpapers.
 
 The bar has workspace buttons, a scrolling media title and eight-band audio
 visualizer, a clock with a Philippine calendar, a persistent notification inbox,
-and audio, Wi-Fi, Bluetooth, battery, and tray modules. Clicking the status icons
+and audio, Wi-Fi, Bluetooth, battery, tray, and power modules. Clicking the status icons
 opens matching GTK popups with the launcher's translucent tint, subtle highlight,
 and frosted blur. The calendar and notification history work offline. The active
 workspace has a lavender underline, and the clock matches the lavender icons.
@@ -105,11 +105,15 @@ automatically reboot. Package downloads, AUR builds, and sudo may take time.
 | `Super+Shift+M` | End the Hyprland session |
 | Click clock | Philippine calendar |
 | Click bell / audio / Wi-Fi / Bluetooth | Open the matching popup |
+| Click power | Open Shutdown, Reboot, Sleep, and Logout options |
 
 The wallpaper on login is `cloudsnight.jpg`. The launcher closes with another
 tap of Super, Escape, or an outside click. Popups close with Escape or an outside
 click. Rofi uses fuzzy app search, app icons, and a compact results list that
 shrinks as matches narrow. Its theme lives in `config/rofi/glass.rasi`.
+
+The power menu has no tooltips. Logout ends the current desktop session and
+returns to the login screen; use it to sign in as another user.
 
 The media module reads playback metadata and the default audio
 output; it never records the microphone. Notifications are stored locally under
