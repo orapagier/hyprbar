@@ -70,9 +70,13 @@ class InstallerTests(unittest.TestCase):
         output = subprocess.check_output(
             [str(self.config / 'hypr/app-launcher.sh'), '-filter', 'app with spaces'],
             env=env, text=True)
-        self.assertEqual(json.loads(output), [
+        args = json.loads(output)
+        self.assertEqual(args[:6], [
             '-config', str(self.config / 'rofi/config.rasi'),
-            '-show', 'drun', '-monitor', '-1', '-filter', 'app with spaces'])
+            '-show', 'drun', '-monitor', '-1'])
+        self.assertEqual(args[6], '-theme-str')
+        self.assertIn('glass: rgba(', args[7])
+        self.assertEqual(args[8:], ['-filter', 'app with spaces'])
 
         text = (self.config / 'hypr/hyprland.lua').read_text()
         command = re.search(r"^local menu\s*=\s*'([^']+)'", text, re.MULTILINE)[1]
@@ -125,11 +129,12 @@ class InstallerTests(unittest.TestCase):
                     # Expand the command's words without running any programs.
                     result = subprocess.check_output(['bash', '-c',
                         'set -- ' + command + '; printf "%s\\0" "$@"'], env=self.env)
-                    paths = [p.decode() for p in result.split(b'\0') if b'/waybar/' in p]
+                    paths = [p.decode() for p in result.split(b'\0')
+                             if b'/waybar/' in p or b'/hypr/' in p]
                     self.assertEqual(len(paths), 1)
                     self.assertTrue(Path(paths[0]).is_file(), command)
                     count += 1
-        self.assertEqual(count, 8)
+        self.assertEqual(count, 9)
 
     def test_unit_path_escaping(self):
         spec = importlib.util.spec_from_file_location('installer', ROOT / 'tools/install_configs.py')

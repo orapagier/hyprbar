@@ -103,6 +103,7 @@ automatically reboot. Package downloads, AUR builds, and sudo may take time.
 | `Super+H` / `Super+Shift+H` | Hide / restore window |
 | `Super+W` / `Super+Shift+W` | Next / previous wallpaper |
 | `Super+Shift+M` | End the Hyprland session |
+| Click Arch logo | Open the app launcher |
 | Click clock | Philippine calendar |
 | Click bell / audio / Wi-Fi / Bluetooth | Open the matching popup |
 | Click power | Open Shutdown, Reboot, Sleep, and Logout options |
@@ -111,6 +112,14 @@ The wallpaper on login is `cloudsnight.jpg`. The launcher closes with another
 tap of Super, Escape, or an outside click. Popups close with Escape or an outside
 click. Rofi uses fuzzy app search, app icons, and a compact results list that
 shrinks as matches narrow. Its theme lives in `config/rofi/glass.rasi`.
+
+The popups sample the backdrop locally and increase their dark tint over bright
+windows to keep labels readable. They update once a second while open; dark
+windows keep more of the original transparency. Rofi chooses its tint each time
+it opens and uses solid light text for clear font strokes. Rofi does not
+reload a theme in an open view. Captures stay in memory, and unavailable capture
+uses an opaque fallback. The small sampler builds automatically with the
+installed C compiler and Wayland library.
 
 The power menu has no tooltips. Logout ends the current desktop session and
 returns to the login screen; use it to sign in as another user.

@@ -3,6 +3,9 @@
 
 import argparse
 import configparser
+from concurrent.futures import ThreadPoolExecutor
+import importlib.util
+from pathlib import Path
 import signal
 import sys
 import traceback
@@ -14,6 +17,10 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 gi.require_version("GtkLayerShell", "0.1")
 from gi.repository import Gdk, GLib, Gtk, GtkLayerShell, Pango
+
+_glass_spec = importlib.util.spec_from_file_location('adaptive_glass', Path(__file__).with_name('adaptive-glass.py'))
+_glass = importlib.util.module_from_spec(_glass_spec)
+_glass_spec.loader.exec_module(_glass)
 
 
 def arguments(argv=None):
@@ -47,6 +54,14 @@ class Popup:
         self.rows = []
         self.result = None
         self.closed = False
+        self.contrast_sampler = _glass.Sampler()
+        self.contrast_alpha = _glass.FALLBACK
+        self.contrast_css = Gtk.CssProvider()
+        self.contrast_css.load_from_data(_glass.gtk_css(self.contrast_alpha).encode())
+        self.contrast_source = None
+        self.contrast_pending = False
+        self.contrast_executor = None
+        self.position_source = None
         self.theme = configparser.ConfigParser()
         self.theme.read(args.theme)
         self.settings = self.theme["main"]
@@ -123,6 +138,9 @@ window, #wifi-outside {{ background: transparent; }}
     def finish(self, result=None):
         if not self.closed:
             self.closed = True
+            if self.position_source is not None:
+                GLib.source_remove(self.position_source)
+                self.position_source = None
             self.result = result
             Gtk.main_quit()
         return True
@@ -290,13 +308,74 @@ window, #wifi-outside {{ background: transparent; }}
         self.size_panel()
         return self.panel_events
 
-    def position_panel(self, *_args):
-        allocation = self.fixed.get_allocation()
+    def panel_position(self, output_width, output_height):
         width = self.panel_events.get_preferred_width()[1]
         height = self.panel_events.get_preferred_height()[1]
-        x = max(0, allocation.width - width - self.settings.getint("x-margin", 12))
-        y = max(0, min(self.settings.getint("y-margin", 40), allocation.height - height))
-        self.fixed.move(self.panel_events, x, y)
+        x = max(0, output_width - width - self.settings.getint("x-margin", 12))
+        y = max(0, min(self.settings.getint("y-margin", 40), output_height - height))
+        return x, y
+
+    def queue_position(self, *_args):
+        # Moving a Gtk.Fixed child inside size-allocate can lose the resize
+        # request at the end of that allocation. Apply it after layout instead.
+        if not self.closed and self.position_source is None:
+            self.position_source = GLib.idle_add(self.apply_position)
+
+    def apply_position(self):
+        self.position_source = None
+        if not self.closed:
+            self.position_panel()
+        return False
+
+    def position_panel(self, *_args):
+        allocation = self.fixed.get_allocation()
+        x, y = self.panel_position(allocation.width, allocation.height)
+        current = (self.fixed.child_get_property(self.panel_events, "x"),
+                   self.fixed.child_get_property(self.panel_events, "y"))
+        if current != (x, y):
+            self.fixed.move(self.panel_events, x, y)
+        return False
+
+    def apply_contrast(self, alpha):
+        # Darken immediately; only relax the tint after a meaningful change.
+        if alpha > self.contrast_alpha or self.contrast_alpha - alpha >= 0.03:
+            self.contrast_alpha = alpha
+            self.contrast_css.load_from_data(_glass.gtk_css(alpha).encode())
+
+    def initial_contrast(self, geometry):
+        self.contrast_geometry = geometry
+        width = min(geometry.width, self.panel_events.get_preferred_width()[1])
+        height = min(geometry.height, self.panel_events.get_preferred_height()[1])
+        x, y = self.panel_position(geometry.width, geometry.height)
+        level = self.contrast_sampler.opening(
+            self.args.output, (x, y, max(1, width), max(1, height)),
+            (geometry.x + x, geometry.y + y, max(1, width), max(1, height)))
+        self.apply_contrast(_glass.opacity_for_brightness(level))
+
+    def refresh_contrast(self):
+        if self.closed:
+            return False
+        if self.contrast_pending:
+            return True
+        allocation = self.panel_events.get_allocation()
+        inset = max(0, min(self.hpad, self.vpad, 8))
+        rectangle = (self.contrast_geometry.x + self.fixed.child_get_property(self.panel_events, 'x') + inset,
+                     self.contrast_geometry.y + self.fixed.child_get_property(self.panel_events, 'y') + inset,
+                     max(1, allocation.width - 2 * inset), max(1, allocation.height - 2 * inset))
+        self.contrast_pending = True
+        future = self.contrast_executor.submit(self.contrast_sampler.windows, rectangle)
+        future.add_done_callback(lambda done: GLib.idle_add(self.contrast_completed, done)
+                                 if not self.closed else None)
+        return True
+
+    def contrast_completed(self, future):
+        self.contrast_pending = False
+        if not self.closed:
+            try:
+                level = future.result()
+            except (OSError, ValueError, RuntimeError):
+                level = None
+            self.apply_contrast(_glass.opacity_for_brightness(level))
         return False
 
     def surface(self, monitor, with_panel):
@@ -325,11 +404,20 @@ window, #wifi-outside {{ background: transparent; }}
         if with_panel:
             self.fixed = Gtk.Fixed()
             outside.add(self.fixed)
-            self.fixed.put(self.panel(), 0, 0)
-            self.fixed.connect("size-allocate", self.position_panel)
+            panel = self.panel()
+            panel.show_all()
+            geometry = monitor.get_geometry()
+            # Start at the right edge before the first frame is painted.
+            self.fixed.put(panel, *self.panel_position(geometry.width, geometry.height))
+            self.fixed.connect("size-allocate", self.queue_position)
+            panel.connect("size-allocate", self.queue_position)
             window.connect("key-press-event", self.keypress)
+        if with_panel:
+            self.initial_contrast(monitor.get_geometry())
         self.windows.append(window)
         window.show_all()
+        if with_panel:
+            self.queue_position()
         # Explicitly keep the entire surface clickable, including clear pixels.
         self.set_input_region(window, window.get_allocation())
         self.set_input_region(outside, outside.get_allocation())
@@ -349,6 +437,8 @@ window, #wifi-outside {{ background: transparent; }}
         if target is None:
             target = display.get_primary_monitor() or monitors[0]
         Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), self.contrast_css,
+                                                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 3)
         try:
             for monitor in monitors:
                 if monitor != target:
@@ -357,10 +447,18 @@ window, #wifi-outside {{ background: transparent; }}
             if self.args.lines:
                 self.update_list()
             self.focus_control()
+            self.contrast_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix='glass-contrast')
+            self.contrast_source = GLib.timeout_add(1000, self.refresh_contrast)
             for signum in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
                 GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signum, self.finish)
             Gtk.main()
         finally:
+            self.closed = True
+            if self.contrast_source is not None:
+                GLib.source_remove(self.contrast_source)
+                self.contrast_source = None
+            if self.contrast_executor is not None:
+                self.contrast_executor.shutdown(wait=False, cancel_futures=True)
             for window in self.windows:
                 window.destroy()
         if self.result is None:

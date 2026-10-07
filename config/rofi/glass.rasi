@@ -5,17 +5,17 @@
 * {
     font: "DejaVu Sans 11";
     background-color: transparent;
-    text-color: #cdd6f4;
+    text-color: #eef2ff;
     border-color: transparent;
     border: 0px;
     margin: 0px;
     padding: 0px;
     spacing: 0px;
 
-    glass: rgba(30, 30, 46, 0.28);
+    glass: rgba(30, 30, 46, 0.99);
     edge: rgba(255, 255, 255, 0.16);
     accent: #cba6f7;
-    muted: #a6adc8;
+    muted: #cdd6f4;
     selected: rgba(203, 166, 247, 0.22);
     selected-edge: rgba(203, 166, 247, 0.30);
 }
@@ -66,6 +66,7 @@ textbox-search {
 }
 
 entry {
+    text-color: #eef2ff;
     placeholder: "Search your apps…";
     placeholder-color: @muted;
     cursor-color: @accent;
@@ -95,14 +96,14 @@ element {
 
 element normal.normal, element alternate.normal {
     background-color: transparent;
-    text-color: #cdd6f4;
+    text-color: #eef2ff;
 }
 
 element selected.normal, element selected.active, element selected.urgent {
     background-color: @selected;
     background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.0));
     border-color: @selected-edge;
-    text-color: @accent;
+    text-color: #ffffff;
 }
 
 element-icon {
@@ -113,10 +114,19 @@ element-icon {
 
 element-text {
     background-color: transparent;
-    text-color: inherit;
+    text-color: #eef2ff;
     vertical-align: 0.5;
     highlight: bold;
     cursor: inherit;
+}
+
+element-text selected.normal, element-text selected.active, element-text selected.urgent {
+    text-color: #ffffff;
+}
+
+/* Solid light fills keep the thin font strokes readable. */
+entry, element-text, textbox-search {
+    text-outline: false;
 }
 
 @media (max-height: 650) {

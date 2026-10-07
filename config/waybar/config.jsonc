@@ -8,9 +8,15 @@
   "margin-bottom": 0,
   "spacing": 3,
   "reload_style_on_change": true,
-  "modules-left": ["hyprland/workspaces", "custom/media"],
+  "modules-left": ["custom/arch", "hyprland/workspaces", "custom/media"],
   "modules-center": ["clock"],
-  "modules-right": ["custom/notifications", "pulseaudio", "network", "bluetooth", "battery", "tray", "custom/power"],
+  "modules-right": ["tray", "custom/notifications", "pulseaudio", "network", "bluetooth", "battery", "custom/power"],
+
+  "custom/arch": {
+    "format": "",
+    "tooltip": false,
+    "on-click": "uwsm app -- \"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/app-launcher.sh\""
+  },
 
   "custom/power": {
     "format": "󰐥",

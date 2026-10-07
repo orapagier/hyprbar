@@ -30,6 +30,7 @@ python-cairo
 python-dbus
 gtk3
 gtk-layer-shell
+wayland
 libnotify
 fontconfig
 ttf-dejavu

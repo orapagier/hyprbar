@@ -57,6 +57,7 @@ tooltip {
   color: #f5f0ff;
 }
 
+#custom-arch,
 #clock,
 #custom-media,
 #custom-notifications,
@@ -74,6 +75,22 @@ tooltip {
   padding: 0 10px;
   margin: 2px 0;
   border-radius: 10px;
+}
+
+#custom-arch {
+  font-family: "GoMono Nerd Font", "DejaVu Sans";
+  font-size: 16px;
+  font-weight: normal;
+  /* The glyph extends 6px beyond its advance; balance its visible bounds. */
+  padding: 0 11px 0 5px;
+  color: #1793d1;
+  text-shadow: 0 -1px rgba(177, 228, 255, 0.70),
+               0 1px #0b6392,
+               0 2px #07466a,
+               1px 3px 2px rgba(0, 0, 0, 0.55);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 #clock {

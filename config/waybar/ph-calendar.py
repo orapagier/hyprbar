@@ -272,14 +272,12 @@ menu menuitem:hover { background: rgba(203,166,247,0.22); color: #b4befe; }
         self.year, self.month = self.selected.year, self.selected.month
         self.render()
 
-    def position_panel(self, *_args):
-        allocation = self.fixed.get_allocation()
+    def panel_position(self, output_width, output_height):
         width = self.panel_events.get_preferred_width()[1]
         height = self.panel_events.get_preferred_height()[1]
-        x = max(0, (allocation.width - width) // 2)
-        y = max(0, min(self.settings.getint("y-margin", 40), allocation.height - height))
-        self.fixed.move(self.panel_events, x, y)
-        return False
+        x = max(0, (output_width - width) // 2)
+        y = max(0, min(self.settings.getint("y-margin", 40), output_height - height))
+        return x, y
 
     def focus_control(self):
         self.previous.grab_focus()
