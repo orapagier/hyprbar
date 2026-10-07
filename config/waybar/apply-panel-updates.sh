@@ -2,7 +2,7 @@
 # Apply the panel changes from the user's desktop session.
 set -e
 systemctl --user daemon-reload
-systemctl --user start waybar-notification-monitor.service
+systemctl --user restart waybar-notification-monitor.service
 makoctl reload
 if pgrep -x waybar >/dev/null; then
   pkill -SIGUSR2 -x waybar

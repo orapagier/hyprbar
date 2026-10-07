@@ -9,7 +9,7 @@ jobs:
       - name: Install validation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck python3-gi python3-cairo python3-dbus \
+          sudo apt-get install -y shellcheck dbus-daemon python3-gi python3-cairo python3-dbus \
             gir1.2-gtk-3.0 gir1.2-gtklayershell-0.1 gir1.2-playerctl-2.0 libfftw3-double3 libwayland-dev
       - name: Check shell scripts
         run: |

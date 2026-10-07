@@ -36,7 +36,7 @@ class Monitor:
         if kind == dbus.lowlevel.MESSAGE_TYPE_METHOD_CALL and message.get_interface() == NAME and message.get_member() == 'Notify':
             values = message.get_args_list()
             if len(values) != 8:
-                return True
+                return dbus.lowlevel.HANDLER_RESULT_HANDLED
             app, replaces, _icon, summary, body, actions, _hints, _timeout = values
             actions = {str(actions[index]): str(actions[index + 1]) for index in range(0, len(actions) - 1, 2)}
             row_id = self.store.receive(app, summary, body, actions, self.owner_key(), int(replaces))
@@ -62,7 +62,7 @@ class Monitor:
                         self.store.db.execute('UPDATE notifications SET active=0 WHERE owner<>?', (self.owner_key(),))
         # A monitoring connection must never dispatch observed method calls or
         # send a reply on another application's behalf.
-        return True
+        return dbus.lowlevel.HANDLER_RESULT_HANDLED
 
     def seed(self):
         if not self.owner:
@@ -80,6 +80,47 @@ class Monitor:
                     with self.store.db:
                         self.store.db.execute('UPDATE notifications SET active=? WHERE owner=? AND bus_id=?',
                                               (int(command == 'list'), self.owner_key(), item['id']))
+
+
+def watch(store, connection):
+    loop = GLib.MainLoop()
+    disconnected = False
+
+    def connection_lost(_connection):
+        nonlocal disconnected
+        disconnected = True
+        store.metadata('heartbeat', 0)
+        print('Notification capture: monitoring connection lost; restarting', file=sys.stderr)
+        loop.quit()
+
+    connection.call_on_disconnection(connection_lost)
+
+    def heartbeat():
+        if not connection.get_is_connected():
+            connection_lost(connection)
+            return True
+        store.metadata('heartbeat', time.time())
+        return True
+
+    heartbeat()
+    if disconnected:
+        return 1
+    timer = GLib.timeout_add_seconds(5, heartbeat)
+
+    def stop():
+        loop.quit()
+        return True
+
+    signals = [GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signum, stop)
+               for signum in (signal.SIGINT, signal.SIGTERM)]
+    try:
+        loop.run()
+    finally:
+        GLib.source_remove(timer)
+        for source in signals:
+            GLib.source_remove(source)
+        store.metadata('heartbeat', 0)
+    return int(disconnected)
 
 
 def main():
@@ -111,19 +152,7 @@ def main():
         monitor.seed()
     except (ValueError, OSError, subprocess.SubprocessError) as error:
         print(f'Notification history import: {error}', file=sys.stderr)
-    def heartbeat():
-        store.metadata('heartbeat', time.time())
-        return True
-    heartbeat()
-    GLib.timeout_add_seconds(5, heartbeat)
-    loop = GLib.MainLoop()
-    for signum in (signal.SIGINT, signal.SIGTERM):
-        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signum, lambda: loop.quit())
-    try:
-        loop.run()
-    finally:
-        store.metadata('heartbeat', 0)
-    return 0
+    return watch(store, connection)
 
 
 if __name__ == '__main__':

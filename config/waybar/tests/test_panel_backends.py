@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import time
 import unittest
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,10 +53,11 @@ class InboxTests(unittest.TestCase):
 
     def notify(self, title='Message', replaces=0, sender=':1.20', serial=1):
         message = Message(1, ['Chat', replaces, '', title, 'Body', ['default', 'Open'], {'transient': True}, 1], sender=sender, serial=serial)
-        self.assertTrue(self.monitor.message(None, message))
+        self.assertEqual(self.monitor.message(None, message), monitor_module.dbus.lowlevel.HANDLER_RESULT_HANDLED)
 
     def reply(self, bus_id=7, sender=':1.20', serial=1):
-        self.assertTrue(self.monitor.message(None, Message(2, [bus_id], sender=':1.10', destination=sender, reply_serial=serial)))
+        self.assertEqual(self.monitor.message(None, Message(2, [bus_id], sender=':1.10', destination=sender, reply_serial=serial)),
+                         monitor_module.dbus.lowlevel.HANDLER_RESULT_HANDLED)
 
     def test_expired_transient_notifications_remain_after_reopening(self):
         self.notify()
@@ -124,6 +126,36 @@ class InboxTests(unittest.TestCase):
         self.notify('After login', replaces=7, serial=2)
         self.reply(serial=2)
         self.assertEqual(len(self.store.rows()), 2)
+
+    def test_every_observed_message_is_consumed_without_an_automatic_reply(self):
+        messages = [Message(1, []), Message(4, [7, 1], member='NotificationClosed'),
+                    Message(1, [], interface='org.freedesktop.DBus.Peer', member='Ping')]
+        for message in messages:
+            self.assertEqual(self.monitor.message(None, message),
+                             monitor_module.dbus.lowlevel.HANDLER_RESULT_HANDLED)
+
+    def test_disconnection_clears_health_and_exits_for_systemd_restart(self):
+        connection = Mock()
+        connection.get_is_connected.return_value = True
+        loop = Mock()
+        loop.run.side_effect = lambda: connection.call_on_disconnection.call_args.args[0](connection)
+        with patch.object(monitor_module.GLib, 'MainLoop', return_value=loop), \
+             patch.object(monitor_module.GLib, 'unix_signal_add', side_effect=[101, 102]), \
+             patch.object(monitor_module.GLib, 'timeout_add_seconds', return_value=100), \
+             patch.object(monitor_module.GLib, 'source_remove'), \
+             patch('sys.stderr'):
+            self.assertEqual(monitor_module.watch(self.store, connection), 1)
+        loop.quit.assert_called_once()
+        self.assertEqual(self.store.status()['class'], 'offline')
+
+    def test_already_disconnected_monitor_never_reports_healthy_or_waits_forever(self):
+        connection = Mock()
+        connection.get_is_connected.return_value = False
+        loop = Mock()
+        with patch.object(monitor_module.GLib, 'MainLoop', return_value=loop), patch('sys.stderr'):
+            self.assertEqual(monitor_module.watch(self.store, connection), 1)
+        loop.run.assert_not_called()
+        self.assertEqual(self.store.status()['class'], 'offline')
 
 
 class BluetoothTests(unittest.TestCase):
