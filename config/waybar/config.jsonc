@@ -68,7 +68,7 @@
   },
 
   "network": {
-    "format-wifi": "{icon} ",
+    "format-wifi": "{icon}",
     "format-icons": [
       "\udb82\udd2f",   // 󰤯 empty
       "\udb82\udd1f",   // 󰤟 1 bar

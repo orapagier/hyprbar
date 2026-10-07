@@ -126,6 +126,8 @@ tooltip {
 }
 
 #custom-notifications {
+  /* Center the visible glyph, which overhangs its advance by 4px. */
+  padding: 0 10px 0 6px;
   color: #a6adc8;
   background-color: rgba(166, 173, 200, 0.18);
   border-color: rgba(166, 173, 200, 0.26);
@@ -159,7 +161,8 @@ tooltip {
   border-color: rgba(148, 226, 213, 0.26);
   font-family: "GoMono Nerd Font", "DejaVu Sans";
   font-size: 15px;
-  padding: 0 8px;
+  /* Wi-Fi glyphs overhang their advance by 7px. */
+  padding: 0 12px 0 5px;
 }
 
 #network.disconnected,

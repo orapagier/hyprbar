@@ -73,7 +73,11 @@ class Store:
     def status(self):
         count = self.db.execute('SELECT COUNT(*) FROM notifications WHERE unread=1 AND dismissed=0').fetchone()[0]
         healthy = time.time() - float(self.metadata('heartbeat') or 0) < 20
-        return {'text': '󰂚' + (f' <span size="6144">{count}</span>' if count else ''),
+        # Balance the raised badge with equal-width figure spaces on the left,
+        # so the bell stays centered within its background at every count.
+        balance = '<span size="6144">' + '\u2007' * (len(str(count)) + 1) + '</span>' if count else ''
+        badge = f'<span size="6144" rise="5120"> {count}</span>' if count else ''
+        return {'text': balance + '󰂚' + badge,
                 'class': 'offline' if not healthy else ('unread' if count else 'empty'),
                 'tooltip': (f'{count} unread notifications' if count else 'Notifications') +
                            ('\nNotification capture is not running' if not healthy else '')}
