@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture every desktop Notify call while Mako continues showing popups."""
+"""Capture every desktop Notify call for the bell while Mako handles delivery."""
 import fcntl
 import importlib.util
 import json

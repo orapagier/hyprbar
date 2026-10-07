@@ -62,7 +62,7 @@ def install(repo):
                 raise
         print('Installed:', destination)
 
-    for name in ('hypr', 'waybar', 'fuzzel', 'rofi'):
+    for name in ('hypr', 'waybar', 'fuzzel', 'rofi', 'mako'):
         put(repo / 'config' / name, config / name, Path('config') / name)
 
     with tempfile.TemporaryDirectory(prefix='hyprbar-service-') as temporary:

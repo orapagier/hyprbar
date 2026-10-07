@@ -46,6 +46,8 @@ class InstallerTests(unittest.TestCase):
         for name in ('config.rasi', 'glass.rasi'):
             self.assertEqual((self.config / 'rofi' / name).read_bytes(),
                              (ROOT / 'config/rofi' / name).read_bytes())
+        self.assertEqual((self.config / 'mako/config').read_bytes(),
+                         (ROOT / 'config/mako/config').read_bytes())
         self.assertTrue(os.access(self.config / 'waybar/wifi-menu.sh', os.X_OK))
         service = (self.config / 'systemd/user/waybar-notification-monitor.service').read_text()
         self.assertIn(f'"{self.config}/waybar/notification-monitor.py"', service)
@@ -89,6 +91,8 @@ class InstallerTests(unittest.TestCase):
         self.install()
         style = self.config / 'waybar/style.css'
         style.write_text('/* previous theme */\n')
+        mako = self.config / 'mako/config'
+        mako.write_text('max-visible=5\n')
         unrelated = self.config / 'unrelated-app/settings'
         unrelated.parent.mkdir()
         unrelated.write_text('keep me')
@@ -97,6 +101,8 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(len(backups), 1)
         self.assertEqual((backups[0] / 'config/waybar/style.css').read_text(),
                          '/* previous theme */\n')
+        self.assertEqual((backups[0] / 'config/mako/config').read_text(), 'max-visible=5\n')
+        self.assertEqual(mako.read_bytes(), (ROOT / 'config/mako/config').read_bytes())
         self.assertEqual(unrelated.read_text(), 'keep me')
         self.install()
         self.assertEqual(list((self.state / 'hyprbar/backups').iterdir()), backups)

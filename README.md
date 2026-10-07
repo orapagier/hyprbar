@@ -69,7 +69,7 @@ preferred-mode rule in `hyprland.lua`.
 `--config-only` does not install packages, enable services, reload the desktop,
 or change the timezone. It is useful when the dependencies are already present.
 
-The installer replaces its `hypr`, `waybar`, `rofi`, and `fuzzel` config directories and
+The installer replaces its `hypr`, `waybar`, `rofi`, `fuzzel`, and `mako` config directories and
 backs up changed existing paths under:
 
 ```text
@@ -127,6 +127,9 @@ returns to the login screen; use it to sign in as another user.
 The media module reads playback metadata and the default audio
 output; it never records the microphone. Notifications are stored locally under
 `~/.local/state/waybar/notifications/` until cleared from the inbox.
+All notifications go to the bell's inbox without toast popups. Mako runs in the
+background for notification delivery and actions; `config/mako/config` hides
+both toasts and the hidden-notification counter.
 
 ## Checks and troubleshooting
 

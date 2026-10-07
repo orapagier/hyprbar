@@ -389,15 +389,6 @@ hl.layer_rule({
     animation    = "fade",
 })
 
--- Mako notifications: matching frosted glass
-hl.layer_rule({
-    name  = "mako-blur",
-    match = { namespace = "notifications" },
-
-    blur         = true,
-    ignore_alpha = 0.2,
-})
-
 -- Hyprland-run windowrule
 hl.window_rule({
     name  = "move-hyprland-run",
