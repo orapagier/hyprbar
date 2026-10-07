@@ -62,8 +62,10 @@ class Popup:
 window, #wifi-outside {{ background: transparent; }}
 #wifi-panel {{
   background: {rgba(colors['background'])}; color: {rgba(colors['text'])};
+  background-image: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0));
   border: {border.getint('width', 1)}px solid {rgba(colors['border'])};
   border-radius: {border.getint('radius', 12)}px;
+  box-shadow: inset 0 1px rgba(255,255,255,0.10);
   padding: 0;
 }}
 #wifi-panel * {{ font-family: "{family}"; font-size: {font_size}pt; }}
@@ -76,10 +78,10 @@ window, #wifi-outside {{ background: transparent; }}
 #wifi-panel entry:focus {{ border: none; box-shadow: none; }}
 #wifi-panel entry placeholder {{ color: {rgba(colors['placeholder'])}; }}
 #wifi-panel .popup-title {{ font-size: 11pt; font-weight: 600; }}
-#wifi-panel button {{ background: rgba(49,50,68,0.45); background-image: none; border: 1px solid rgba(205,214,244,0.10); border-radius: 8px; box-shadow: none; padding: 6px 8px; min-height: 20px; }}
+#wifi-panel button {{ background: rgba(255,255,255,0.045); background-image: none; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; box-shadow: none; padding: 6px 8px; min-height: 20px; }}
 #wifi-panel button:hover {{ background: {rgba(colors['selection'])}; }}
 #wifi-panel button:focus {{ border-color: {rgba(colors['prompt'])}; outline: none; }}
-#wifi-panel .input-field {{ background: rgba(49,50,68,0.45); border: 1px solid rgba(205,214,244,0.10); border-radius: 8px; }}
+#wifi-panel .input-field {{ background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; }}
 #wifi-panel .input-field:focus-within {{ border-color: {rgba(colors['prompt'])}; }}
 #wifi-panel list, #wifi-panel scrolledwindow, #wifi-panel viewport {{ background: transparent; border: none; }}
 #wifi-panel row {{ padding: 0; margin: 0; border: none; border-radius: {border.getint('selection-radius', 6)}px; }}

@@ -32,14 +32,14 @@ class MenuPopup(_popup.Popup):
 #wifi-panel button.connected label { color: #a6e3a1; }
 #wifi-panel .card { background: transparent; border-radius: 8px; }
 #wifi-panel button.device-row { background: transparent; border: 1px solid transparent; padding: 0; }
-#wifi-panel button.device-row:hover { background: rgba(49,50,68,0.8); }
+#wifi-panel button.device-row:hover { background: rgba(203,166,247,0.22); border-color: rgba(203,166,247,0.30); }
 #wifi-panel button.device-row:focus { border-color: #b4befe; }
 #wifi-panel expander.notification-row { border-radius: 8px; }
-#wifi-panel expander.notification-row:hover { background: rgba(49,50,68,0.8); }
+#wifi-panel expander.notification-row:hover { background: rgba(203,166,247,0.22); }
 #wifi-panel expander.notification-row title { padding: 8px 6px; }
 #wifi-panel expander.notification-row arrow { color: #7f849c; min-width: 10px; min-height: 10px; }
 #wifi-panel .card-title { font-weight: 600; }
-#wifi-panel .caption { color: #7f849c; font-size: 8pt; }
+#wifi-panel .caption { color: #a6adc8; font-size: 8pt; }
 #wifi-panel .body { color: #bac2de; font-size: 9pt; }
 ''')
 

@@ -93,21 +93,21 @@ class AudioPopup(Popup):
 #wifi-panel .audio-title {{ font-weight: 600; font-size: 11pt; }}
 #wifi-panel .audio-percent {{ color: {accent}; }}
 #wifi-panel .audio-caption {{ color: {dim}; font-size: 8pt; }}
-#wifi-panel button.mute-toggle {{ background: rgba(49,50,68,0.55); background-image: none; border: none; box-shadow: none; border-radius: 8px; padding: 4px; min-height: 26px; min-width: 26px; }}
+#wifi-panel button.mute-toggle {{ background: rgba(255,255,255,0.045); background-image: none; border: none; box-shadow: none; border-radius: 8px; padding: 4px; min-height: 26px; min-width: 26px; }}
 #wifi-panel button.mute-toggle label {{ color: {accent}; font-size: 16pt; }}
-#wifi-panel button.mute-toggle:hover {{ background: rgba(69,71,90,0.8); }}
+#wifi-panel button.mute-toggle:hover {{ background: rgba(203,166,247,0.22); }}
 #wifi-panel button.mute-toggle.muted-audio label {{ color: #f38ba8; }}
 #wifi-panel scale {{ padding: 9px 6px; min-height: 14px; }}
-#wifi-panel scale trough {{ background: #313244; border: none; border-radius: 4px; min-height: 4px; }}
+#wifi-panel scale trough {{ background: rgba(255,255,255,0.12); border: none; border-radius: 4px; min-height: 4px; }}
 #wifi-panel scale highlight {{ background: {accent}; border: none; border-radius: 4px; min-height: 4px; }}
 #wifi-panel scale slider {{ background: {text}; background-image: none; border: none; box-shadow: none; border-radius: 7px; min-width: 12px; min-height: 12px; margin: -4px 0; }}
 #wifi-panel #mic-slider highlight {{ background: #89b4fa; }}
-#wifi-panel combobox button {{ background: rgba(49,50,68,0.45); background-image: none; color: {text}; border: 1px solid rgba(205,214,244,0.10); border-radius: 8px; padding: 8px 10px; box-shadow: none; min-height: 20px; }}
-#wifi-panel combobox button:hover {{ background: rgba(69,71,90,0.65); }}
+#wifi-panel combobox button {{ background: rgba(255,255,255,0.045); background-image: none; color: {text}; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 10px; box-shadow: none; min-height: 20px; }}
+#wifi-panel combobox button:hover {{ background: rgba(203,166,247,0.22); }}
 #wifi-panel combobox arrow {{ color: {dim}; min-width: 10px; min-height: 10px; }}
-menu {{ background: #181825; color: {text}; border: 1px solid #313244; border-radius: 8px; padding: 6px; }}
+menu {{ background: rgba(30,30,46,0.28); background-image: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0)); color: {text}; border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; padding: 6px; }}
 menu menuitem {{ color: {text}; padding: 8px 10px; border-radius: 6px; }}
-menu menuitem:hover {{ background: #313244; color: {accent}; }}
+menu menuitem:hover {{ background: rgba(203,166,247,0.22); color: {accent}; }}
 '''.encode())
 
     def background(self, action, callback=None):

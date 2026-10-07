@@ -30,7 +30,7 @@ hl.monitor({
 -- Set programs that you use
 local terminal    = "kitty"
 local fileManager = "uwsm app -- thunar"
-local menu        = "uwsm app -- fuzzel"
+local menu        = 'uwsm app -- "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/app-launcher.sh"'
 
 
 -------------------
@@ -261,8 +261,8 @@ hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("command -v hyprshutdown >/de
 hl.bind(mainMod .. " + M", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
--- Launcher: press and release SUPER alone
-hl.bind("SUPER + Super_L", hl.dsp.exec_cmd(menu), { release = true })
+-- Launcher: SUPER toggles it; outside clicks dismiss it on Wayland.
+require("rofi-controls").setup(menu)
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 
@@ -364,6 +364,29 @@ hl.layer_rule({
     blur         = true,
     ignore_alpha = 0.05,
     animation    = "slide",
+})
+
+-- Rofi: same translucent tint as Waybar, with a gentle opening animation.
+-- Skip fully transparent corner pixels so the blur follows the rounded panel.
+hl.layer_rule({
+    name  = "rofi-glass",
+    match = { namespace = "^rofi$" },
+
+    blur         = true,
+    ignore_alpha = 0.05,
+    animation    = "popin 95%",
+})
+
+-- Waybar popdowns use transparent full-output surfaces for outside clicks.
+-- Blur only the painted panel, leaving the clear surrounding pixels untouched.
+hl.layer_rule({
+    name  = "waybar-popdown-glass",
+    match = { namespace = "^(calendar-menu|wifi-menu|audio-menu|bluetooth-menu|notifications-menu)$" },
+
+    blur         = true,
+    blur_popups  = true,
+    ignore_alpha = 0.05,
+    animation    = "fade",
 })
 
 -- Mako notifications: matching frosted glass

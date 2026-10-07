@@ -29,13 +29,13 @@ tooltip {
 }
 
 #workspaces button {
-  color: #a6adc8;
+  color: #9399b2;
   padding: 0 8px;
   margin: 2px 1px;
   border-radius: 8px;
-  background-color: rgba(137, 180, 250, 0.18);
+  background-color: rgba(137, 180, 250, 0.10);
   background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
-  border: 1px solid rgba(137, 180, 250, 0.22);
+  border: 1px solid rgba(137, 180, 250, 0.14);
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.10);
   transition: all 200ms ease;
 }
@@ -45,10 +45,16 @@ tooltip {
   background-color: rgba(137, 180, 250, 0.30);
 }
 
-#workspaces button.active {
-  color: #cba6f7;
-  background-color: rgba(203, 166, 247, 0.28);
-  border-color: rgba(203, 166, 247, 0.40);
+#workspaces button.active,
+#workspaces button.active:hover {
+  color: #f5f0ff;
+  background-color: rgba(203, 166, 247, 0.36);
+  border-color: rgba(203, 166, 247, 0.70);
+  box-shadow: inset 0 -2px #cba6f7, inset 0 1px rgba(255, 255, 255, 0.16);
+}
+
+#workspaces button.active label {
+  color: #f5f0ff;
 }
 
 #clock,
@@ -70,9 +76,9 @@ tooltip {
 }
 
 #clock {
-  color: #fab387;
-  background-color: rgba(250, 179, 135, 0.20);
-  border-color: rgba(250, 179, 135, 0.28);
+  color: #b4befe;
+  background-color: rgba(180, 190, 254, 0.20);
+  border-color: rgba(180, 190, 254, 0.28);
   font-size: 12px;
 }
 

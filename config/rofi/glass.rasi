@@ -1,0 +1,124 @@
+/* Match Waybar's #1e1e2e glass tint, faint white sheen and pastel accents.
+ * Blur comes from the rofi-glass layer rule in hyprland.lua.
+ * Keep child backgrounds transparent so the glass does not stack up.
+ */
+* {
+    font: "DejaVu Sans 11";
+    background-color: transparent;
+    text-color: #cdd6f4;
+    border-color: transparent;
+    border: 0px;
+    margin: 0px;
+    padding: 0px;
+    spacing: 0px;
+
+    glass: rgba(30, 30, 46, 0.28);
+    edge: rgba(255, 255, 255, 0.16);
+    accent: #cba6f7;
+    muted: #a6adc8;
+    selected: rgba(203, 166, 247, 0.22);
+    selected-edge: rgba(203, 166, 247, 0.30);
+}
+
+window {
+    location: center;
+    anchor: center;
+    width: 440px;
+    fullscreen: false;
+    transparency: "real";
+    background-color: @glass;
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.0));
+    border: 1px;
+    border-color: @edge;
+    border-radius: 16px;
+    padding: 12px;
+    children: [ mainbox ];
+}
+
+mainbox {
+    orientation: vertical;
+    children: [ inputbar, listview ];
+    spacing: 8px;
+    expand: false;
+}
+
+inputbar {
+    orientation: horizontal;
+    children: [ textbox-search, entry ];
+    spacing: 10px;
+    padding: 10px 12px;
+    expand: false;
+    background-color: rgba(255, 255, 255, 0.045);
+    border: 1px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+}
+
+textbox-search {
+    content: "";
+    font: "GoMono Nerd Font 12";
+    text-color: @accent;
+    /* Nerd Font icons can extend beyond their text advance width. */
+    width: 28px;
+    padding: 0px 4px 0px 0px;
+    expand: false;
+    vertical-align: 0.5;
+}
+
+entry {
+    placeholder: "Search your apps…";
+    placeholder-color: @muted;
+    cursor-color: @accent;
+    cursor-width: 2px;
+    vertical-align: 0.5;
+}
+
+listview {
+    lines: 6;
+    columns: 1;
+    fixed-height: false;
+    dynamic: true;
+    expand: false;
+    scrollbar: false;
+    spacing: 3px;
+}
+
+element {
+    orientation: horizontal;
+    children: [ element-icon, element-text ];
+    padding: 7px 10px;
+    spacing: 10px;
+    border: 1px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+element normal.normal, element alternate.normal {
+    background-color: transparent;
+    text-color: #cdd6f4;
+}
+
+element selected.normal, element selected.active, element selected.urgent {
+    background-color: @selected;
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.0));
+    border-color: @selected-edge;
+    text-color: @accent;
+}
+
+element-icon {
+    size: 24px;
+    vertical-align: 0.5;
+    background-color: transparent;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    vertical-align: 0.5;
+    highlight: bold;
+    cursor: inherit;
+}
+
+@media (max-height: 650) {
+    listview { lines: 5; }
+}

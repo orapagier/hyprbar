@@ -90,15 +90,15 @@ class CalendarPopup(Popup):
         self.calendar_css = Gtk.CssProvider()
         self.calendar_css.load_from_data(b'''
 #wifi-panel button {
-  background: rgba(49,50,68,0.45); background-image: none; color: #cdd6f4;
+  background: rgba(255,255,255,0.045); background-image: none; color: #cdd6f4;
   border: 1px solid transparent; border-radius: 8px; box-shadow: none;
   padding: 5px 7px; min-height: 22px; min-width: 18px;
 }
-#wifi-panel button:hover { background: #45475a; }
+#wifi-panel button:hover { background: rgba(203,166,247,0.22); }
 #wifi-panel button:focus { border-color: #b4befe; outline: none; }
 #wifi-panel button.today-control, #wifi-panel button.today-control:hover, #wifi-panel button.today-control:active, #wifi-panel button.today-control:focus { border-color: transparent; outline: none; box-shadow: none; }
-#wifi-panel .calendar-heading { color: #f9e2af; font-size: 11pt; font-weight: 600; }
-#wifi-panel .weekday { color: #7f849c; font-size: 8pt; }
+#wifi-panel .calendar-heading { color: #b4befe; font-size: 11pt; font-weight: 600; }
+#wifi-panel .weekday { color: #a6adc8; font-size: 8pt; }
 #wifi-panel button.day { padding: 3px; min-height: 24px; }
 #wifi-panel button.regular, #wifi-panel .regular { color: #f38ba8; }
 #wifi-panel button.special, #wifi-panel .special { color: #f9e2af; }
@@ -107,19 +107,19 @@ class CalendarPopup(Popup):
 #wifi-panel button.special { background: rgba(249,226,175,0.12); }
 #wifi-panel button.working { background: rgba(137,180,250,0.12); }
 #wifi-panel button.today { border-color: #cba6f7; font-weight: bold; }
-#wifi-panel button.selected { background: #45475a; }
-popover.calendar-tooltip { background: #181825; color: #cdd6f4; border: 1px solid #313244; border-radius: 8px; box-shadow: none; }
+#wifi-panel button.selected { background: rgba(203,166,247,0.22); }
+popover.calendar-tooltip { background: rgba(30,30,46,0.72); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; box-shadow: none; }
 popover.calendar-tooltip label { color: #cdd6f4; font-family: "GoMono Nerd Font"; font-size: 9pt; }
 #wifi-panel combobox button { padding: 5px 8px; }
-#wifi-panel combobox arrow { color: #7f849c; min-width: 10px; min-height: 10px; }
-#wifi-panel spinbutton { background: #313244; color: #cdd6f4; caret-color: #f9e2af; border: 1px solid rgba(205,214,244,0.10); border-radius: 8px; box-shadow: none; font-weight: 600; }
-#wifi-panel spinbutton entry { background: transparent; color: #cdd6f4; caret-color: #f9e2af; padding: 4px 6px; min-height: 24px; font-weight: 600; }
+#wifi-panel combobox arrow { color: #a6adc8; min-width: 10px; min-height: 10px; }
+#wifi-panel spinbutton { background: rgba(255,255,255,0.045); color: #cdd6f4; caret-color: #b4befe; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; box-shadow: none; font-weight: 600; }
+#wifi-panel spinbutton entry { background: transparent; color: #cdd6f4; caret-color: #b4befe; padding: 4px 6px; min-height: 24px; font-weight: 600; }
 #wifi-panel spinbutton:focus, #wifi-panel spinbutton:focus-within { border-color: rgba(205,214,244,0.10); outline: none; box-shadow: none; }
 #wifi-panel spinbutton selection, #wifi-panel spinbutton entry selection { background-color: #b4befe; color: #11111b; }
 #wifi-panel spinbutton button, #wifi-panel spinbutton button:hover, #wifi-panel spinbutton button:active, #wifi-panel spinbutton button:focus, #wifi-panel spinbutton button:checked { color: #b4befe; border: none; outline: none; box-shadow: none; padding: 2px 4px; min-width: 10px; }
-menu { background: #181825; color: #cdd6f4; border: 1px solid #313244; border-radius: 8px; padding: 6px; }
+menu { background: rgba(30,30,46,0.28); background-image: linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0)); color: #cdd6f4; border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; padding: 6px; }
 menu menuitem { color: #cdd6f4; padding: 8px 10px; border-radius: 6px; }
-menu menuitem:hover { background: #313244; color: #f9e2af; }
+menu menuitem:hover { background: rgba(203,166,247,0.22); color: #b4befe; }
 ''')
 
     def button(self, label, tooltip, callback):

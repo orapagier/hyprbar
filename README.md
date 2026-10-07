@@ -2,12 +2,15 @@
 
 Jelmar's Hyprland desktop for Arch Linux: a compact, transparent Waybar with
 individual pastel glass backgrounds, rounded borders, and compositor blur.
-Includes the complete current Hyprland configuration and seven wallpapers.
+Includes a compact glass Rofi launcher, the complete current Hyprland
+configuration, and seven wallpapers.
 
 The bar has workspace buttons, a scrolling media title and eight-band audio
 visualizer, a clock with a Philippine calendar, a persistent notification inbox,
 and audio, Wi-Fi, Bluetooth, battery, and tray modules. Clicking the status icons
-opens matching GTK popups. The calendar and notification history work offline.
+opens matching GTK popups with the launcher's translucent tint, subtle highlight,
+and frosted blur. The calendar and notification history work offline. The active
+workspace has a lavender underline, and the clock matches the lavender icons.
 
 ## Install on fresh Arch Linux
 
@@ -23,10 +26,11 @@ cd hyprbar
 
 The installer upgrades Arch and installs everything needed for this desktop:
 
-- Hyprland, UWSM, Waybar, wallpaper daemon, Mako, launcher, Kitty, and Thunar.
+- Hyprland, UWSM, Waybar, wallpaper daemon, Mako, Rofi, Kitty, and Thunar.
+- Fuzzel as a fallback launcher.
 - GTK layer-shell, Python bindings, D-Bus, Playerctl, FFTW, and PulseAudio tools.
 - PipeWire/WirePlumber, NetworkManager, Bluetooth, portals, and the Polkit agent.
-- DejaVu, GoMono Nerd Font, Noto fonts, and Adwaita icons/cursors.
+- DejaVu, GoMono Nerd Font, Noto fonts, Pop/Adwaita icons, and Adwaita cursors.
 - Brave (`brave-bin`, built from the AUR as your user).
 - COSMIC Greeter when no display manager is already configured.
 - Configs, all seven wallpapers, and the persistent notification user service.
@@ -65,7 +69,7 @@ preferred-mode rule in `hyprland.lua`.
 `--config-only` does not install packages, enable services, reload the desktop,
 or change the timezone. It is useful when the dependencies are already present.
 
-The installer replaces its `hypr`, `waybar`, and `fuzzel` config directories and
+The installer replaces its `hypr`, `waybar`, `rofi`, and `fuzzel` config directories and
 backs up changed existing paths under:
 
 ```text
@@ -88,7 +92,7 @@ automatically reboot. Package downloads, AUR builds, and sudo may take time.
 | Shortcut / action | Result |
 | --- | --- |
 | `Super+T` | Kitty terminal |
-| Press and release `Super` | Fuzzel launcher |
+| Press and release `Super` | Toggle the glass Rofi launcher |
 | `Super+E` | Thunar file manager |
 | `Super+B` | Brave |
 | `Super+Q` | Close focused window |
@@ -102,8 +106,12 @@ automatically reboot. Package downloads, AUR builds, and sudo may take time.
 | Click clock | Philippine calendar |
 | Click bell / audio / Wi-Fi / Bluetooth | Open the matching popup |
 
-The wallpaper on login is `cloudsnight.jpg`. Popups close with Escape or an
-outside click. The media module reads playback metadata and the default audio
+The wallpaper on login is `cloudsnight.jpg`. The launcher closes with another
+tap of Super, Escape, or an outside click. Popups close with Escape or an outside
+click. Rofi uses fuzzy app search, app icons, and a compact results list that
+shrinks as matches narrow. Its theme lives in `config/rofi/glass.rasi`.
+
+The media module reads playback metadata and the default audio
 output; it never records the microphone. Notifications are stored locally under
 `~/.local/state/waybar/notifications/` until cleared from the inbox.
 
@@ -124,6 +132,11 @@ If the bar needs restarting after a manual config update, run
 inspect `journalctl --user -u waybar-notification-monitor.service`. Popup errors
 are logged under `~/.local/state/waybar/`. Wi-Fi requires NetworkManager and
 Bluetooth requires a supported adapter and the BlueZ daemon.
+
+After updating the launcher or popdown configuration, run `hyprctl reload` and
+close/reopen the menus. The blur rules ignore transparent pixels outside the
+panels, so their invisible click areas do not blur the whole screen. Rofi 2.0
+needs the included Hyprland controls for outside-click dismissal on Wayland.
 
 The calendar contains the holiday rules/data in `ph-calendar.py`; special
 government declarations may require updating that file. Wallpaper images are

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 
 import cairo
@@ -26,12 +27,17 @@ def check(directory):
     Gtk.CssProvider().load_from_path(str(directory / 'style.css'))
     ctypes.CDLL(find_library('fftw3') or 'libfftw3.so.3')
     required = ('Hyprland', 'hyprctl', 'waybar', 'awww', 'awww-daemon', 'mako',
-                'makoctl', 'nmcli', 'pactl', 'parec', 'wpctl', 'fuzzel', 'kitty',
+                'makoctl', 'nmcli', 'pactl', 'parec', 'wpctl', 'rofi', 'kitty',
                 'thunar', 'playerctl', 'notify-send', 'brightnessctl', 'uwsm')
     missing = [name for name in required if not shutil.which(name)]
     if missing:
         raise SystemExit('Missing commands: ' + ', '.join(missing))
-    print('Waybar JSON/CSS, GTK layer-shell, Playerctl, D-Bus, Cairo, FFTW, and commands: OK')
+    theme = directory.parent / 'rofi/config.rasi'
+    result = subprocess.run(['rofi', '-config', str(theme), '-dump-theme'],
+                            text=True, capture_output=True, check=True)
+    if re.search(r'error|failed to parse', result.stderr, re.IGNORECASE):
+        raise SystemExit(result.stderr)
+    print('Waybar JSON/CSS, Rofi theme, GTK layer-shell, Playerctl, D-Bus, Cairo, FFTW, and commands: OK')
 
 
 if __name__ == '__main__':

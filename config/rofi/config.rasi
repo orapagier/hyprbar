@@ -1,0 +1,23 @@
+configuration {
+    modes: "drun";
+    font: "DejaVu Sans 11";
+    show-icons: true;
+    icon-theme: "Pop";
+    terminal: "kitty";
+    run-command: "uwsm app -- {cmd}";
+    drun-display-format: "{name}";
+    matching: "fuzzy";
+    sort: true;
+    sorting-method: "fzf";
+    case-sensitive: false;
+    cycle: true;
+    scroll-method: 0;
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
+    click-to-exit: true;
+    disable-history: false;
+    sidebar-mode: false;
+}
+
+@theme "glass"

@@ -6,6 +6,7 @@ uwsm
 waybar
 awww
 mako
+rofi
 fuzzel
 kitty
 thunar
@@ -36,6 +37,7 @@ ttf-go-nerd
 noto-fonts
 noto-fonts-emoji
 adwaita-icon-theme
+pop-icon-theme
 adwaita-cursors
 brightnessctl
 xdg-desktop-portal

@@ -41,6 +41,11 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual((self.config / 'waybar/style.css').read_bytes(),
                          (ROOT / 'config/waybar/style.css').read_bytes())
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
+        self.assertTrue(os.access(self.config / 'hypr/app-launcher.sh', os.X_OK))
+        self.assertTrue((self.config / 'hypr/rofi-controls.lua').is_file())
+        for name in ('config.rasi', 'glass.rasi'):
+            self.assertEqual((self.config / 'rofi' / name).read_bytes(),
+                             (ROOT / 'config/rofi' / name).read_bytes())
         self.assertTrue(os.access(self.config / 'waybar/wifi-menu.sh', os.X_OK))
         service = (self.config / 'systemd/user/waybar-notification-monitor.service').read_text()
         self.assertIn(f'"{self.config}/waybar/notification-monitor.py"', service)
@@ -53,6 +58,28 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('Unchanged:', result.stdout)
         self.assertNotIn('Installed:', result.stdout)
         self.assertFalse(self.state.exists())
+
+    def test_installed_launcher_uses_custom_config_paths_and_preserves_arguments(self):
+        self.install()
+        mock_bin = self.root / 'mock bin'
+        mock_bin.mkdir()
+        mock_rofi = mock_bin / 'rofi'
+        mock_rofi.write_text('#!/usr/bin/python3\nimport json, sys\nprint(json.dumps(sys.argv[1:]))\n')
+        mock_rofi.chmod(0o755)
+        env = dict(self.env, PATH=str(mock_bin) + os.pathsep + self.env['PATH'])
+        output = subprocess.check_output(
+            [str(self.config / 'hypr/app-launcher.sh'), '-filter', 'app with spaces'],
+            env=env, text=True)
+        self.assertEqual(json.loads(output), [
+            '-config', str(self.config / 'rofi/config.rasi'),
+            '-show', 'drun', '-monitor', '-1', '-filter', 'app with spaces'])
+
+        text = (self.config / 'hypr/hyprland.lua').read_text()
+        command = re.search(r"^local menu\s*=\s*'([^']+)'", text, re.MULTILINE)[1]
+        words = subprocess.check_output(
+            ['bash', '-c', 'set -- ' + command + '; printf "%s\\0" "$@"'], env=self.env)
+        self.assertEqual(words.decode().split('\0')[:-1],
+                         ['uwsm', 'app', '--', str(self.config / 'hypr/app-launcher.sh')])
 
     def test_changes_are_backed_up_and_unrelated_files_are_preserved(self):
         self.install()
