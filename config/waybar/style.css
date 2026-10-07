@@ -145,15 +145,27 @@ tooltip {
   background-color: rgba(243, 139, 168, 0.30);
 }
 
+#network,
 #bluetooth {
+  min-width: 20px;
+}
+
+#bluetooth {
+  padding: 0 9px 0 8px;
   color: #b4befe;
   background-color: rgba(180, 190, 254, 0.20);
   border-color: rgba(180, 190, 254, 0.28);
 }
-#bluetooth.connected { color: #89b4fa; }
+#bluetooth.connected {
+  color: #89b4fa;
+  padding: 0 10px 0 7px;
+}
 #bluetooth.off,
 #bluetooth.disabled,
-#bluetooth.no-controller { color: #585b70; }
+#bluetooth.no-controller {
+  color: #585b70;
+  padding: 0 10px 0 7px;
+}
 
 #network {
   color: #94e2d5;
