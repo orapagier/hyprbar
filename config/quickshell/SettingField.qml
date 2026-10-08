@@ -7,6 +7,7 @@ ColumnLayout {
     property string label: ""
     property string value: ""
     property string hint: ""
+    property string description: ""
     property bool colorField: false
     signal edited(string value)
     spacing: 8
@@ -19,8 +20,8 @@ ColumnLayout {
         Layout.fillWidth: true
         Rectangle {
             visible: field.colorField
-            Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredWidth: 32
+            Layout.preferredHeight: 32
             radius: 7
             border.color: "#667085"
             color: /^#[0-9a-fA-F]{6}$/.test(field.value) ? field.value : "transparent"
@@ -30,6 +31,7 @@ ColumnLayout {
             Layout.fillWidth: true
             implicitHeight: 42
             leftPadding: 14
+            Accessible.name: field.label
             rightPadding: 14
             color: "#e0e5f4"
             font.pixelSize: 12
@@ -40,9 +42,9 @@ ColumnLayout {
             placeholderTextColor: "#939bb3"
             selectByMouse: true
             background: Rectangle {
-                radius: 12
-                color: input.activeFocus ? "#30364f" : input.hovered ? "#2b3349" : "#242c40"
-                border.color: input.activeFocus ? "#a894db" : input.hovered ? "#596582" : "#3e4a65"
+                radius: 8
+                color: input.activeFocus ? "#202735" : input.hovered ? "#222a38" : "#171d27"
+                border.color: input.activeFocus ? "#a894db" : input.hovered ? "#596582" : "#364153"
                 Behavior on color {
                     ColorAnimation {
                         duration: 130
@@ -51,5 +53,13 @@ ColumnLayout {
             }
             onTextEdited: field.edited(text)
         }
+    }
+    Label {
+        visible: field.description !== ""
+        Layout.fillWidth: true
+        text: field.description
+        wrapMode: Text.WordWrap
+        color: "#939bb3"
+        font.pixelSize: 11
     }
 }

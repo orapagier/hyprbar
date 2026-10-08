@@ -24,5 +24,6 @@ Switch {
         text: control.text; font.pixelSize: 12; color: "#d2d7e9"
         leftPadding: control.indicator.width + control.spacing
         verticalAlignment: Text.AlignVCenter
+        wrapMode: Text.WordWrap
     }
 }

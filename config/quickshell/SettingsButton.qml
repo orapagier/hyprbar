@@ -16,11 +16,10 @@ Button {
         elide: Text.ElideRight
     }
     background: Rectangle {
-        radius: height / 2
-        color: control.down ? "#555078" : control.highlighted ? "#45405e" : control.hovered ? "#343a50" : control.flat ? "transparent" : "#272d41"
-        border.color: control.activeFocus ? "#b4a2ff" : control.highlighted ? "#74648e" : control.hovered ? "#545d79" : "#3b435c"
+        radius: 8
+        color: control.down ? "#555078" : control.highlighted ? "#45405e" : control.hovered ? "#343a50" : control.flat ? "transparent" : "#252d3b"
+        border.color: control.activeFocus ? "#b4a2ff" : control.highlighted ? "#74648e" : control.hovered ? "#545d79" : "#3c4658"
         border.width: control.flat && !control.highlighted && !control.hovered && !control.activeFocus ? 0 : 1
         Behavior on color { ColorAnimation { duration: 130 } }
-        Rectangle { x: 12; y: 1; width: parent.width - 24; height: 1; color: "#12ffffff"; radius: 1 }
     }
 }

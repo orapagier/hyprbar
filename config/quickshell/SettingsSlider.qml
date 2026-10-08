@@ -30,7 +30,7 @@ ColumnLayout {
         }
         Label {
             objectName: "sliderValue"
-            text: root.inherited ? root.inheritedText : Math.round(root.displayValue) + root.suffix
+            text: root.inherited ? root.inheritedText : Number(root.displayValue.toFixed(2)) + root.suffix
             color: root.inherited ? "#8996b1" : "#c9bdff"
             font.pixelSize: 12
         }

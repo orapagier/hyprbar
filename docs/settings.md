@@ -167,3 +167,14 @@ their own font sizes. Larger icons expand their hit areas and the bar height to
 avoid clipping. Items without a built-in icon use this size for icon overrides.
 Old experimental motion preferences are ignored and removed on the next save;
 popdowns use the original fade-and-slide transition.
+
+All settings pages share the same card structure and spacing. **Bar & layout**
+groups layout sliders, default appearance, and clock formatting with a sample.
+Item pages group visibility/position, text/icon overrides, colors/background,
+and shape/transparency. Grids stack into one column below 600 px of editor
+width; background switches and inheritance actions also stack in narrow cards.
+The live bar preview scales to fit narrower windows. Sliders display pixel or
+percentage units; reset arrows restore bundled bar defaults or the original item
+appearance as appropriate. The final item restore action retains its existing
+last-saved semantics. Hover, focus, and switch transitions use the shared native
+controls; no new configuration keys or startup services are introduced.

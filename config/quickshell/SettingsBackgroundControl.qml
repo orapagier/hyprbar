@@ -11,8 +11,11 @@ ColumnLayout {
     property string inheritDescription: "Following general setting"
     signal edited(string mode)
     spacing: 6
-    RowLayout {
+    GridLayout {
+        Layout.fillWidth: true
+        columns: control.width >= 480 ? 2 : 1
         SettingsSwitch {
+            Layout.fillWidth: true
             objectName: "backgroundPillSwitch"
             text: control.switchText
             checked: control.mode === "on" || (control.mode !== "off" && control.inheritedVisible)

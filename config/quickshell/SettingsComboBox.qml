@@ -14,8 +14,8 @@ ComboBox {
     }
     indicator: Text { text: "⌄"; color: "#b1a2d9"; font.pixelSize: 18; x: control.width - 26; y: (control.height - height) / 2 - 2 }
     background: Rectangle {
-        radius: 12; color: control.hovered ? "#30384e" : "#242b3f"
-        border.color: control.activeFocus ? "#a995d9" : "#414b65"
+        radius: 8; color: control.hovered ? "#222a38" : "#171d27"
+        border.color: control.activeFocus ? "#a995d9" : "#364153"
         Behavior on color { ColorAnimation { duration: 130 } }
     }
     delegate: ItemDelegate {
@@ -30,7 +30,7 @@ ComboBox {
         y: control.height + 6; width: control.width
         padding: 6
         implicitHeight: Math.min(240, list.contentHeight + 12)
-        background: Rectangle { radius: 16; color: "#242a3e"; border.color: "#505976" }
+        background: Rectangle { radius: 10; color: "#242a3e"; border.color: "#505976" }
         contentItem: ListView {
             id: list
             clip: true; implicitHeight: contentHeight

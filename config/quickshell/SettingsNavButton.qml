@@ -5,9 +5,12 @@ Button {
     id: control
     property string symbol: "󰒓"
     property bool itemEnabled: true
-    implicitHeight: 34
+    implicitHeight: 38
     leftPadding: 13; rightPadding: 13
     hoverEnabled: true
+    ToolTip.visible: hovered
+    ToolTip.delay: 600
+    ToolTip.text: text
     contentItem: Item {
         implicitWidth: 190; implicitHeight: 22
         Text {
@@ -24,10 +27,10 @@ Button {
         Rectangle { width: 4; height: 4; radius: 2; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; color: control.highlighted ? "#c0acff" : "transparent" }
     }
     background: Rectangle {
-        radius: 12
-        color: control.highlighted ? "#35354e" : control.hovered ? "#262d41" : "transparent"
+        radius: 8
+        color: control.highlighted ? "#302d43" : control.hovered ? "#232b38" : "transparent"
         border.width: control.highlighted || control.activeFocus ? 1 : 0
-        border.color: control.activeFocus ? "#b4a2ff" : "#50516f"
+        border.color: control.activeFocus ? "#b4a2ff" : "#504865"
         Behavior on color { ColorAnimation { duration: 140 } }
     }
 }

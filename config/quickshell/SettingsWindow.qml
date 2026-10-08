@@ -31,8 +31,8 @@ FloatingWindow {
             launcher: "App launcher",
             settings: "Settings shortcut",
             workspaces: "Workspaces",
-            media: "Media and spectrum",
-            calendar: "Clock and calendar",
+            media: "Media & spectrum",
+            calendar: "Clock & calendar",
             tray: "System tray",
             notifications: "Notifications",
             audio: "Audio",
@@ -57,7 +57,7 @@ FloatingWindow {
         })
     visible: false
     title: "Hyprshell Settings"
-    implicitWidth: 1180
+    implicitWidth: screen ? Math.min(1180, Math.round(screen.width * 0.9)) : 1180
     implicitHeight: screen ? Math.round(screen.height * 0.75) : 810
     color: "#10131c"
     function open() {
@@ -168,9 +168,9 @@ FloatingWindow {
     }
     Pane {
         anchors.fill: parent
-        padding: 24
-        topPadding: 10
-        bottomPadding: 14
+        padding: 20
+        topPadding: 20
+        bottomPadding: 12
         palette.window: "#10131c"
         palette.windowText: "#ecebff"
         palette.text: "#ecebff"
@@ -183,20 +183,9 @@ FloatingWindow {
         palette.dark: "#b4a2ff"
         palette.mid: "#363e58"
         font.family: "DejaVu Sans"
-        background: Rectangle {
-            gradient: Gradient {
-                GradientStop {
-                    position: 0
-                    color: "#191e30"
-                }
-                GradientStop {
-                    position: 1
-                    color: "#101622"
-                }
-            }
-        }
+        background: Rectangle { color: "#141820" }
         contentItem: ColumnLayout {
-            spacing: 10
+            spacing: 16
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
@@ -209,7 +198,7 @@ FloatingWindow {
                         color: "#ecebff"
                     }
                     Label {
-                        text: "Personalize your desktop"
+                        text: "Settings"
                         color: "#939bb3"
                     }
                 }
@@ -219,7 +208,7 @@ FloatingWindow {
                 Label {
                     text: window.saving ? "●  Saving…" : !window.success ? "●  Check your changes" : window.dirty ? "●  Saving soon…" : "●  Saved automatically"
                     font.pixelSize: 11
-                    color: window.dirty ? "#e7ca98" : "#9eafb7"
+                    color: !window.success ? "#f38ba8" : window.dirty ? "#e7ca98" : "#9eafb7"
                 }
                 SettingsButton {
                     text: "Reset unsaved changes"
@@ -236,23 +225,25 @@ FloatingWindow {
             Rectangle {
                 Layout.fillWidth: true
                 visible: window.section !== -2
-                Layout.preferredHeight: previewBar.y + previewBar.height + 38
-                radius: 16
-                color: "#242a3e"
-                border.color: "#363e58"
+                Layout.preferredHeight: previewBar.y + previewBar.height * previewBar.scale + 16
+                radius: 12
+                color: "#1a202b"
+                border.color: "#2c3443"
                 Label {
                     x: 16
-                    y: 7
-                    text: "BAR PREVIEW · DRAG ITEMS TO REARRANGE · CLICK TO EDIT"
+                    y: 12
+                    text: "LIVE PREVIEW   ·   Drag to rearrange, click to customize"
                     color: "#949dbb"
                     font.pixelSize: 10
-                    font.letterSpacing: 1.5
+                    font.letterSpacing: 0.3
                 }
                 Bar {
                     id: previewBar
                     x: 12
-                    y: 25
-                    width: parent.width - 24
+                    y: 34
+                    width: Math.max(1000, parent.width - 24)
+                    scale: Math.min(1, (parent.width - 24) / width)
+                    transformOrigin: Item.TopLeft
                     settings: window.draft
                     trayModel: [{icon: Qt.resolvedUrl("icons/preview-tray.svg")} ]
                     clockText: Qt.formatDateTime(new Date(), window.draft.bar.clockFormat)
@@ -308,16 +299,16 @@ FloatingWindow {
                 spacing: 16
                 ScrollView {
                     id: sidebar
-                    Layout.preferredWidth: 226
+                    Layout.preferredWidth: window.width < 900 ? 200 : 226
                     Layout.fillHeight: true
                     clip: true
                     padding: 10
                     contentWidth: availableWidth
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     background: Rectangle {
-                        radius: 20
-                        color: "#1e2537"
-                        border.color: "#333e56"
+                        radius: 12
+                        color: "#191e28"
+                        border.color: "#2c3443"
                     }
                     ColumnLayout {
                         width: sidebar.availableWidth
@@ -332,7 +323,7 @@ FloatingWindow {
                             Layout.bottomMargin: 12
                         }
                         SettingsNavButton {
-                            text: "Overview and bar"
+                            text: "Bar & layout"
                             symbol: "󰕮"
                             Layout.fillWidth: true
                             flat: true
@@ -341,7 +332,7 @@ FloatingWindow {
                         }
                         SettingsNavButton {
                             symbol: "󰖲"
-                            text: "Hyprland appearance"
+                            text: "Hyprland"
                             Layout.fillWidth: true
                             flat: true
                             highlighted: window.section === -2
@@ -378,12 +369,12 @@ FloatingWindow {
                     Layout.fillHeight: true
                     clip: true
                     contentWidth: availableWidth
-                    padding: 24
+                    padding: window.width < 900 ? 16 : 24
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     background: Rectangle {
-                        radius: 20
-                        color: "#20283b"
-                        border.color: "#3b4660"
+                        radius: 12
+                        color: "#171c26"
+                        border.color: "#2c3443"
                     }
                     ColumnLayout {
                         width: editorScroll.availableWidth
@@ -395,248 +386,31 @@ FloatingWindow {
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -1 ? "Your bar, your layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: window.section === -1 ? "Changes save and apply automatically as you customize your desktop." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Changes apply automatically. Choose a position, change its appearance, or hide this item. Empty text and color fields use the original values."
+                            text: window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
                             color: "#939bb3"
                         }
-                        ColumnLayout {
+                        SettingsBarEditor {
                             visible: window.section === -1
                             Layout.fillWidth: true
-                            spacing: 18
-                            SettingsIconSize {
-                                Layout.fillWidth: true
-                                settingValue: window.draft.bar.iconSize
-                                onEdited: value => window.updateBar("iconSize", value)
-                            }
-                            SettingsSwitch {
-                                text: "Adapt colors to wallpaper"
-                                checked: window.draft.bar.adaptiveColors
-                                onToggled: window.updateBar("adaptiveColors", checked)
-                            }
-                            SettingsBackgroundControl {
-                                Layout.fillWidth: true
-                                switchText: "Show background pills for all items"
-                                mode: window.draft.bar.background || "inherit"
-                                inheritLabel: "Use original backgrounds"
-                                inheritDescription: "Original backgrounds: glass logo and settings cog have no pill. Each item can override this choice."
-                                onEdited: mode => window.updateBar("background", mode)
-                            }
-                            GridLayout {
-                                columns: 2
-                                columnSpacing: 20
-                                rowSpacing: 16
-                                Layout.fillWidth: true
-                                Repeater {
-                                    model: [
-                                        {
-                                            key: "height",
-                                            label: "Bar height · 28–80 px"
-                                        },
-                                        {
-                                            key: "spacing",
-                                            label: "Item spacing · 0–30 px"
-                                        },
-                                        {
-                                            key: "marginTop",
-                                            label: "Top margin · 0–100 px"
-                                        },
-                                        {
-                                            key: "marginSide",
-                                            label: "Side margins · 0–200 px"
-                                        }
-                                    ]
-                                    delegate: SettingField {
-                                        required property var modelData
-                                        Layout.fillWidth: true
-                                        label: modelData.label
-                                        value: String(window.draft.bar[modelData.key])
-                                        onEdited: value => window.updateBar(modelData.key, value === "" ? "" : Number(value))
-                                    }
-                                }
-                            }
-                            SettingField {
-                                Layout.fillWidth: true
-                                label: "Clock format (Qt date/time format)"
-                                value: window.draft.bar.clockFormat
-                                onEdited: value => window.updateBar("clockFormat", value)
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: "Select an item in the sidebar to hide it, move it, or customize its colors. Per-item color overrides take priority over wallpaper adaptation. Tray artwork keeps each application's own icon."
-                                wrapMode: Text.WordWrap
-                                color: "#939bb3"
-                            }
+                            settings: window.draft.bar
+                            onEdited: (key, value) => window.updateBar(key, value)
                         }
-                        ColumnLayout {
+                        SettingsItemEditor {
                             visible: window.section >= 0
                             Layout.fillWidth: true
-                            spacing: 18
-                            SettingsIconSize {
-                                Layout.fillWidth: true
-                                individual: true
-                                settingValue: window.selected.iconSize
-                                inheritedSize: window.draft.bar.iconSize
-                                onEdited: value => window.updateItem("iconSize", value)
-                            }
-                            RowLayout {
-                                SettingsSwitch {
-                                    text: "Show item"
-                                    checked: window.selected.enabled !== false
-                                    onToggled: window.updateItem("enabled", checked)
-                                }
-                                Item {
-                                    Layout.fillWidth: true
-                                }
-                                SettingsButton {
-                                    text: "Reset item"
-                                    enabled: !window.saving
-                                    onClicked: window.resetItem()
-                                    ToolTip.visible: hovered
-                                    ToolTip.text: "Restore this item's last saved settings and position"
-                                }
-                            }
-                            RowLayout {
-                                Label {
-                                    text: "Position"
-                                }
-                                SettingsComboBox {
-                                    model: ["left", "center", "right"]
-                                    currentIndex: Math.max(0, model.indexOf(window.selected.side))
-                                    onActivated: window.updateItem("side", currentText)
-                                }
-                                SettingsButton {
-                                    text: "← Earlier"
-                                    onClicked: window.moveItem(-1)
-                                }
-                                SettingsButton {
-                                    text: "Later →"
-                                    onClicked: window.moveItem(1)
-                                }
-                            }
-                            Label {
-                                Layout.fillWidth: true
-                                text: "Extra left and right spacing adds to the general item spacing, outside the pill. Pill background inherit follows the general setting."
-                                wrapMode: Text.WordWrap
-                                color: "#939bb3"
-                            }
-                            RowLayout {
-                                Label {
-                                    text: "Wallpaper colors"
-                                }
-                                SettingsComboBox {
-                                    model: ["inherit", "on", "off"]
-                                    currentIndex: Math.max(0, model.indexOf(window.selected.adaptiveColors))
-                                    onActivated: window.updateItem("adaptiveColors", currentText)
-                                }
-                            }
-                            SettingsBackgroundControl {
-                                Layout.fillWidth: true
-                                mode: window.selected.background || "inherit"
-                                inheritedVisible: window.draft.bar.background === "on" || (window.draft.bar.background !== "off" && window.selected.id !== "launcher" && window.selected.id !== "settings")
-                                onEdited: mode => window.updateItem("background", mode)
-                            }
-                            GridLayout {
-                                columns: 2
-                                columnSpacing: 20
-                                rowSpacing: 16
-                                Layout.fillWidth: true
-                                Repeater {
-                                    model: [
-                                        {
-                                            key: "text",
-                                            label: "Text / glyph override"
-                                        },
-                                        {
-                                            key: "icon",
-                                            label: "Icon glyph override"
-                                        },
-                                        {
-                                            key: "textColor",
-                                            label: "Text color"
-                                        },
-                                        {
-                                            key: "iconColor",
-                                            label: "Icon color"
-                                        },
-                                        {
-                                            key: "backgroundColor",
-                                            label: "Pill color"
-                                        },
-                                        {
-                                            key: "outlineColor",
-                                            label: "Outline color"
-                                        }
-                                    ]
-                                    delegate: SettingField {
-                                        required property var modelData
-                                        Layout.fillWidth: true
-                                        label: modelData.label
-                                        value: window.selected[modelData.key] || ""
-                                        colorField: modelData.key.endsWith("Color")
-                                        hint: colorField ? "Default · #RRGGBB" : "Default"
-                                        onEdited: value => window.updateItem(modelData.key, value)
-                                    }
-                                }
-                            }
-                            RowLayout {
-                                SettingsCheckBox {
-                                    text: "Hide text"
-                                    checked: window.selected.hideText || false
-                                    onToggled: window.updateItem("hideText", checked)
-                                }
-                                SettingsCheckBox {
-                                    text: "Hide icon"
-                                    checked: window.selected.hideIcon || false
-                                    onToggled: window.updateItem("hideIcon", checked)
-                                }
-                            }
-                            GridLayout {
-                                columns: 2
-                                columnSpacing: 20
-                                rowSpacing: 16
-                                Layout.fillWidth: true
-                                Repeater {
-                                    model: [
-                                        {
-                                            key: "spacingLeft",
-                                            label: "Extra left spacing · 0–200 px"
-                                        },
-                                        {
-                                            key: "spacingRight",
-                                            label: "Extra right spacing · 0–200 px"
-                                        },
-                                        {
-                                            key: "opacity",
-                                            label: "Entire item opacity · 0–1"
-                                        },
-                                        {
-                                            key: "backgroundOpacity",
-                                            label: "Pill opacity · 0–1 / -1 auto"
-                                        },
-                                        {
-                                            key: "fontSize",
-                                            label: "Font size · 0 default / 1–48 px"
-                                        },
-                                        {
-                                            key: "radius",
-                                            label: "Pill radius · -1 auto / 0–50 px"
-                                        }
-                                    ]
-                                    delegate: SettingField {
-                                        required property var modelData
-                                        Layout.fillWidth: true
-                                        label: modelData.label
-                                        value: String(window.selected[modelData.key] ?? "")
-                                        onEdited: value => window.updateItem(modelData.key, value === "" ? "" : Number(value))
-                                    }
-                                }
-                            }
+                            settings: window.selected
+                            barSettings: window.draft.bar
+                            saving: window.saving
+                            onEdited: (key, value) => window.updateItem(key, value)
+                            onMoveRequested: direction => window.moveItem(direction)
+                            onResetRequested: window.resetItem()
                         }
                         SettingsAppearance {
                             visible: window.section === -2
@@ -649,7 +423,7 @@ FloatingWindow {
             }
             Label {
                 Layout.fillWidth: true
-                text: window.message || window.store.error || "Changes stay on this device · Saved and applied automatically"
+                text: !window.success ? (window.message || window.store.error) : "Changes save and apply automatically"
                 wrapMode: Text.WordWrap
                 font.pixelSize: 11
                 color: window.success ? "#939bb3" : "#f38ba8"

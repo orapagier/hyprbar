@@ -8,9 +8,10 @@ Rectangle {
     property string subtitle: ""
     default property alias controls: body.data
     implicitHeight: content.implicitHeight + 40
-    color: "#1b2233"
-    radius: 14
-    border.color: "#343f57"
+    Layout.minimumWidth: 0
+    color: "#1d2430"
+    radius: 12
+    border.color: "#303948"
     ColumnLayout {
         id: content
         anchors.fill: parent
