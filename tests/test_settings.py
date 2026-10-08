@@ -1,0 +1,216 @@
+"""Settings transactions in isolated XDG directories; never change a desktop."""
+import copy
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location('settings_backend', ROOT / 'config/quickshell/settings/backend.py')
+backend = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(backend)
+
+
+class SettingsTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='hyprshell-settings-')
+        self.addCleanup(self.temp.cleanup)
+        self.config = Path(self.temp.name) / 'config with spaces'
+        self.state = Path(self.temp.name) / 'state'
+        self.env = patch.dict(os.environ, XDG_CONFIG_HOME=str(self.config), XDG_STATE_HOME=str(self.state), HYPRLAND_INSTANCE_SIGNATURE='')
+        self.env.start()
+        self.addCleanup(self.env.stop)
+        self.data = copy.deepcopy(backend.DEFAULTS)
+        self.path = self.config / 'hyprshell/settings.json'
+
+    def test_apply_preserves_hyprland_and_backup_can_restore_previous_settings(self):
+        result = backend.save(self.data)
+        self.assertTrue(result['ok'])
+        self.assertFalse((self.config / 'hypr').exists())
+        original = self.path.read_text()
+        self.data['items'][0]['enabled'] = False
+        result = backend.save(self.data, backend.DEFAULTS)
+        backup = Path(result['backup'])
+        manifest = json.loads((backup / 'manifest.json').read_text())
+        entry = next(i for i in manifest if i['path'] == str(self.path))
+        self.assertEqual((backup / entry['file']).read_text(), original)
+        self.assertFalse(json.loads(self.path.read_text())['items'][0]['enabled'])
+
+    def test_invalid_and_unknown_values_write_nothing(self):
+        variants = []
+        for key, value in [('opacity', 2), ('backgroundOpacity', -0.5), ('textColor', 'red'), ('side', 'bottom'), ('order', True)]:
+            data = copy.deepcopy(self.data)
+            data['items'][0][key] = value
+            variants.append(data)
+        data = copy.deepcopy(self.data)
+        data['hyprland']['rounding'] = '__import__("os")'
+        variants.append(data)
+        data = copy.deepcopy(self.data)
+        data['items'].append(data['items'][0])
+        variants.append(data)
+        for data in variants:
+            with self.assertRaises(ValueError):
+                backend.save(data)
+        self.assertFalse(self.path.exists())
+
+    def test_spacing_and_backgrounds_round_trip_with_legacy_defaults(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['background']
+        for item in legacy['items']:
+            del item['spacingLeft']
+            del item['spacingRight']
+        self.assertEqual(backend.validate(legacy), self.data)
+        self.data['bar']['background'] = 'off'
+        wifi = next(i for i in self.data['items'] if i['id'] == 'wifi')
+        wifi.update(spacingLeft=7, spacingRight=10, background='on')
+        backend.save(self.data)
+        self.assertEqual(json.loads(self.path.read_text()), self.data)
+
+    def test_invalid_spacing_and_global_background_are_rejected(self):
+        for key in ('spacingLeft', 'spacingRight'):
+            for value in (-1, 201, 0.5, True, '5', float('inf')):
+                with self.subTest(key=key, value=value):
+                    data = copy.deepcopy(self.data)
+                    data['items'][0][key] = value
+                    with self.assertRaises(ValueError):
+                        backend.save(data)
+        for value in ('yes', True, None):
+            data = copy.deepcopy(self.data)
+            data['bar']['background'] = value
+            with self.assertRaises(ValueError):
+                backend.save(data)
+        self.assertFalse(self.path.exists())
+
+    def test_icon_sizes_round_trip_and_retired_motion_settings_are_removed(self):
+        legacy = copy.deepcopy(self.data)
+        for section in [legacy['bar'], *legacy['items']]:
+            del section['iconSize']
+            section.update(genieEffect=True, genieOpenDuration=360, genieCloseDuration=280)
+        self.assertEqual(backend.validate(legacy), self.data)
+        self.data['bar']['iconSize'] = 24
+        self.data['items'][0]['iconSize'] = 36
+        backend.save(self.data)
+        self.assertEqual(json.loads(self.path.read_text()), self.data)
+        self.path.write_text(json.dumps(legacy))
+        backend.save(self.data, legacy)
+        self.assertEqual(json.loads(self.path.read_text()), self.data)
+
+    def test_invalid_icon_sizes_write_nothing(self):
+        for section in ['bar', 'item']:
+            for value in (-1, 1, 7, 49, True, False, 12.5, '24', None, float('nan')):
+                with self.subTest(section=section, value=value):
+                    data = copy.deepcopy(self.data)
+                    target = data['bar'] if section == 'bar' else data['items'][0]
+                    target['iconSize'] = value
+                    with self.assertRaises(ValueError):
+                        backend.save(data)
+        self.assertFalse(self.path.exists())
+
+    def test_external_edit_is_not_overwritten(self):
+        backend.save(self.data)
+        self.data['bar']['height'] = 40
+        backend.save(self.data)
+        before = self.path.read_text()
+        with self.assertRaisesRegex(ValueError, 'changed outside'):
+            backend.save(backend.DEFAULTS, backend.DEFAULTS)
+        self.assertEqual(self.path.read_text(), before)
+
+    def test_lua_override_is_appended_once_and_clearing_restores_inheritance(self):
+        main = self.config / 'hypr/hyprland.lua'
+        main.parent.mkdir(parents=True)
+        main.write_text('-- Personal config\nhl.config({general={gaps_out=17}})\n')
+        self.data['hyprland'] = {'gapsOut': 25, 'blur': False}
+        backend.save(self.data)
+        self.assertTrue(main.read_text().startswith('-- Personal config\n'))
+        self.assertEqual(main.read_text().count(backend.MARKER), 1)
+        override = self.config / 'hyprshell/overrides.lua'
+        self.assertIn('gaps_out = 25', override.read_text())
+        self.assertIn('enabled = false', override.read_text())
+        self.data['hyprland'] = {}
+        backend.save(self.data)
+        self.assertNotIn('gaps_out', override.read_text())
+        self.assertEqual(main.read_text().count(backend.MARKER), 1)
+
+    def test_conf_user_gets_conf_override(self):
+        main = self.config / 'hypr/hyprland.conf'
+        main.parent.mkdir(parents=True)
+        main.write_text('general {\n gaps_out = 17\n}\n')
+        self.data['hyprland'] = {'rounding': 8, 'animations': False}
+        backend.save(self.data)
+        self.assertIn('source = ', main.read_text())
+        override = self.config / 'hyprshell/overrides.conf'
+        self.assertIn('decoration:rounding = 8', override.read_text())
+        self.assertIn('animations:enabled = false', override.read_text())
+
+    def test_glass_controls_round_trip_lua_and_conf(self):
+        self.data['hyprland'] = {
+            'activeOpacity': 0.85, 'inactiveOpacity': 0.65,
+            'blur': True, 'blurSize': 12, 'blurPasses': 3, 'blurVibrancy': 0.35,
+        }
+        for lua in (True, False):
+            with self.subTest(lua=lua):
+                main = self.config / ('hypr/hyprland.lua' if lua else 'hypr/hyprland.conf')
+                main.parent.mkdir(parents=True, exist_ok=True)
+                main.write_text('-- Personal config\n' if lua else '# Personal config\n')
+                backend.save(self.data)
+                override = self.config / ('hyprshell/overrides.lua' if lua else 'hyprshell/overrides.conf')
+                text = override.read_text()
+                for key, value in [('active_opacity', 0.85), ('inactive_opacity', 0.65),
+                                   ('size', 12), ('passes', 3), ('vibrancy', 0.35)]:
+                    self.assertIn(f'{key} = {value}', text)
+                self.assertEqual(json.loads(self.path.read_text())['hyprland'], self.data['hyprland'])
+                main.unlink()
+                self.path.unlink()
+
+    def test_invalid_glass_values_write_nothing(self):
+        for key, values in {
+            'blurSize': (0, 21, 1.5, True),
+            'blurPasses': (0, 5, 2.5, True),
+            'blurVibrancy': (-0.1, 1.1, float('nan'), True),
+        }.items():
+            for value in values:
+                with self.subTest(key=key, value=value):
+                    data = copy.deepcopy(self.data)
+                    data['hyprland'][key] = value
+                    with self.assertRaises(ValueError):
+                        backend.save(data)
+        self.assertFalse(self.path.exists())
+
+    def test_reload_errors_roll_back_files_and_reload_original(self):
+        main = self.config / 'hypr/hyprland.lua'
+        main.parent.mkdir(parents=True)
+        original = '-- Personal config\n'
+        main.write_text(original)
+        self.data['hyprland'] = {'rounding': 8}
+        with patch.dict(os.environ, HYPRLAND_INSTANCE_SIGNATURE='test'), patch.object(backend.subprocess, 'run') as run:
+            run.side_effect = [subprocess.CompletedProcess([], 0, 'ok'), subprocess.CompletedProcess([], 0, 'invalid config'), subprocess.CompletedProcess([], 0, 'ok')]
+            with self.assertRaisesRegex(ValueError, 'invalid config'):
+                backend.save(self.data)
+            self.assertEqual(run.call_count, 3)
+        self.assertEqual(main.read_text(), original)
+        self.assertFalse(self.path.exists())
+        self.assertFalse((self.config / 'hyprshell/overrides.lua').exists())
+
+    def test_partial_write_failure_rolls_back_earlier_files(self):
+        main = self.config / 'hypr/hyprland.lua'
+        main.parent.mkdir(parents=True)
+        main.write_text('-- original\n')
+        self.data['hyprland'] = {'rounding': 8}
+        atomic = backend.atomic
+        def fail_target(path, text):
+            if path == self.path:
+                raise OSError('disk full')
+            atomic(path, text)
+        with patch.object(backend, 'atomic', side_effect=fail_target):
+            with self.assertRaisesRegex(OSError, 'disk full'):
+                backend.save(self.data)
+        self.assertEqual(main.read_text(), '-- original\n')
+        self.assertFalse((self.config / 'hyprshell/overrides.lua').exists())
+
+
+if __name__ == '__main__':
+    unittest.main()

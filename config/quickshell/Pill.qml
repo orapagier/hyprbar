@@ -2,6 +2,15 @@ import QtQuick
 
 Item {
     id: pill
+    property var settings: ({})
+    readonly property string shownText: settings.hideText ? "" : settings.text || text
+    readonly property string shownIcon: settings.hideIcon ? "" : settings.icon || icon
+    readonly property color textColor: settings.textColor || (family === "GoMono Nerd Font" ? settings.iconColor : "") || effectiveForeground
+    readonly property color iconColor: settings.iconColor || effectiveForeground
+    function styledBackground(base) {
+        let c = settings.backgroundColor ? Qt.color(settings.backgroundColor) : base;
+        return Qt.rgba(c.r, c.g, c.b, settings.backgroundOpacity >= 0 ? settings.backgroundOpacity : base.a);
+    }
     property string text: ""
     property string icon: ""
     property int iconSize: 16
@@ -24,6 +33,7 @@ Item {
     property bool interactive: true
     property bool raised: true
     property bool backgroundVisible: true
+    readonly property bool backgroundShown: settings.background === "on" || (settings.background !== "off" && backgroundVisible)
     readonly property bool hovered: pointer.containsMouse
     property bool selected: false
     property color hoverTint: tint
@@ -32,24 +42,27 @@ Item {
     signal wheel(var event)
     signal entered()
     signal exited()
-    readonly property int iconWidth: icon.length ? iconSize + 5 : 0
+    readonly property bool labelIsIcon: family === "GoMono Nerd Font"
+    readonly property int effectiveIconSize: settings.iconSize || settings.fontSize || iconSize
+    readonly property int effectiveGlyphSize: settings.iconSize || settings.fontSize || pixelSize
+    readonly property int iconWidth: shownIcon.length ? effectiveIconSize + 5 : 0
     implicitWidth: Math.min(maximumWidth, Math.max(minimumTextWidth, label.implicitWidth) + iconWidth + leftPadding + rightPadding)
-    implicitHeight: 28
+    implicitHeight: Math.max(28, shownIcon.length ? effectiveIconSize + 8 : 0, labelIsIcon && shownText.length ? effectiveGlyphSize + 8 : 0)
     Rectangle {
-        visible: pill.backgroundVisible
+        visible: pill.backgroundShown
         anchors.fill: parent
-        radius: height / 2
-        color: pill.adaptivePalette
+        radius: pill.settings.radius >= 0 ? pill.settings.radius : height / 2
+        color: pill.styledBackground(pill.adaptivePalette
             ? (pill.selected ? pill.adaptivePalette.selected : pointer.containsMouse ? pill.adaptivePalette.hover : pill.adaptivePalette.tint)
-            : pill.selected ? Qt.rgba(pill.foreground.r, pill.foreground.g, pill.foreground.b, 0.32) : pointer.containsMouse ? pill.hoverTint : pill.tint
+            : pill.selected ? Qt.rgba(pill.foreground.r, pill.foreground.g, pill.foreground.b, 0.32) : pointer.containsMouse ? pill.hoverTint : pill.tint)
         Behavior on color { ColorAnimation { duration: 200 } }
         border.width: 1
-        border.color: pill.adaptivePalette ? (pill.selected ? pill.adaptivePalette.selectedOutline : pill.adaptivePalette.outline)
-            : pill.selected ? Qt.rgba(pill.foreground.r, pill.foreground.g, pill.foreground.b, 0.65) : pill.outline
+        border.color: pill.settings.outlineColor || (pill.adaptivePalette ? (pill.selected ? pill.adaptivePalette.selectedOutline : pill.adaptivePalette.outline)
+            : pill.selected ? Qt.rgba(pill.foreground.r, pill.foreground.g, pill.foreground.b, 0.65) : pill.outline)
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
-            radius: height / 2
+            radius: parent.radius
             visible: pill.raised
             gradient: Gradient {
                 GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.08) }
@@ -65,11 +78,12 @@ Item {
     Text {
         x: pill.leftPadding
         anchors.verticalCenter: parent.verticalCenter
-        width: pill.iconSize
-        visible: pill.icon.length > 0
-        text: pill.icon
-        color: pill.effectiveForeground
-        font.family: "GoMono Nerd Font"; font.pixelSize: pill.iconSize
+        objectName: "pillIcon"
+        width: pill.effectiveIconSize
+        visible: pill.shownIcon.length > 0
+        text: pill.shownIcon
+        color: pill.iconColor
+        font.family: "GoMono Nerd Font"; font.pixelSize: pill.effectiveIconSize
         horizontalAlignment: Text.AlignHCenter
         renderType: Text.NativeRendering
     }
@@ -78,11 +92,11 @@ Item {
         x: pill.leftPadding + pill.iconWidth
         anchors.verticalCenter: parent.verticalCenter
         width: parent.width - pill.leftPadding - pill.rightPadding - pill.iconWidth
-        text: pill.text
+        text: pill.shownText
         textFormat: pill.textFormat
-        color: pill.effectiveForeground
+        color: pill.textColor
         font.family: pill.family
-        font.pixelSize: pill.pixelSize
+        font.pixelSize: pill.labelIsIcon ? pill.effectiveGlyphSize : pill.settings.fontSize || pill.pixelSize
         font.bold: pill.bold
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

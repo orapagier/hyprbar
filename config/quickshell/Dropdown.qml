@@ -10,6 +10,7 @@ PanelWindow {
     property string section: ""
     property string displayedSection: section
     property rect triggerRect: Qt.rect(12, 4, 32, 20)
+    property string alignment: "center"
     property color accent: "#b4befe"
     property bool pinned: false
     property real barBottom: 37
@@ -18,6 +19,7 @@ PanelWindow {
     required property var services
     required property var inbox
     signal closeRequested()
+    signal settingsRequested()
     // Keep one surface mapped. Remapping it during hover can synthesize
     // leave/enter events on the bar and repeatedly close and reopen menus.
     visible: true
@@ -39,19 +41,24 @@ PanelWindow {
         MenuPopover {
             anchors.fill: parent
             triggerRect: dropdown.triggerRect
+            alignment: dropdown.alignment
             accent: dropdown.accent
             opened: dropdown.opened
-            centered: dropdown.displayedSection === "calendar"
-            leftAligned: dropdown.displayedSection === "launcher"
-            title: ({launcher:"Applications",calendar:"Calendar",audio:"Audio",wifi:"Wi-Fi",bluetooth:"Bluetooth",notifications:"Notifications",battery:"Battery",power:"Power options"})[dropdown.displayedSection] || ""
-            symbol: ({launcher:"",calendar:"󰃭",audio:dropdown.services.audioIcon || "󰕾",wifi:"󰤨",bluetooth:"󰂯",notifications:"󰂚",battery:"󰁹",power:"󰐥"})[dropdown.displayedSection] || ""
-            page: ({launcher: launcherPage, calendar: calendarPage, audio: audioPage, wifi: wifiPage, bluetooth: bluetoothPage, notifications: inboxPage, battery: batteryPage, power: powerPage})[dropdown.displayedSection] || null
+            cardClickable: dropdown.displayedSection === "settings"
+            onCardClicked: {
+                dropdown.closeRequested();
+                dropdown.settingsRequested();
+            }
+            title: ({launcher:"Applications",settings:"Hyprshell",calendar:"Calendar",audio:"Audio",wifi:"Wi-Fi",bluetooth:"Bluetooth",notifications:"Notifications",battery:"Battery",power:"Power options"})[dropdown.displayedSection] || ""
+            symbol: ({launcher:"",settings:"󰒓",calendar:"󰃭",audio:dropdown.services.audioIcon || "󰕾",wifi:"󰤨",bluetooth:"󰂯",notifications:"󰂚",battery:"󰁹",power:"󰐥"})[dropdown.displayedSection] || ""
+            page: ({launcher: launcherPage, settings: settingsPage, calendar: calendarPage, audio: audioPage, wifi: wifiPage, bluetooth: bluetoothPage, notifications: inboxPage, battery: batteryPage, power: powerPage})[dropdown.displayedSection] || null
             onHoverChanged: inside => dropdown.hoverChanged(inside)
         }
     }
     onOpenedChanged: if (opened) focusScope.forceActiveFocus()
     Shortcut { sequence: "Escape"; enabled: dropdown.opened; onActivated: dropdown.closeRequested() }
     Component { id: launcherPage; LauncherMenu { onLaunched: dropdown.closeRequested() } }
+    Component { id: settingsPage; SettingsMenu { onOpenRequested: { dropdown.closeRequested(); dropdown.settingsRequested(); } } }
     Component { id: calendarPage; CalendarMenu {} }
     Component { id: audioPage; AudioMenu { services: dropdown.services } }
     Component { id: wifiPage; WifiMenu { services: dropdown.services } }

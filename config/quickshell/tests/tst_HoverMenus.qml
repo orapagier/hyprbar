@@ -16,51 +16,61 @@ Item {
         activeMenu: state.section
         onMenuHovered: name => state.hover(name)
         onMenuLeft: name => state.leave(name)
-        onAction: (name, argument) => state.activate(name)
+        onAction: (name, argument) => {
+            if (name === "settings") root.openSettings();
+            else state.activate(name);
+        }
     }
     MenuPopover {
         id: popover
         anchors.fill: parent
         triggerRect: bar.menuRect(state.displayedSection)
+        alignment: bar.side(state.displayedSection)
         accent: bar.menuAccent(state.displayedSection)
         title: state.displayedSection
         symbol: "󰕾"
         opened: state.section.length > 0
-        centered: state.displayedSection === "calendar"
-        leftAligned: state.displayedSection === "launcher"
+        cardClickable: state.displayedSection === "settings"
+        onCardClicked: root.openSettings()
         onHoverChanged: inside => state.retain(inside)
-        page: Component {
+        page: state.displayedSection === "settings" ? settingsPage : actionPage
+    }
+    Component {
+        id: settingsPage
+        SettingsMenu { onOpenRequested: root.openSettings() }
+    }
+    Component {
+        id: actionPage
             Item {
                 implicitHeight: 140
                 Button { objectName: "menuAction"; text: "Test action"; onClicked: root.actionCount++ }
             }
-        }
     }
     property int actionCount: 0
+    property int settingsOpenCount: 0
+    function openSettings() { state.close(); settingsOpenCount++; }
     TestCase {
         name: "HoverMenus"
         when: windowShown
-        function init() { mouseMove(root, 5, 480); state.close(); }
-        function cleanup() { state.close(); root.width = 1366; }
+        function init() { mouseMove(root, 5, 480); wait(20); state.close(); }
+        function cleanup() { state.close(); bar.settings = {}; root.width = 1366; }
         function hover(name) {
             let trigger = findChild(bar, name === "notifications" ? "notificationBell" : name + "Trigger");
             verify(trigger !== null);
             mouseMove(trigger, trigger.width / 2, trigger.height / 2);
             tryCompare(state, "section", name);
         }
+        function expectedBodyX(side) {
+            return side === "left" ? 12 : side === "right" ? root.width - popover.bodyWidth - 12 : (root.width - popover.bodyWidth) / 2;
+        }
         function test_hoverOpensEveryMenu_data() {
-            return ["launcher", "calendar", "notifications", "audio", "wifi", "bluetooth", "battery", "power"].map(name => ({tag: name, menu: name}));
+            return ["launcher", "settings", "calendar", "notifications", "audio", "wifi", "bluetooth", "battery", "power"].map(name => ({tag: name, menu: name}));
         }
         function test_hoverOpensEveryMenu(data) {
             hover(data.menu);
             verify(!state.pinned);
             verify(popover.bodyX >= 12);
-            if (data.menu === "calendar")
-                compare(popover.bodyX + popover.bodyWidth / 2, root.width / 2);
-            else if (data.menu === "launcher")
-                compare(popover.bodyX, 12);
-            else
-                compare(popover.bodyRight, root.width - 12);
+            compare(popover.bodyX, expectedBodyX(bar.side(data.menu)));
             let trigger = bar.menuRect(data.menu);
             compare(popover.neckY, trigger.y + trigger.height - 1);
             compare(popover.tipX, trigger.x + trigger.width / 2);
@@ -84,6 +94,46 @@ Item {
             compare(root.actionCount, before + 1);
             mouseMove(root, 5, 480);
             tryCompare(state, "section", "");
+        }
+        function test_settingsCogOpensWindow_data() {
+            return [{tag: "direct", preview: false}, {tag: "preview", preview: true}];
+        }
+        function test_settingsCogOpensWindow(data) {
+            if (data.preview) hover("settings");
+            let cog = findChild(bar,"settingsTrigger");
+            mouseMove(cog, cog.width / 2, cog.height / 2);
+            let before = root.settingsOpenCount;
+            mouseClick(cog,cog.width/2,cog.height/2);
+            compare(root.settingsOpenCount, before + 1);
+            compare(state.section,"");
+            verify(!state.pinned);
+            wait(180);
+            compare(state.section,"");
+        }
+        function test_settingsPreviewCardOpensWindow_data() {
+            return [
+                {tag: "padding", x: 5, y: 5},
+                {tag: "heading", x: 90, y: 30},
+                {tag: "description", x: 100, y: 115}
+            ];
+        }
+        function test_settingsPreviewCardOpensWindow(data) {
+            hover("settings");
+            wait(250);
+            let before = root.settingsOpenCount;
+            mouseClick(root, popover.bodyX + data.x, popover.bodyY + data.y);
+            compare(root.settingsOpenCount, before + 1);
+            compare(state.section, "");
+        }
+        function test_settingsPreviewButtonOpensWindowOnce() {
+            hover("settings");
+            wait(250);
+            let button = findChild(popover, "openSettingsButton");
+            verify(button !== null);
+            let before = root.settingsOpenCount;
+            mouseClick(button, button.width / 2, button.height / 2);
+            compare(root.settingsOpenCount, before + 1);
+            compare(state.section, "");
         }
         function test_launcherCanBeEnteredAndUsed() {
             hover("launcher");
@@ -126,7 +176,39 @@ Item {
             let trigger = findChild(bar, "audioTrigger");
             let position = trigger.mapToItem(root, trigger.width / 2, 0);
             compare(popover.tipX, position.x);
-            compare(popover.bodyRight, root.width - 12);
+            compare(popover.bodyX, expectedBodyX(bar.side("audio")));
+        }
+        function test_openMenuFollowsMovedIcon_data() {
+            return ["launcher", "settings", "calendar", "notifications", "audio", "wifi", "bluetooth", "battery", "power"].map(name => ({tag: name, menu: name}));
+        }
+        function test_openMenuFollowsMovedIcon(data) {
+            hover(data.menu);
+            state.activate(data.menu); // Keep the menu open while editing settings.
+            for (let side of ["center", "left", "right"]) {
+                bar.settings = {items: [{id: data.menu, side: side, order: 0}, ...(data.menu === "calendar" ? [] : [{id: "calendar", enabled: false}])]};
+                let rect = bar.menuRect(data.menu);
+                let center = rect.x + rect.width / 2;
+                compare(state.section, data.menu);
+                compare(popover.tipX, center);
+                compare(popover.bodyX, expectedBodyX(side));
+                if (side === "center") fuzzyCompare(popover.bodyX + popover.bodyWidth / 2, root.width / 2, 0.01);
+                verify(popover.containsPointer(Qt.point(popover.shoulder, popover.bodyY - 8)));
+            }
+        }
+        function test_groupAlignment_data() {
+            return ["left", "center", "right"].map(side => ({tag: side, side: side}));
+        }
+        function test_groupAlignment(data) {
+            bar.settings = {items: [{id: "audio", side: data.side, order: 0}, {id: "wifi", side: data.side, order: 1}]};
+            hover("audio");
+            let audioTip = popover.tipX;
+            let cardX = popover.bodyX;
+            hover("wifi");
+            verify(popover.tipX !== audioTip);
+            compare(popover.bodyX, cardX);
+            compare(cardX, expectedBodyX(data.side));
+            wait(250);
+            grabImage(root).save("/tmp/quickshell-popdown-" + data.side + ".png");
         }
         function test_hoverReentryDoesNotFlicker() {
             hover("audio");

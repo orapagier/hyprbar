@@ -6,24 +6,31 @@ import QtQuick.Layouts
 Item {
     id: popover
     property rect triggerRect: Qt.rect(12, 4, 32, 20)
+    property string alignment: "center"
     property color accent: "#b4befe"
     property string title: ""
     property string symbol: ""
     property Component page: null
     property bool opened: false
-    property bool centered: false
-    property bool leftAligned: false
+    property bool cardClickable: false
     property bool connected: true
     readonly property bool rendering: opened || surface.opacity > 0
     signal hoverChanged(bool inside)
+    signal cardClicked()
     readonly property real bodyWidth: Math.min(300, width - 24)
-    readonly property real bodyX: centered ? (width - bodyWidth) / 2 : leftAligned ? 12 : width - bodyWidth - 12
+    // Anchor the card to its bar group; the funnel still follows the icon.
+    readonly property real bodyX: alignment === "left" ? 12
+        : alignment === "right" ? width - bodyWidth - 12
+        : (width - bodyWidth) / 2
     readonly property real neckY: triggerRect.y + triggerRect.height - 1
     readonly property real bodyY: connected ? neckY + 34 : Math.max(48, triggerRect.y + triggerRect.height + 12)
     readonly property real bodyHeight: Math.min(height - bodyY - 16, contents.implicitHeight + 36)
     readonly property real bodyRight: bodyX + bodyWidth
     readonly property real bodyBottom: bodyY + bodyHeight
     readonly property real tipX: triggerRect.x + triggerRect.width / 2
+    readonly property real neckHalfWidth: 0.75
+    readonly property real attachmentHalfWidth: 8
+    readonly property real waistY: neckY + 7
     readonly property real shoulder: Math.max(bodyX + 52, Math.min(bodyRight - 52, triggerRect.x + triggerRect.width / 2))
     readonly property bool pointerInside: opened && tracking.hovered && containsPointer(tracking.point.position)
 
@@ -72,9 +79,15 @@ Item {
                     GradientStop { position: 0.23; color: "#b52b2b42" }
                     GradientStop { position: 1; color: "#d51e1e2e" }
                 }
-                startX: popover.tipX; startY: popover.neckY
+                startX: popover.tipX - popover.attachmentHalfWidth; startY: popover.neckY
+                PathLine { x: popover.tipX + popover.attachmentHalfWidth; y: popover.neckY }
                 PathCubic {
-                    control1X: popover.tipX + 2; control1Y: popover.neckY + 12
+                    control1X: popover.tipX + popover.neckHalfWidth; control1Y: popover.neckY + 1
+                    control2X: popover.tipX + popover.neckHalfWidth; control2Y: popover.waistY - 3
+                    x: popover.tipX + popover.neckHalfWidth; y: popover.waistY
+                }
+                PathCubic {
+                    control1X: popover.tipX + popover.neckHalfWidth; control1Y: popover.waistY + 12
                     control2X: popover.shoulder + 12; control2Y: popover.bodyY
                     x: popover.shoulder + 36; y: popover.bodyY
                 }
@@ -89,8 +102,13 @@ Item {
                 PathLine { x: popover.shoulder - 36; y: popover.bodyY }
                 PathCubic {
                     control1X: popover.shoulder - 12; control1Y: popover.bodyY
-                    control2X: popover.tipX - 2; control2Y: popover.neckY + 12
-                    x: popover.tipX; y: popover.neckY
+                    control2X: popover.tipX - popover.neckHalfWidth; control2Y: popover.waistY + 12
+                    x: popover.tipX - popover.neckHalfWidth; y: popover.waistY
+                }
+                PathCubic {
+                    control1X: popover.tipX - popover.neckHalfWidth; control1Y: popover.waistY - 3
+                    control2X: popover.tipX - popover.neckHalfWidth; control2Y: popover.neckY + 1
+                    x: popover.tipX - popover.attachmentHalfWidth; y: popover.neckY
                 }
             }
         }
@@ -114,7 +132,9 @@ Item {
         MouseArea {
             x: popover.bodyX; y: popover.connected ? popover.neckY : popover.bodyY
             width: popover.bodyWidth; height: popover.bodyBottom - y
-            onClicked: mouse => mouse.accepted = true
+            enabled: popover.opened
+            cursorShape: popover.cardClickable ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: if (popover.cardClickable) popover.cardClicked()
         }
         ColumnLayout {
             id: contents

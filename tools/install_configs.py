@@ -79,6 +79,10 @@ def install(repo):
     for script in sorted((repo / 'bin').iterdir()):
         put(script, home / '.local/bin' / script.name, Path('.local/bin') / script.name)
 
+    for desktop in sorted((repo / 'assets/applications').glob('*.desktop')):
+        put(desktop, home / '.local/share/applications' / desktop.name,
+            Path('.local/share/applications') / desktop.name)
+
     with tempfile.TemporaryDirectory(prefix='hyprshell-service-') as temporary:
         service = Path(temporary) / 'waybar-notification-monitor.service'
         text = (repo / 'config/systemd/user' / service.name).read_text()

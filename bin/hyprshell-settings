@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eu
+shell_bin=$(command -v quickshell || command -v qs || true)
+if [[ -z "$shell_bin" ]]; then
+    printf 'Quickshell is not installed.\n' >&2
+    exit 1
+fi
+if ! "$shell_bin" ipc --path "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell" call bar settings; then
+    printf 'Start the Hyprshell bar with start-quickshell-bar, then open settings again.\n' >&2
+    exit 1
+fi

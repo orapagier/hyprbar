@@ -329,6 +329,16 @@ hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = tr
 
 -- Example window rules that are useful
 
+-- Settings starts floating; Super+V can still toggle it into the tiling layout.
+-- Center horizontally and lift it 40px above the vertical midpoint.
+hl.window_rule({
+    name = "hyprshell-settings-placement",
+    match = { initial_title = "^Hyprshell Settings$" },
+    float = true,
+    size = { "min(1180,monitor_w*0.9)", "monitor_h*0.75" },
+    move = { "(monitor_w-min(1180,monitor_w*0.9))/2", "max(48,monitor_h*0.125-40)" },
+})
+
 -- Float dialogs without changing the default tiling of normal app windows.
 -- Modal is an app-provided dialog flag, not a window-size heuristic.
 hl.window_rule({
@@ -496,3 +506,11 @@ end)
 
 -- HyprMod managed settings
 require("hyprland-gui")
+
+-- Hyprshell settings override
+local hyprshellOverride = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/hyprshell/overrides.lua"
+local hyprshellFile = io.open(hyprshellOverride, "r")
+if hyprshellFile then
+    hyprshellFile:close()
+    dofile(hyprshellOverride)
+end

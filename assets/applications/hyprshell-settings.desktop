@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Hyprshell Settings
+Comment=Customize your Hyprshell bar and Hyprland appearance
+Exec=hyprshell-settings
+Icon=preferences-desktop
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=Hyprland;Quickshell;bar;theme;

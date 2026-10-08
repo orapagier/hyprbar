@@ -11,6 +11,8 @@ Pills sample the wallpaper underneath each item and adjust their foreground
 and tint for readable contrast. Hovering an icon opens its connected popdown;
 moving into the menu keeps it open, and hovering another icon switches menus.
 Click an icon to pin its menu until another click, an outside click, or Escape.
+Popdowns follow their icons when moved or reordered in Settings, centering under
+the trigger and staying within the screen edges, even while pinned open.
 Notifications use the same side margins as other popdowns. Wi-Fi and Bluetooth
 rows keep a fixed 36px height and elide long names within the menu width.
 
@@ -18,6 +20,76 @@ The native UI and service bindings use QML/JavaScript. A small C helper drives
 the audio spectrum from the speaker output monitor. The previous Waybar, GTK,
 Mako, Rofi, and Fuzzel configuration remains bundled as an optional fallback.
 Hyprshell was formerly named Hyprbar.
+
+## Settings app
+
+Open **Hyprshell Settings** from the application launcher, or run
+`~/.local/bin/hyprshell-settings` while the Hyprshell bar is running.
+Install an updated checkout with `./setup.sh --config-only` to get the app.
+The cog beside the Arch logo also opens a settings popdown: hover to open,
+click to pin, then choose **Open Hyprshell Settings**. Its colors, position,
+and visibility are configurable like other bar items.
+
+The settings window opens floating, centered horizontally and 40px above the
+vertical midpoint. Press `Super+V` to toggle between floating and tiled.
+
+Settings runs inside the existing Quickshell process. Its UI loads only when
+opened and unloads after closing once pending saves finish. Invalid or failed
+edits are retained as a small draft and restored on reopening; the hidden
+controls and preview are released. The application-menu entry is just a shortcut
+to this module.
+
+The native settings window includes a sample bar preview and automatic saving:
+
+- Show or hide any built-in module, move it left/center/right, and change its order
+  by dragging in the preview. Click preview items to edit them.
+- Enable wallpaper colors globally or override the choice for each module.
+- Override text and icon glyphs, text/icon/pill/outline colors (`#RRGGBB`),
+  whole-item and pill opacity, font size, global/per-item background visibility,
+  pill radius, and extra left/right spacing per item.
+- Adjust bar height, margins, spacing, and the clock's Qt date/time format.
+- Resize icons globally or individually from 8–48 px. Individual sizes override
+  the global size; reset restores inheritance. The bar grows to fit larger icons.
+- Set Hyprland gaps, border size, window rounding and opacity, blur, shadows,
+  and animations. Empty Hyprland fields preserve the underlying configuration.
+
+Preferences are stored in `$XDG_CONFIG_HOME/hyprshell/settings.json`
+(`~/.config/hyprshell/settings.json` by default), outside the directories
+replaced by the installer. Missing preferences use bundled defaults. Changes
+save and apply automatically after a short 500 ms pause; no Apply button is
+needed. Closing the window flushes pending edits. Each save
+validates values, backs up changed files, and writes them atomically. Bar
+settings update through a watched file without restarting the notification
+service. Manual colors take priority over adaptive colors. A hidden module's
+menu closes; hiding media destroys its visualizer component. Desktop services
+continue running when their status items are hidden.
+
+Hyprland overrides live in `hyprshell/overrides.lua` or `overrides.conf`, with
+a source line added to the user's main config when needed. The app supports
+both Lua and traditional `.conf` main configs. It reloads Hyprland when running
+in a desktop session and rolls back affected files if reload fails or reports
+configuration errors. Each save backs up previous files under
+`$XDG_STATE_HOME/hyprshell/backups/settings-<timestamp>/`; `manifest.json` maps
+each numbered backup to its original path and records newly created files.
+Clearing a Hyprland field automatically removes that override.
+Invalid values leave the last saved settings active and show an error; editing
+the field to a valid value resumes automatic saving.
+
+The Arch logo and settings cog are standalone glass vector shapes, with
+reflective fills and edges inside their silhouettes and no default backing
+pill. Hovering or pinning their menus brightens the glass.
+
+This version configures **the Hyprshell Quickshell components**. It does not
+discover or rewrite arbitrary third-party QML shells. Tray application artwork
+keeps its original icons/colors; workspace styling applies to the workspace
+group. Battery and media still appear only when the corresponding hardware or
+playback is available. The preview uses sample statuses and a fallback palette,
+while the actual bar samples the wallpaper on each output. Monitor layouts,
+keybindings, window rules, popup styling, custom modules, and profile management
+remain outside the settings window for now.
+
+See [docs/settings.md](docs/settings.md) for the configuration contract and
+extension points.
 
 ## Install on fresh Arch Linux
 

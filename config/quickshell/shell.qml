@@ -16,9 +16,21 @@ ShellRoot {
     readonly property var statusData: desktopServices.statusData
     readonly property var mediaData: desktopServices.mediaData
     readonly property var notificationData: notificationInbox.statusData
+    SettingsStore { id: preferences }
+    SettingsController {
+        id: settingsController
+        store: preferences
+        // Reopening an existing window must activate it, even on another
+        // workspace. Do not remap it or reset a user's tiled/floating choice.
+        onFocusRequested: settingsWindow => {
+            let existing = Hyprland.toplevels.values.find(t => t.title === settingsWindow.title);
+            if (existing)
+                Hyprland.dispatch("hl.dsp.focus({ window = 'address:" + existing.address + "' })");
+        }
+    }
     function updateClock() {
         let now = new Date();
-        clockText = Qt.formatDateTime(now, "MMM dd   hh:mm AP   ddd");
+        clockText = Qt.formatDateTime(now, preferences.config.bar.clockFormat);
     }
     DesktopServices { id: desktopServices }
     NotificationInbox { id: notificationInbox }
@@ -35,12 +47,13 @@ ShellRoot {
             MenuController { id: menuState }
             screen: modelData
             anchors { top: true; left: true; right: true }
-            margins { top: 5; left: 10; right: 10 }
-            implicitHeight: 32
+            margins { top: preferences.config.bar.marginTop; left: preferences.config.bar.marginSide; right: preferences.config.bar.marginSide }
+            implicitHeight: bar.implicitHeight
             color: "transparent"
             WlrLayershell.namespace: "waybar"
             Bar {
                 id: bar
+                settings: preferences.config
                 anchors.fill: parent
                 statusData: shell.statusData
                 mediaData: shell.mediaData
@@ -62,6 +75,10 @@ ShellRoot {
                 onAction: (name, argument) => {
                     if (name === "workspace") shell.services.workspace(argument);
                     else if (name === "workspace-scroll") shell.services.scrollWorkspace(argument);
+                    else if (name === "settings") {
+                        for (let panel of panels.instances) panel.closeMenu();
+                        settingsController.open();
+                    }
                     else {
                         for (let other of panels.instances) if (other !== panel) other.closeMenu();
                         menuState.activate(name);
@@ -80,6 +97,7 @@ ShellRoot {
                 barBottom: panel.margins.top + panel.height
                 section: menuState.section
                 displayedSection: menuState.displayedSection
+                alignment: bar.side(menuState.displayedSection)
                 pinned: menuState.pinned
                 triggerRect: {
                     let rect = bar.menuRect(menuState.displayedSection);
@@ -89,10 +107,21 @@ ShellRoot {
                 services: shell.services
                 inbox: shell.inbox
                 onCloseRequested: menuState.close()
+                onSettingsRequested: settingsController.open()
                 onHoverChanged: inside => menuState.retain(inside)
             }
             function closeMenu() { menuState.close(); }
+            function refreshSettings() {
+                if (menuState.section && !bar.itemEnabled(menuState.section)) menuState.close();
+            }
             function toggleLauncher() { menuState.activate("launcher"); }
+        }
+    }
+    Connections {
+        target: preferences
+        function onConfigChanged() {
+            shell.updateClock();
+            for (let panel of panels.instances) panel.refreshSettings();
         }
     }
     IpcHandler {
@@ -103,6 +132,7 @@ ShellRoot {
             return true;
         }
         function reload(): void { Quickshell.reload(true); }
+        function settings(): void { settingsController.open(); }
         function toggleLauncher(): void {
             let focused = Hyprland.focusedMonitor;
             let panel = panels.instances.find(p => focused && p.screen.name === focused.name) || panels.instances[0];

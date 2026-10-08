@@ -1,11 +1,12 @@
 import QtQuick
+import "SettingsModel.js" as Settings
 
 Pill {
     id: control
     required property var bar
     required property string menu
     objectName: menu + "Trigger"
-    colorSampler: bar.wallpaperColors
+    colorSampler: Settings.adaptive(bar.settings, menu) ? bar.wallpaperColors : null
     colorRoot: bar
     selected: bar.activeMenu === menu
     onEntered: bar.menuHovered(menu)
