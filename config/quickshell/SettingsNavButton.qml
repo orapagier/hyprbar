@@ -5,12 +5,9 @@ Button {
     id: control
     property string symbol: "󰒓"
     property bool itemEnabled: true
-    implicitHeight: 38
-    leftPadding: 13; rightPadding: 13
+    implicitHeight: 27
+    leftPadding: 10; rightPadding: 10
     hoverEnabled: true
-    ToolTip.visible: hovered
-    ToolTip.delay: 600
-    ToolTip.text: text
     contentItem: Item {
         implicitWidth: 190; implicitHeight: 22
         Text {
