@@ -44,14 +44,14 @@ Item {
         id: left
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 3
+        spacing: 1
         BarMenuButton {
             bar: bar; menu: "launcher"
             id: arch
             text: ""; foreground: "#1793d1"
             family: "GoMono Nerd Font"; pixelSize: 20; bold: false
             minimumTextWidth: 28
-            leftPadding: 5; rightPadding: 5
+            leftPadding: 5; rightPadding: 2
             backgroundVisible: false
             content.opacity: 0
             GlassLogo {
@@ -65,7 +65,7 @@ Item {
             id: workspaceRow
             height: 28
             spacing: 2
-            leftPadding: 3; rightPadding: 3
+            leftPadding: 1; rightPadding: 3
             Repeater {
                 model: (bar.statusData.workspaces || []).filter(w => !bar.outputName || w.monitor === bar.outputName)
                 delegate: Pill {
@@ -74,13 +74,13 @@ Item {
                     required property var modelData
                     property bool active: modelData.active || false
                     anchors.verticalCenter: workspaceRow.verticalCenter
-                    height: 24
+                    height: 20
                     text: modelData.name || String(modelData.id)
-                    leftPadding: 9; rightPadding: 9
+                    leftPadding: 7; rightPadding: 7
                     foreground: active ? "#cba6f7" : "#a0a0a0"
-                    colorStyle: active ? "emphasized" : "muted"
+                    colorStyle: "muted"
                     selected: active
-                    raised: active
+                    raised: false
                     onClicked: bar.action("workspace", modelData.id)
                     onWheel: event => bar.action("workspace-scroll", event.angleDelta.y > 0 ? -1 : 1)
                 }
