@@ -5,6 +5,7 @@ import filecmp
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -64,6 +65,19 @@ def install(repo):
 
     for name in ('hypr', 'waybar', 'fuzzel', 'rofi', 'mako'):
         put(repo / 'config' / name, config / name, Path('config') / name)
+
+    # Compile before replacing the destination, so a failed build leaves it intact.
+    with tempfile.TemporaryDirectory(prefix='hyprbar-quickshell-') as temporary:
+        payload = Path(temporary) / 'quickshell'
+        shutil.copytree(repo / 'config/quickshell', payload,
+                        ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
+        subprocess.run(['cc', '-O2', str(payload / 'helpers/audio-spectrum.c'),
+                        '-o', str(payload / 'helpers/audio-spectrum'),
+                        '-lpulse-simple', '-lpulse', '-lfftw3', '-lm'], check=True)
+        put(payload, config / 'quickshell', Path('config/quickshell'))
+
+    for script in sorted((repo / 'bin').iterdir()):
+        put(script, home / '.local/bin' / script.name, Path('.local/bin') / script.name)
 
     with tempfile.TemporaryDirectory(prefix='hyprbar-service-') as temporary:
         service = Path(temporary) / 'waybar-notification-monitor.service'

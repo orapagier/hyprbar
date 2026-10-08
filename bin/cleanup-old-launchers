@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Review by default; --apply removes only the named, audited packages.
+set -euo pipefail
+export LC_ALL=C
+apply=false
+remove_go=false
+remove_debug=false
+for option in "$@"; do
+    case "$option" in
+        --apply) apply=true ;;
+        --remove-go) remove_go=true ;;
+        --remove-debug) remove_debug=true ;;
+        *) printf 'Usage: %s [--apply] [--remove-go] [--remove-debug]\n' "$0" >&2; exit 2 ;;
+    esac
+done
+
+# Use an explicit list: recursive removal would also take resvg, which Yazi
+# can use for SVG previews. Pacman will refuse if new dependents need a target.
+candidates=(fuzzel rofi fcft xcb-imdkit libutf8proc)
+if "$remove_go"; then candidates+=(go); fi
+if "$remove_debug"; then candidates+=(yay-debug); fi
+targets=()
+for package in "${candidates[@]}"; do
+    if pacman -Q "$package" >/dev/null 2>&1; then targets+=("$package"); fi
+done
+if ((${#targets[@]} == 0)); then
+    printf 'All selected packages are already absent.\n'
+    exit 0
+fi
+
+plan=$(pacman -R --print --print-format '%n %s' -- "${targets[@]}")
+printf 'Packages selected for removal:\n'
+printf '%s\n' "$plan" | awk '{ printf "  %-18s %7.2f MiB\n", $1, $2 / 1048576; total += $2 } END { printf "Total installed size: %.2f MiB\n", total / 1048576 }'
+if ! "$apply"; then
+    printf '\nPreview only. Add --apply to remove this list.\n'
+    exit 0
+fi
+
+shell_bin=$(command -v quickshell || command -v qs || true)
+if [[ -z "$shell_bin" ]] || [[ $(timeout 3 "$shell_bin" ipc --path "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell" call bar ready 2>/dev/null) != true ]]; then
+    printf 'The native Quickshell bar must be running before removing the old launchers.\n' >&2
+    exit 1
+fi
+
+backup="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/backups/launcher-cleanup-20261008"
+mkdir -p -- "$backup"
+pacman -Q > "$backup/packages-at-removal.txt"
+printf '%s\n' "$plan" > "$backup/removal-plan.txt"
+sudo pacman -Rn -- "${targets[@]}"
+printf '\nCleanup completed. Package list saved in %s\n' "$backup"
+printf 'Remaining orphaned packages (for separate review):\n'
+pacman -Qdt || true

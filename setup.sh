@@ -65,7 +65,7 @@ if (( DRY_RUN )); then
     printf 'Full Arch upgrade and packages: %s\n' "${PACKAGES[*]}"
     (( INSTALL_BROWSER == 0 )) || printf 'Browser: build and install brave-bin from the AUR as the current user\n'
     (( INSTALL_GREETER == 0 )) || printf 'Login screen: install/enable cosmic-greeter only if no display manager is configured\n'
-    printf 'Enable NetworkManager, Bluetooth, PipeWire, WirePlumber, and the notification inbox\n'
+    printf 'Enable NetworkManager, Bluetooth, PipeWire, and WirePlumber; Quickshell owns the notification inbox\n'
     printf 'Timezone: %s\n' "${TIMEZONE:-unchanged}"
   fi
   printf 'Config destination: %s\nWallpaper destination: %s\n' "$CONFIG_DIR" "$HOME/Pictures/Wallpapers"
@@ -122,6 +122,7 @@ fi
 
 log 'Validating the installed configuration and refreshing fonts'
 python3 "$REPO_DIR/tools/check_runtime.py" "$CONFIG_DIR/waybar"
+QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software qmltestrunner -input "$CONFIG_DIR/quickshell/tests"
 Hyprland --verify-config --config "$CONFIG_DIR/hypr/hyprland.lua"
 fc-cache -f
 xdg-user-dirs-update
@@ -133,9 +134,9 @@ if [[ -n "$TIMEZONE" ]]; then
 fi
 
 # Enabling units works from a TTY even when there is no active user bus.
-systemctl --user --root=/ --no-reload enable pipewire.socket pipewire-pulse.socket wireplumber.service waybar-notification-monitor.service
+systemctl --user --root=/ --no-reload enable pipewire.socket pipewire-pulse.socket wireplumber.service
 if systemctl --user daemon-reload; then
-  systemctl --user start pipewire.socket pipewire-pulse.socket wireplumber.service waybar-notification-monitor.service
+  systemctl --user start pipewire.socket pipewire-pulse.socket wireplumber.service
 else
   printf 'User services are enabled and will start at the next login.\n'
 fi

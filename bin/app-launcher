@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -eu
+shell_bin=$(command -v quickshell || command -v qs || true)
+if [[ -z "$shell_bin" ]]; then
+    printf 'Quickshell is not installed.\n' >&2
+    exit 1
+fi
+if timeout 3 "$shell_bin" ipc --path "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell" call bar toggleLauncher 2>/dev/null; then
+    exit 0
+fi
+# Recover the native launcher if the desktop shell has not started yet.
+"$HOME/.local/bin/start-quickshell-bar" --require-quickshell
+exec "$shell_bin" ipc --path "${XDG_CONFIG_HOME:-$HOME/.config}/quickshell" call bar toggleLauncher

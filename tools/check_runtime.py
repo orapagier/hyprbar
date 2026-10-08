@@ -28,7 +28,8 @@ def check(directory):
     ctypes.CDLL(find_library('fftw3') or 'libfftw3.so.3')
     required = ('Hyprland', 'hyprctl', 'waybar', 'awww', 'awww-daemon', 'mako',
                 'makoctl', 'nmcli', 'pactl', 'parec', 'wpctl', 'rofi', 'kitty',
-                'thunar', 'playerctl', 'notify-send', 'brightnessctl', 'uwsm')
+                'thunar', 'playerctl', 'notify-send', 'brightnessctl', 'uwsm',
+                'quickshell', 'sqlite3', 'cc', 'qmltestrunner', 'grim', 'slurp', 'swappy')
     missing = [name for name in required if not shutil.which(name)]
     if missing:
         raise SystemExit('Missing commands: ' + ', '.join(missing))

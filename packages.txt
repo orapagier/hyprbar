@@ -3,6 +3,10 @@ hyprland
 hyprland-guiutils
 hyprpolkitagent
 uwsm
+quickshell
+qt6-declarative
+qt6-svg
+sqlite
 waybar
 awww
 mako
@@ -41,6 +45,9 @@ adwaita-icon-theme
 pop-icon-theme
 adwaita-cursors
 brightnessctl
+grim
+slurp
+swappy
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk

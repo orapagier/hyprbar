@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Session launcher only. The bar and all dropdown logic run in QML.
+set -u
+config="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/quickshell"
+mkdir -p -- "$state_dir"
+shell_bin=$(command -v quickshell || command -v qs || true)
+fallback() {
+    printf 'Quickshell did not start. See %s/bar.log\n' "$state_dir" >&2
+    if ! pgrep -u "$(id -u)" -x mako >/dev/null; then
+        nohup mako >>"$state_dir/mako-fallback.log" 2>&1 </dev/null &
+    fi
+    systemctl --user start waybar-notification-monitor.service 2>/dev/null || true
+    if [[ "${1:-}" != --require-quickshell ]] && ! pgrep -u "$(id -u)" -x waybar >/dev/null; then
+        nohup waybar >>"$state_dir/waybar-fallback.log" 2>&1 </dev/null &
+    fi
+    exit 1
+}
+[[ -n "$shell_bin" ]] || fallback "${1:-}"
+export QT_QPA_PLATFORM=wayland
+# Quickshell's native notification server replaces Mako and the Python collector.
+systemctl --user stop mako.service 2>/dev/null || true
+pkill -u "$(id -u)" -x mako 2>/dev/null || true
+if ! timeout 20 "$shell_bin" --no-duplicate --daemonize --path "$config" >>"$state_dir/bar.log" 2>&1; then
+    fallback "${1:-}"
+fi
+ready=false
+for _attempt in {1..40}; do
+    if [[ $(timeout 2 "$shell_bin" ipc --path "$config" call bar ready 2>/dev/null) == true ]]; then
+        ready=true
+        break
+    fi
+    sleep 0.25
+done
+if [[ "$ready" != true ]]; then
+    "$shell_bin" kill --path "$config" >>"$state_dir/bar.log" 2>&1 || true
+    fallback "${1:-}"
+fi
+# Confirm this Quickshell instance also owns the notification service.
+shell_pid=$("$shell_bin" list --path "$config" --json | sed -n 's/.*"pid": *\([0-9][0-9]*\).*/\1/p' | head -1)
+read -r _owner_type owner_pid < <(busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus GetConnectionUnixProcessID s org.freedesktop.Notifications 2>/dev/null) || true
+if [[ -z "$shell_pid" || "${owner_pid:-}" != "$shell_pid" ]]; then
+    "$shell_bin" kill --path "$config" >>"$state_dir/bar.log" 2>&1 || true
+    fallback "${1:-}"
+fi
+systemctl --user disable --now waybar-notification-monitor.service 2>/dev/null || true
+if systemctl --user is-active --quiet waybar.service 2>/dev/null; then
+    systemctl --user stop waybar.service || exit 1
+fi
+pkill -u "$(id -u)" -x waybar 2>/dev/null || true

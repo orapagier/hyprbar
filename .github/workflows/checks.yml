@@ -10,12 +10,29 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck dbus-daemon python3-gi python3-cairo python3-dbus \
-            gir1.2-gtk-3.0 gir1.2-gtklayershell-0.1 gir1.2-playerctl-2.0 libfftw3-double3 libwayland-dev
+            gir1.2-gtk-3.0 gir1.2-gtklayershell-0.1 gir1.2-playerctl-2.0 libfftw3-dev libpulse-dev libwayland-dev
       - name: Check shell scripts
         run: |
           bash -n setup.sh
-          shellcheck setup.sh config/hypr/wallpaper-start.sh config/hypr/app-launcher.sh
+          shellcheck setup.sh bin/* config/quickshell/*.sh config/hypr/wallpaper-start.sh config/hypr/app-launcher.sh
       - name: Test installer in isolated home directories
         run: /usr/bin/python3 -m unittest discover -s tests -v
       - name: Test media and panel backends without a display
         run: /usr/bin/python3 -m unittest discover -s config/waybar/tests -v
+
+  quickshell:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install native panel dependencies
+        run: pacman -Syu --needed --noconfirm git quickshell qt6-declarative qt6-svg libpulse fftw python
+      - uses: actions/checkout@v4
+      - name: Compile the output spectrum helper
+        run: cc -O2 config/quickshell/helpers/audio-spectrum.c -o config/quickshell/helpers/audio-spectrum -lpulse-simple -lpulse -lfftw3 -lm
+      - name: Check QML components offscreen
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_QUICK_BACKEND: software
+        run: /usr/lib/qt6/bin/qmltestrunner -input config/quickshell/tests
+      - name: Check native FFT and QML delivery
+        run: python3 config/quickshell/tests/test_spectrum.py

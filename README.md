@@ -1,16 +1,22 @@
 # Hyprbar
 
-Jelmar's Hyprland desktop for Arch Linux: a compact, transparent Waybar with
-individual pastel glass backgrounds, rounded borders, and compositor blur.
-Includes a compact glass Rofi launcher, the complete current Hyprland
-configuration, and seven wallpapers.
+Jelmar's Hyprland desktop for Arch Linux, now using a native Quickshell bar,
+launcher, and popdowns. The transparent 32px bar has wallpaper-tinted glass
+pills, a glass Arch logo, workspace buttons, scrolling media text, a twelve-band
+audio visualizer, a Philippine calendar, a persistent notification inbox,
+audio, Wi-Fi, Bluetooth, battery, tray, and power controls. Seven wallpapers
+and the current Hyprland configuration are included.
 
-The bar has workspace buttons, a scrolling media title and eight-band audio
-visualizer, a clock with a Philippine calendar, a persistent notification inbox,
-and audio, Wi-Fi, Bluetooth, battery, tray, and power modules. Clicking the status icons
-opens matching GTK popups with the launcher's translucent tint, subtle highlight,
-and frosted blur. The calendar and notification history work offline. The active
-workspace has a lavender underline, and the clock matches the lavender icons.
+Pills sample the wallpaper underneath each item and adjust their foreground
+and tint for readable contrast. Hovering an icon opens its connected popdown;
+moving into the menu keeps it open, and hovering another icon switches menus.
+Click an icon to pin its menu until another click, an outside click, or Escape.
+Notifications use the same side margins as other popdowns. Wi-Fi and Bluetooth
+rows keep a fixed 36px height and elide long names within the menu width.
+
+The native UI and service bindings use QML/JavaScript. A small C helper drives
+the audio spectrum from the speaker output monitor. The previous Waybar, GTK,
+Mako, Rofi, and Fuzzel configuration remains available as a fallback.
 
 ## Install on fresh Arch Linux
 
@@ -24,75 +30,78 @@ cd hyprbar
 ./setup.sh
 ```
 
-The installer upgrades Arch and installs everything needed for this desktop:
+The installer upgrades Arch and installs the desktop dependencies, including
+Hyprland, UWSM, Quickshell, Qt Quick, the wallpaper daemon, Kitty, Thunar,
+PipeWire/WirePlumber, NetworkManager, BlueZ, portals, the Polkit agent, fonts,
+icons, screenshot tools, and the fallback bar/launchers. It builds Brave from
+the AUR as your user, sets the timezone to `Asia/Manila`, and installs COSMIC
+Greeter if no display manager is configured. Package downloads and builds may
+take time. It does not reboot or interrupt your current desktop.
 
-- Hyprland, UWSM, Waybar, wallpaper daemon, Mako, Rofi, Kitty, and Thunar.
-- Fuzzel as a fallback launcher.
-- GTK layer-shell, Python bindings, D-Bus, Playerctl, FFTW, and PulseAudio tools.
-- PipeWire/WirePlumber, NetworkManager, Bluetooth, portals, and the Polkit agent.
-- DejaVu, GoMono Nerd Font, Noto fonts, Pop/Adwaita icons, and Adwaita cursors.
-- Brave (`brave-bin`, built from the AUR as your user).
-- COSMIC Greeter when no display manager is already configured.
-- Configs, all seven wallpapers, and the persistent notification user service.
-- System timezone `Asia/Manila`, matching the original desktop.
-
-Reboot and select **Hyprland (uwsm-managed)** on the login screen. If you prefer
-a TTY, start the session with:
+Reboot and select **Hyprland (uwsm-managed)** on the login screen, or start
+from a TTY with:
 
 ```bash
 uwsm start -e -D Hyprland hyprland.desktop
 ```
 
-This config uses [Hyprland's Lua configuration](https://wiki.hypr.land/Configuring/Start/)
-and requires **Hyprland 0.56 or later**. The original versions are recorded in
-`docs/original-packages.txt`. Arch is rolling release: the installer uses the
-current packages while preserving the config and wallpaper assets. It does not
-freeze the entire operating system to those recorded versions.
+The config uses Hyprland's Lua API and requires **Hyprland 0.56 or later**.
+Arch is rolling release; `docs/original-packages.txt` records the earlier
+Waybar desktop's packages rather than freezing the current installation.
+Partitioning, the base OS, user creation, the bootloader, and proprietary GPU
+drivers remain part of your Arch setup. The laptop's monitor override lives in
+`config/hypr/hyprland-gui.lua`; other displays use the automatic preferred-mode
+rule in `hyprland.lua`.
 
-The base OS, disk partitioning, user creation, bootloader, and any proprietary
-GPU driver configuration remain part of your Arch installation. Mesa and Linux
-firmware are installed for the desktop. On NVIDIA hardware, set up the driver
-appropriate for your GPU before starting Hyprland. The original laptop monitor
-override is in `config/hypr/hyprland-gui.lua`; other displays use the automatic
-preferred-mode rule in `hyprland.lua`.
-
-## Installer options and backups
+## Updating configs and backups
 
 ```bash
 ./setup.sh --dry-run                         # preview; changes nothing
-./setup.sh --config-only                     # configs and wallpapers only
-./setup.sh --skip-browser --no-greeter        # use your existing apps/login
+./setup.sh --config-only                     # configs, helpers, wallpapers only
+./setup.sh --skip-browser --no-greeter        # keep your apps/login
 ./setup.sh --timezone Europe/London          # choose another timezone
-./setup.sh --keep-timezone                   # preserve the system timezone
+./setup.sh --keep-timezone                   # preserve system timezone
 ```
 
-`--config-only` does not install packages, enable services, reload the desktop,
-or change the timezone. It is useful when the dependencies are already present.
+`--config-only` requires Python 3, a C compiler, and the libpulse/FFTW development
+files already installed. It compiles the spectrum helper but does not install
+packages, enable services, reload the desktop, or change the timezone.
 
-The installer replaces its `hypr`, `waybar`, `rofi`, `fuzzel`, and `mako` config directories and
-backs up changed existing paths under:
+The installer replaces its `hypr`, `quickshell`, `waybar`, `rofi`, `fuzzel`, and
+`mako` directories, installs the three session/launcher utilities from `bin/`
+into `~/.local/bin/`, and installs the fallback notification service and bundled
+wallpapers. Changed existing paths are backed up under:
 
 ```text
 ~/.local/state/hyprbar/backups/<timestamp>/
 ```
 
-It also backs up any replaced notification service or wallpaper. Unrelated app
-configs and differently named wallpapers are preserved. Repeating an install
-does not back up files that already match. `XDG_CONFIG_HOME` and `XDG_STATE_HOME`
-are respected, and paths are quoted so usernames/home directories may differ.
-To restore a config, move the installed directory aside and copy its original
-from the backup's `config/` directory. Reload the session afterward.
+Unrelated app configs, utilities, and differently named wallpapers are preserved.
+Repeating the installation skips identical payloads. `XDG_CONFIG_HOME` and
+`XDG_STATE_HOME` are respected, including paths containing spaces. Restore a
+path by moving the installed copy aside and copying its original from the backup.
 
-An existing display manager is kept. Installing the greeter enables it for the
-next boot and does not interrupt your current desktop. The script does not
-automatically reboot. Package downloads, AUR builds, and sudo may take time.
+Quickshell watches QML changes and reloads automatically. When migrating from
+Waybar/Mako in an existing desktop, install the configs and run:
+
+```bash
+~/.config/quickshell/install-and-activate.sh
+hyprctl reload
+```
+
+The session helper confirms the native bar and notification server are ready
+before stopping Waybar and disabling its Python notification collector. If
+Quickshell cannot start, Waybar/Mako remain available as a fallback. The native
+launcher retries shell startup if necessary. An existing enabled Mako user
+service may need disabling if it is independently configured to reclaim the
+notification service.
 
 ## Controls
 
 | Shortcut / action | Result |
 | --- | --- |
 | `Super+T` | Kitty terminal |
-| Press and release `Super` | Toggle the glass Rofi launcher |
+| Press and release `Super` / click Arch logo | Toggle native app launcher |
 | `Super+E` | Thunar file manager |
 | `Super+B` | Brave |
 | `Super+Q` | Close focused window |
@@ -102,59 +111,53 @@ automatically reboot. Package downloads, AUR builds, and sudo may take time.
 | `Super+Shift+1…0` | Move window to workspace |
 | `Super+H` / `Super+Shift+H` | Hide / restore window |
 | `Super+W` / `Super+Shift+W` | Next / previous wallpaper |
+| `Print` / `Insert` | Select screenshot region, then edit in Swappy |
 | `Super+Shift+M` | End the Hyprland session |
-| Click Arch logo | Open the app launcher |
-| Click clock | Philippine calendar |
-| Click bell / audio / Wi-Fi / Bluetooth | Open the matching popup |
-| Click power | Open Shutdown, Reboot, Sleep, and Logout options |
+| Hover / click clock or status icon | Open / pin its popdown |
 
-The wallpaper on login is `cloudsnight.jpg`. The launcher closes with another
-tap of Super, Escape, or an outside click. Popups close with Escape or an outside
-click. Rofi uses fuzzy app search, app icons, and a compact results list that
-shrinks as matches narrow. Its theme lives in `config/rofi/glass.rasi`.
+The wallpaper on login is `cloudsnight.jpg`. Audio controls support dragging
+and clicking the volume and microphone sliders, muting, and selecting outputs.
+Wi-Fi uses NetworkManager; Bluetooth uses BlueZ and a supported adapter, with
+pairing prompts inside the menu. Battery details include charge and health
+information when the hardware supplies them. Power controls include logout,
+which returns to the login screen.
 
-The popups sample the backdrop locally and increase their dark tint over bright
-windows to keep labels readable. They update once a second while open; dark
-windows keep more of the original transparency. Rofi chooses its tint each time
-it opens and uses solid light text for clear font strokes. Rofi does not
-reload a theme in an open view. Captures stay in memory, and unavailable capture
-uses an opaque fallback. The small sampler builds automatically with the
-installed C compiler and Wayland library.
-
-The power menu has no tooltips. Logout ends the current desktop session and
-returns to the login screen; use it to sign in as another user.
-
-The media module reads playback metadata and the default audio
-output; it never records the microphone. Notifications are stored locally under
-`~/.local/state/waybar/notifications/` until cleared from the inbox.
-All notifications go to the bell's inbox without toast popups. Mako runs in the
-background for notification delivery and actions; `config/mako/config` hides
-both toasts and the hidden-notification counter.
+Notifications go directly into the bell's inbox without toast popups. Click a
+notification to expand its complete title/body, scroll long messages, and use
+the corner × to dismiss it. Search and Clear all are included. Existing history
+is imported once from `~/.local/state/waybar/notifications/` using read-only
+SQLite access; new history uses `Quickshell.statePath("notifications.json")`.
+The media visualizer reads the speaker output monitor, never the microphone.
 
 ## Checks and troubleshooting
 
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m unittest discover -s config/waybar/tests -v
-python3 tools/check_runtime.py config/waybar
+cc -O2 config/quickshell/helpers/audio-spectrum.c \
+  -o config/quickshell/helpers/audio-spectrum -lpulse-simple -lpulse -lfftw3 -lm
+QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
+  /usr/lib/qt6/bin/qmltestrunner -input config/quickshell/tests
+python3 config/quickshell/tests/test_spectrum.py
 Hyprland --verify-config --config "$PWD/config/hypr/hyprland.lua"
 ```
 
-Installer tests use isolated temporary home directories. Runtime and bar checks
-require the desktop dependencies; they do not need a running desktop.
+Installer checks use temporary home directories. Offscreen QML checks cover the
+bar, hover and pinned menus, audio controls, notification expansion and long
+message scrolling, battery states, media bars, and wallpaper sampling/contrast.
+Synthetic audio checks verify frequency separation and capture lifecycle.
+GitHub Actions checks the installer/fallback on Ubuntu and the native panel on
+Arch Linux.
 
-If the bar needs restarting after a manual config update, run
-`~/.config/waybar/apply-panel-updates.sh` from a desktop terminal. For the inbox,
-inspect `journalctl --user -u waybar-notification-monitor.service`. Popup errors
-are logged under `~/.local/state/waybar/`. Wi-Fi requires NetworkManager and
-Bluetooth requires a supported adapter and the BlueZ daemon.
+Startup output is in `~/.local/state/quickshell/bar.log`. Native components and
+service details are documented in [config/quickshell/README.md](config/quickshell/README.md).
+To return to Waybar/Mako, run `~/.config/quickshell/restore-waybar.sh` and reload
+Hyprland. Keep the fallback launcher packages installed if you use this option.
+The optional `~/.local/bin/cleanup-old-launchers` utility previews its package
+removal list; `--apply` removes the listed old launcher packages only after it
+confirms Quickshell is running. No cleanup runs during installation.
 
-After updating the launcher or popdown configuration, run `hyprctl reload` and
-close/reopen the menus. The blur rules ignore transparent pixels outside the
-panels, so their invisible click areas do not blur the whole screen. Rofi 2.0
-needs the included Hyprland controls for outside-click dismissal on Wayland.
-
-The calendar contains the holiday rules/data in `ph-calendar.py`; special
-government declarations may require updating that file. Wallpaper images are
-copied from the original desktop; no new ownership or license over those
-third-party images is claimed here.
+The calendar's holiday rules/data live in `config/quickshell/Calendar.js`;
+special government declarations may require updates. Wallpapers are copied
+from the original desktop; no new ownership or license over those third-party
+images is claimed here.

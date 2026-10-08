@@ -30,7 +30,7 @@ hl.monitor({
 -- Set programs that you use
 local terminal    = "kitty"
 local fileManager = "uwsm app -- thunar"
-local menu        = 'uwsm app -- "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/app-launcher.sh"'
+local menu        = 'uwsm app -- "$HOME/.local/bin/app-launcher"'
 
 
 -------------------
@@ -261,8 +261,8 @@ hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("command -v hyprshutdown >/de
 hl.bind(mainMod .. " + M", hl.dsp.window.fullscreen({ mode = "maximized" }))
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
--- Launcher: SUPER toggles it; outside clicks dismiss it on Wayland.
-require("rofi-controls").setup(menu)
+-- Quickshell handles launcher toggling and outside clicks natively.
+hl.bind("SUPER + Super_L", hl.dsp.exec_cmd(menu), { release = true, description = "Toggle application launcher" })
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
 
@@ -307,6 +307,11 @@ hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_S
 hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
 hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
 hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+
+-- Screenshot region snipping tool: Print opens the region selector, then edit in swappy
+hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
+-- This keyboard's Print key emits KEY_INSERT, so bind it as well
+hl.bind("Insert", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
 
 -- Requires playerctl
 hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
@@ -366,17 +371,6 @@ hl.layer_rule({
     animation    = "slide",
 })
 
--- Rofi: same translucent tint as Waybar, with a gentle opening animation.
--- Skip fully transparent corner pixels so the blur follows the rounded panel.
-hl.layer_rule({
-    name  = "rofi-glass",
-    match = { namespace = "^rofi$" },
-
-    blur         = true,
-    ignore_alpha = 0.05,
-    animation    = "popin 95%",
-})
-
 -- Waybar popdowns use transparent full-output surfaces for outside clicks.
 -- Blur only the painted panel, leaving the clear surrounding pixels untouched.
 hl.layer_rule({
@@ -387,6 +381,15 @@ hl.layer_rule({
     blur_popups  = true,
     ignore_alpha = 0.05,
     animation    = "fade",
+})
+
+-- Mako notifications: matching frosted glass
+hl.layer_rule({
+    name  = "mako-blur",
+    match = { namespace = "notifications" },
+
+    blur         = true,
+    ignore_alpha = 0.2,
 })
 
 -- Hyprland-run windowrule
@@ -415,10 +418,9 @@ hl.window_rule({
 
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("uwsm app -- waybar")
-    hl.exec_cmd("uwsm app -- mako")
+    hl.exec_cmd('uwsm app -- "$HOME/.local/bin/start-quickshell-bar"')
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
-    -- Wait for the wallpaper daemon before applying the bundled image.
+    -- Wallpaper (awww, successor of swww): start daemon, then set image
     hl.exec_cmd('"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpaper-start.sh"')
 end)
 hl.bind("SUPER + B", hl.dsp.exec_cmd("uwsm app -- brave"))

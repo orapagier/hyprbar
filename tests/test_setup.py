@@ -42,6 +42,10 @@ class InstallerTests(unittest.TestCase):
                          (ROOT / 'config/waybar/style.css').read_bytes())
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
         self.assertTrue(os.access(self.config / 'hypr/app-launcher.sh', os.X_OK))
+        self.assertTrue((self.config / 'quickshell/shell.qml').is_file())
+        self.assertTrue(os.access(self.config / 'quickshell/helpers/audio-spectrum', os.X_OK))
+        for script in ('app-launcher', 'start-quickshell-bar', 'cleanup-old-launchers'):
+            self.assertTrue(os.access(self.home / '.local/bin' / script, os.X_OK))
         self.assertTrue((self.config / 'hypr/rofi-controls.lua').is_file())
         for name in ('config.rasi', 'glass.rasi'):
             self.assertEqual((self.config / 'rofi' / name).read_bytes(),
@@ -85,7 +89,7 @@ class InstallerTests(unittest.TestCase):
         words = subprocess.check_output(
             ['bash', '-c', 'set -- ' + command + '; printf "%s\\0" "$@"'], env=self.env)
         self.assertEqual(words.decode().split('\0')[:-1],
-                         ['uwsm', 'app', '--', str(self.config / 'hypr/app-launcher.sh')])
+                         ['uwsm', 'app', '--', str(self.home / '.local/bin/app-launcher')])
 
     def test_changes_are_backed_up_and_unrelated_files_are_preserved(self):
         self.install()

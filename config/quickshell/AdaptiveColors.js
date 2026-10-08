@@ -1,0 +1,61 @@
+.pragma library
+
+function mix(a, b, amount) {
+    return Qt.rgba(a.r + (b.r - a.r) * amount,
+                   a.g + (b.g - a.g) * amount,
+                   a.b + (b.b - a.b) * amount, 1);
+}
+function luminance(color) {
+    function linear(v) { return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    return 0.2126 * linear(color.r) + 0.7152 * linear(color.g) + 0.0722 * linear(color.b);
+}
+function contrast(a, b) {
+    let x = luminance(a), y = luminance(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+function alpha(color, opacity) { return Qt.rgba(color.r, color.g, color.b, opacity); }
+
+function palette(sample, accent, minimum, maximum, style) {
+    minimum = minimum || sample;
+    maximum = maximum || sample;
+    let light = luminance(sample) > 0.179;
+    if (style === "muted") {
+        let gray = 0.2126 * sample.r + 0.7152 * sample.g + 0.0722 * sample.b;
+        sample = Qt.rgba(gray, gray, gray, 1);
+        accent = Qt.rgba(0.62, 0.62, 0.62, 1);
+    }
+    let base = light ? Qt.rgba(0.98, 0.98, 1, 1) : Qt.rgba(0.055, 0.06, 0.085, 1);
+    if (style === "muted") base = light ? Qt.rgba(0.98, 0.98, 0.98, 1) : Qt.rgba(0.065, 0.065, 0.065, 1);
+    let emphasized = style === "emphasized";
+    let background = mix(mix(sample, accent, emphasized ? 0.80 : 0.30), base, emphasized ? 0.22 : 0.55);
+    let opacity = emphasized ? 0.38 : style === "muted" ? 0.10 : 0.22;
+    let foreground = mix(accent, sample, 0.15);
+    let target = light ? (style === "muted" ? Qt.rgba(0.035, 0.035, 0.035, 1) : Qt.rgba(0.025, 0.03, 0.045, 1)) : Qt.rgba(1, 1, 1, 1);
+    // Start with translucent glass. Increase opacity only when the sampled
+    // region's darkest/lightest pixels need more protection for legible text.
+    function minimumContrast(fg, opacity) {
+        let worst = light ? minimum : maximum;
+        let result = 100;
+        for (let state of [0, 1, 2]) {
+            let fill = mix(background, fg, state * 0.03);
+            let composite = mix(worst, fill, Math.min(0.96, opacity + state * 0.06));
+            if (!light) composite = mix(composite, Qt.rgba(1, 1, 1, 1), 0.08);
+            result = Math.min(result, contrast(fg, composite));
+        }
+        return result;
+    }
+    while (opacity < 0.86 && minimumContrast(target, opacity) < 5.2)
+        opacity = Math.min(0.86, opacity + 0.04);
+    for (let i = 0; i < 20 && minimumContrast(target, opacity) < 5.2; ++i)
+        background = mix(background, base, 0.12);
+    for (let i = 0; i < 40 && minimumContrast(foreground, opacity) < 5; ++i)
+        foreground = mix(foreground, target, 0.12);
+    return {
+        foreground: foreground,
+        tint: alpha(background, opacity),
+        hover: alpha(mix(background, foreground, 0.03), Math.min(0.96, opacity + 0.06)),
+        selected: alpha(mix(background, foreground, 0.06), Math.min(0.96, opacity + 0.12)),
+        outline: alpha(foreground, style === "muted" ? 0.10 : 0.24),
+        selectedOutline: alpha(emphasized ? accent : foreground, emphasized ? 0.70 : 0.55)
+    };
+}
