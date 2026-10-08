@@ -118,7 +118,8 @@ the omitted text; the sender must supply the complete message.
 
 The application-launcher wrapper now opens the QML launcher for both the Arch
 button and the existing Super key binding. If Quickshell cannot start at
-login, the session helper restores Waybar and Mako as a fallback.
+login, the session helper restores Waybar and Mako as a fallback if their
+optional packages are installed (`./setup.sh --with-fallback`).
 The launcher itself uses Quickshell exclusively and retries shell startup if
 needed; Fuzzel and Rofi are no longer needed. The Super binding calls the wrapper
 directly, and the obsolete Rofi layer rule and outside-click hooks are removed.
@@ -174,4 +175,4 @@ Restore the original bar and notification handler:
 ~/.config/quickshell/restore-waybar.sh
 ```
 
-Installer backups live under `~/.local/state/hyprbar/backups/`.
+Installer backups live under `~/.local/state/hyprshell/backups/`.

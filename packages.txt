@@ -1,65 +1,58 @@
-# Official Arch packages installed by setup.sh (pacman performs a full upgrade).
+# Native Hyprshell desktop. Dependencies are resolved by pacman.
+# Session, Wayland, portals, authorization, and rendering
 hyprland
-hyprland-guiutils
-hyprpolkitagent
-uwsm
 quickshell
+uwsm
+hyprpolkitagent
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
 qt6-declarative
 qt6-svg
-sqlite
-waybar
+qt6-wayland
+xorg-xwayland
+mesa
+polkit
+dbus-broker-units
+# Wallpaper, fonts, icons, and cursors used by this desktop
 awww
-mako
-rofi
-fuzzel
+fontconfig
+ttf-dejavu
+ttf-go-nerd
+noto-fonts
+noto-fonts-emoji
+pop-icon-theme
+adwaita-cursors
+# Terminal and file manager for the desktop shortcuts
 kitty
 thunar
 thunar-volman
 tumbler
 gvfs
+xdg-user-dirs
+# Networking, pairing, and battery data
 networkmanager
+wpa_supplicant
 bluez
 bluez-utils
+upower
+# Audio controls and the output spectrum helper
 pipewire
 pipewire-audio
 pipewire-alsa
 pipewire-pulse
 wireplumber
 libpulse
-playerctl
 fftw
-python
-python-gobject
-python-cairo
-python-dbus
-gtk3
-gtk-layer-shell
-wayland
-libnotify
-fontconfig
-ttf-dejavu
-ttf-go-nerd
-noto-fonts
-noto-fonts-emoji
-adwaita-icon-theme
-pop-icon-theme
-adwaita-cursors
+# Brightness and screenshots
 brightnessctl
 grim
 slurp
 swappy
-xdg-desktop-portal
-xdg-desktop-portal-hyprland
-xdg-desktop-portal-gtk
-xdg-user-dirs
-xorg-xwayland
-mesa
-linux-firmware
-dbus-broker
-dbus-broker-units
-polkit
+# Helper build, config installer, notification-history import, session utilities
+gcc
+python
+sqlite
 util-linux
 procps-ng
-git
-curl
-base-devel
+libnotify

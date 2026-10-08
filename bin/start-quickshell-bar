@@ -7,11 +7,13 @@ mkdir -p -- "$state_dir"
 shell_bin=$(command -v quickshell || command -v qs || true)
 fallback() {
     printf 'Quickshell did not start. See %s/bar.log\n' "$state_dir" >&2
-    if ! pgrep -u "$(id -u)" -x mako >/dev/null; then
+    if command -v mako >/dev/null && ! pgrep -u "$(id -u)" -x mako >/dev/null; then
         nohup mako >>"$state_dir/mako-fallback.log" 2>&1 </dev/null &
     fi
-    systemctl --user start waybar-notification-monitor.service 2>/dev/null || true
-    if [[ "${1:-}" != --require-quickshell ]] && ! pgrep -u "$(id -u)" -x waybar >/dev/null; then
+    if command -v mako >/dev/null && command -v waybar >/dev/null; then
+        systemctl --user start waybar-notification-monitor.service 2>/dev/null || true
+    fi
+    if command -v waybar >/dev/null && [[ "${1:-}" != --require-quickshell ]] && ! pgrep -u "$(id -u)" -x waybar >/dev/null; then
         nohup waybar >>"$state_dir/waybar-fallback.log" 2>&1 </dev/null &
     fi
     exit 1

@@ -11,5 +11,5 @@ for (( attempt=0; attempt<50; attempt++ )); do
   fi
   sleep 0.1
 done
-printf 'hyprbar: wallpaper daemon did not become ready\n' >&2
+printf 'hyprshell: wallpaper daemon did not become ready\n' >&2
 exit 1

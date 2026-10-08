@@ -21,7 +21,7 @@ done < <("$shell_bin" list --all --json | awk -F '"' -v expected="$shell_id" '
 ')
 "$shell_bin" kill --path "$config" 2>/dev/null || true
 if ! "$HOME/.local/bin/start-quickshell-bar" --require-quickshell; then
-    if ! pgrep -u "$(id -u)" -x waybar >/dev/null; then
+    if command -v waybar >/dev/null && ! pgrep -u "$(id -u)" -x waybar >/dev/null; then
         nohup waybar >"${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/waybar-fallback.log" 2>&1 </dev/null &
     fi
     exit 1

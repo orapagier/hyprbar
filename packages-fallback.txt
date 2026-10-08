@@ -1,0 +1,12 @@
+# Optional legacy desktop, installed only with ./setup.sh --with-fallback.
+waybar
+mako
+rofi
+fuzzel
+playerctl
+python-gobject
+python-cairo
+python-dbus
+gtk3
+gtk-layer-shell
+wayland

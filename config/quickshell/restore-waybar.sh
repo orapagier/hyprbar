@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+for program in waybar mako rofi; do
+    if ! command -v "$program" >/dev/null; then
+        printf 'Install the legacy dependencies first: ./setup.sh --with-fallback\n' >&2
+        exit 1
+    fi
+done
 config="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell"
 hypr_config="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/hyprland.lua"
 sed -i '/^[[:space:]]*hl.exec_cmd(.*start-quickshell-bar.*)/c\    hl.exec_cmd("uwsm app -- waybar")' "$hypr_config"

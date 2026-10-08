@@ -1,46 +1,47 @@
 #!/usr/bin/env bash
-# Install the complete Hyprbar desktop into the current user's Arch system.
+# Install the native Hyprshell desktop into the current user's Arch system.
 set -Eeuo pipefail
 umask 022
 
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 MODE=install
 DRY_RUN=0
-INSTALL_BROWSER=1
-INSTALL_GREETER=1
-TIMEZONE=Asia/Manila
-BUILD_DIR=
+INSTALL_FALLBACK=0
+INSTALL_GREETER=0
+TIMEZONE=
 
 usage() {
-  cat <<'EOF'
+  cat <<'HELP'
 Usage: ./setup.sh [options]
 
 Run as your normal user, with sudo access, on an installed Arch Linux system.
-  --dry-run          Show the plan without changing anything
-  --config-only      Copy configs and wallpapers only; no packages or services
-  --skip-browser     Skip installing Brave from the AUR
-  --no-greeter       Skip setting up COSMIC Greeter on systems without a greeter
-  --timezone ZONE    Set the system timezone (default: Asia/Manila)
+  --dry-run          Check installed packages and show the plan; change nothing
+  --config-only      Copy configs, compile helpers, and copy wallpapers only
+  --with-fallback    Also install the legacy Waybar/Mako/Rofi/Fuzzel dependencies
+  --with-greeter     Install COSMIC Greeter if no display manager is configured
+  --timezone ZONE    Set the system timezone (default: preserve current timezone)
   --keep-timezone    Leave the system timezone unchanged
   -h, --help         Show this help
 
-Existing configs are backed up under ~/.local/state/hyprbar/backups/.
+Hyprland and Quickshell are checked first; missing desktop dependencies are
+installed from official Arch repositories. No browsers or AUR apps are installed.
+Existing configs are backed up under ~/.local/state/hyprshell/backups/.
 XDG_CONFIG_HOME and XDG_STATE_HOME are respected. A reboot is recommended.
-EOF
+HELP
 }
 
-die() { printf 'hyprbar: %s\n' "$*" >&2; exit 1; }
+die() { printf 'hyprshell: %s\n' "$*" >&2; exit 1; }
 log() { printf '\n==> %s\n' "$*"; }
-cleanup() { [[ -z "$BUILD_DIR" ]] || rm -rf -- "$BUILD_DIR"; }
-trap cleanup EXIT
-trap 'printf "hyprbar: setup failed at line %s. Fix the reported error and rerun setup.sh.\n" "$LINENO" >&2' ERR
+trap 'printf "hyprshell: setup failed at line %s. Fix the reported error and rerun setup.sh.\n" "$LINENO" >&2' ERR
 
 while (( $# )); do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --config-only) MODE=config-only ;;
-    --skip-browser) INSTALL_BROWSER=0 ;;
-    --no-greeter) INSTALL_GREETER=0 ;;
+    --with-fallback) INSTALL_FALLBACK=1 ;;
+    --with-greeter) INSTALL_GREETER=1 ;;
+    --no-greeter) INSTALL_GREETER=0 ;; # Compatibility with the old installer.
+    --skip-browser) : ;; # Browsers are never installed; retain old invocations.
     --keep-timezone) TIMEZONE= ;;
     --timezone)
       (( $# >= 2 )) || die '--timezone requires a timezone name'
@@ -56,20 +57,50 @@ done
 CONFIG_DIR=${XDG_CONFIG_HOME:-$HOME/.config}
 STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}
 [[ "$CONFIG_DIR" == /* && "$STATE_DIR" == /* ]] || die 'XDG paths must be absolute'
-[[ -f "$REPO_DIR/config/waybar/style.css" ]] || die 'Run setup.sh from a complete clone of the repository'
+[[ -f "$REPO_DIR/config/quickshell/shell.qml" && -f "$REPO_DIR/packages.txt" ]] || die 'Run setup.sh from a complete clone of the repository'
 mapfile -t PACKAGES < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$REPO_DIR/packages.txt")
+if (( INSTALL_FALLBACK )); then
+  mapfile -t FALLBACK_PACKAGES < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$REPO_DIR/packages-fallback.txt")
+  PACKAGES+=("${FALLBACK_PACKAGES[@]}")
+fi
+
+check_packages() {
+  log 'Checking Hyprland and Quickshell'
+  local package missing_text status
+  for package in hyprland quickshell; do
+    if pacman -T "$package" >/dev/null 2>&1; then
+      printf '%s: installed (will be updated with the system)\n' "$package"
+    else
+      printf '%s: missing (will be installed)\n' "$package"
+    fi
+  done
+  # -T understands providers such as hyprland-git, unlike pacman -Q hyprland.
+  missing_text=$(pacman -T "${PACKAGES[@]}") || {
+    status=$?
+    (( status == 127 )) || die 'Could not query the pacman dependency database'
+  }
+  MISSING_PACKAGES=()
+  if [[ -n "$missing_text" ]]; then
+    mapfile -t MISSING_PACKAGES <<< "$missing_text"
+  fi
+  if ((${#MISSING_PACKAGES[@]})); then
+    printf 'Missing desktop packages: %s\n' "${MISSING_PACKAGES[*]}"
+  else
+    printf 'All desktop packages are installed.\n'
+  fi
+}
 
 if (( DRY_RUN )); then
   log 'Preview only; no files, packages, services, or settings will change'
   if [[ "$MODE" == install ]]; then
-    printf 'Full Arch upgrade and packages: %s\n' "${PACKAGES[*]}"
-    (( INSTALL_BROWSER == 0 )) || printf 'Browser: build and install brave-bin from the AUR as the current user\n'
+    if command -v pacman >/dev/null; then check_packages; fi
+    printf 'Full Arch upgrade; ensure desktop packages: %s\n' "${PACKAGES[*]}"
     (( INSTALL_GREETER == 0 )) || printf 'Login screen: install/enable cosmic-greeter only if no display manager is configured\n'
-    printf 'Enable NetworkManager, Bluetooth, PipeWire, and WirePlumber; Quickshell owns the notification inbox\n'
+    printf 'Enable NetworkManager, Bluetooth, UPower, PipeWire, and WirePlumber; Quickshell owns the notification inbox\n'
     printf 'Timezone: %s\n' "${TIMEZONE:-unchanged}"
   fi
   printf 'Config destination: %s\nWallpaper destination: %s\n' "$CONFIG_DIR" "$HOME/Pictures/Wallpapers"
-  printf 'Backups: %s/hyprbar/backups/\n' "$STATE_DIR"
+  printf 'Backups: %s/hyprshell/backups/\n' "$STATE_DIR"
   exit 0
 fi
 
@@ -78,14 +109,17 @@ if [[ "$MODE" == install ]]; then
   [[ -f /etc/arch-release ]] || die 'This installer supports Arch Linux'
   [[ $(uname -m) == x86_64 ]] || die 'This setup currently supports x86_64 Arch Linux'
   command -v sudo >/dev/null || die 'Install sudo and grant your user sudo access first'
+  command -v pacman >/dev/null || die 'pacman is required'
   if [[ -n "$TIMEZONE" ]]; then
     [[ "$TIMEZONE" != /* && "$TIMEZONE" != *..* && -f "/usr/share/zoneinfo/$TIMEZONE" ]] || die "Unknown timezone: $TIMEZONE"
   fi
+  check_packages
   sudo -v
-  log 'Upgrading Arch and installing the desktop dependencies'
-  sudo pacman -Syu --needed --noconfirm "${PACKAGES[@]}"
+  log 'Upgrading Arch and installing missing desktop dependencies'
+  # Always upgrade together with installation to avoid unsupported partial upgrades.
+  # Already-satisfied packages keep their existing explicit/dependency status.
+  sudo pacman -Syu --needed --noconfirm "${MISSING_PACKAGES[@]}"
 
-  # The configuration uses the Lua APIs available in the original 0.56 desktop.
   python3 - <<'PY'
 import json, re, subprocess
 info = json.loads(subprocess.check_output(['Hyprland', '--version-json'], text=True))
@@ -94,21 +128,6 @@ if version < (0, 56, 0):
     raise SystemExit('Hyprland 0.56 or newer is required; update your Arch mirrors and rerun.')
 print('Hyprland version:', info['version'])
 PY
-
-  if (( INSTALL_BROWSER )) && ! pacman -Q brave-bin >/dev/null 2>&1; then
-    log 'Building Brave from the AUR as your user'
-    BUILD_DIR=$(mktemp -d -t hyprbar-brave.XXXXXXXX)
-    git clone --depth 1 https://aur.archlinux.org/brave-bin.git "$BUILD_DIR/brave-bin"
-    (cd -- "$BUILD_DIR/brave-bin" && makepkg --syncdeps --install --needed --noconfirm)
-  fi
-
-  if (( INSTALL_GREETER )) && [[ ! -e /etc/systemd/system/display-manager.service ]]; then
-    log 'Installing the COSMIC login screen'
-    sudo pacman -S --needed --noconfirm cosmic-greeter
-    # Enable for the next boot; do not interrupt the current login session.
-    sudo systemctl enable cosmic-greeter.service
-    sudo systemctl set-default graphical.target
-  fi
 fi
 
 command -v python3 >/dev/null || die 'Python 3 is required for --config-only'
@@ -121,14 +140,20 @@ if [[ "$MODE" == config-only ]]; then
 fi
 
 log 'Validating the installed configuration and refreshing fonts'
-python3 "$REPO_DIR/tools/check_runtime.py" "$CONFIG_DIR/waybar"
-QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software qmltestrunner -input "$CONFIG_DIR/quickshell/tests"
+python3 "$REPO_DIR/tools/check_runtime.py" --native
+if (( INSTALL_FALLBACK )); then
+  python3 "$REPO_DIR/tools/check_runtime.py" "$CONFIG_DIR/waybar"
+fi
+# Arch's unqualified qmltestrunner may be Qt 5; this config requires Qt 6.
+QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software /usr/lib/qt6/bin/qmltestrunner -input "$CONFIG_DIR/quickshell/tests"
 Hyprland --verify-config --config "$CONFIG_DIR/hypr/hyprland.lua"
 fc-cache -f
 xdg-user-dirs-update
 
-log 'Enabling networking, Bluetooth, and audio'
+log 'Enabling networking, Bluetooth, battery information, and audio'
 sudo systemctl enable --now NetworkManager.service bluetooth.service
+# UPower is D-Bus activated (a static unit), so start it rather than enable it.
+sudo systemctl start upower.service
 if [[ -n "$TIMEZONE" ]]; then
   sudo timedatectl set-timezone "$TIMEZONE"
 fi
@@ -141,8 +166,15 @@ else
   printf 'User services are enabled and will start at the next login.\n'
 fi
 
+if (( INSTALL_GREETER )) && [[ ! -e /etc/systemd/system/display-manager.service ]]; then
+  log 'Installing the optional COSMIC login screen'
+  sudo pacman -S --needed --noconfirm cosmic-greeter
+  sudo systemctl enable cosmic-greeter.service
+  sudo systemctl set-default graphical.target
+fi
+
 log 'Setup complete'
-printf 'Reboot, then select "Hyprland (uwsm-managed)" on the login screen.\n'
-printf 'From a TTY you can also run: uwsm start -e -D Hyprland hyprland.desktop\n'
+printf 'Reboot, then select "Hyprland (uwsm-managed)" if you use a login screen.\n'
+printf 'From a TTY run: uwsm start -e -D Hyprland hyprland.desktop\n'
 printf 'SUPER+T opens a terminal; press and release SUPER for the launcher.\n'
-printf 'Existing config backups: %s/hyprbar/backups/\n' "$STATE_DIR"
+printf 'Existing config backups: %s/hyprshell/backups/\n' "$STATE_DIR"

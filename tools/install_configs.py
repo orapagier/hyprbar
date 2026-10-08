@@ -36,7 +36,7 @@ def install(repo):
     config = Path(os.environ.get('XDG_CONFIG_HOME') or home / '.config')
     state = Path(os.environ.get('XDG_STATE_HOME') or home / '.local/state')
     stamp = datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + str(time.time_ns())
-    backup = state / 'hyprbar/backups' / stamp
+    backup = state / 'hyprshell/backups' / stamp
 
     def put(source, destination, relative):
         if same(source, destination):
@@ -44,7 +44,7 @@ def install(repo):
             return
         destination.parent.mkdir(parents=True, exist_ok=True)
         saved = backup / relative
-        with tempfile.TemporaryDirectory(prefix='.hyprbar-stage-', dir=destination.parent) as temporary:
+        with tempfile.TemporaryDirectory(prefix='.hyprshell-stage-', dir=destination.parent) as temporary:
             staged = Path(temporary) / 'payload'
             if source.is_dir():
                 shutil.copytree(source, staged, ignore=shutil.ignore_patterns('__pycache__'))
@@ -67,7 +67,7 @@ def install(repo):
         put(repo / 'config' / name, config / name, Path('config') / name)
 
     # Compile before replacing the destination, so a failed build leaves it intact.
-    with tempfile.TemporaryDirectory(prefix='hyprbar-quickshell-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='hyprshell-quickshell-') as temporary:
         payload = Path(temporary) / 'quickshell'
         shutil.copytree(repo / 'config/quickshell', payload,
                         ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
@@ -79,7 +79,7 @@ def install(repo):
     for script in sorted((repo / 'bin').iterdir()):
         put(script, home / '.local/bin' / script.name, Path('.local/bin') / script.name)
 
-    with tempfile.TemporaryDirectory(prefix='hyprbar-service-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='hyprshell-service-') as temporary:
         service = Path(temporary) / 'waybar-notification-monitor.service'
         text = (repo / 'config/systemd/user' / service.name).read_text()
         text = text.replace('/usr/bin/python3 %h/.config/waybar/notification-monitor.py',

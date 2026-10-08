@@ -329,6 +329,45 @@ hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = tr
 
 -- Example window rules that are useful
 
+-- Float dialogs without changing the default tiling of normal app windows.
+-- Modal is an app-provided dialog flag, not a window-size heuristic.
+hl.window_rule({
+    name  = "float-modal-dialogs",
+    match = { modal = true },
+    float = true,
+    center = true,
+})
+
+-- Some Thunar dialogs do not advertise themselves as modal.
+hl.window_rule({
+    name  = "float-thunar-dialogs",
+    match = {
+        class = "(?i)^(thunar|org\\.xfce\\.thunar)$",
+        title = '^((Rename "[^"]*")|(Create (New )?(Folder|File))|(.* - Properties)|(Confirm to replace files)|(Replace the (link|folder|file) in ".*")|(File Operation Progress))$',
+    },
+    float = true,
+    center = true,
+})
+
+-- File chooser portal windows are dialogs, even without a modal flag.
+hl.window_rule({
+    name  = "float-file-chooser-portals",
+    match = { class = "^(xdg-desktop-portal-(gtk|gnome|kde)|org\\.freedesktop\\.impl\\.portal\\.desktop\\.(gtk|gnome|kde))$" },
+    float = true,
+    center = true,
+})
+
+-- Match browser dialog titles exactly, so regular browser windows stay tiled.
+hl.window_rule({
+    name  = "float-browser-dialogs",
+    match = {
+        class = "(?i)^(brave-browser(-beta|-nightly)?|brave|chromium(-browser)?|google-chrome(-beta|-unstable)?|firefox(-esr)?|org\\.mozilla\\.firefox)$",
+        title = "^(Open|Open File|Open Files|Save|Save As|Save File|Select File|Select Folder|Choose File|Choose Files|Choose Folder|Picture-in-Picture)$",
+    },
+    float = true,
+    center = true,
+})
+
 local suppressMaximizeRule = hl.window_rule({
     -- Ignore maximize requests from all apps. You'll probably like this.
     name  = "suppress-maximize-events",

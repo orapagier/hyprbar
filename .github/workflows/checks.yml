@@ -24,9 +24,22 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - name: Install native panel dependencies
-        run: pacman -Syu --needed --noconfirm git quickshell qt6-declarative qt6-svg libpulse fftw python
+      - name: Bootstrap checkout tools
+        run: pacman -Syu --needed --noconfirm git
       - uses: actions/checkout@v4
+      - name: Install the complete native desktop dependency manifest
+        shell: bash
+        run: |
+          mapfile -t packages < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' packages.txt)
+          pacman -Syu --needed --noconfirm git "${packages[@]}"
+      - name: Create a normal desktop test user
+        run: useradd --create-home --shell /bin/bash hyprshell-test
+      - name: Validate native runtime and Hyprland configuration
+        run: |
+          runuser -u hyprshell-test -- python3 tools/check_runtime.py --native
+          runuser -u hyprshell-test -- Hyprland --verify-config --config "$PWD/config/hypr/hyprland.lua"
+      - name: Exercise the installer as a normal user with system changes mocked
+        run: runuser -u hyprshell-test -- python3 -m unittest discover -s tests -v
       - name: Compile the output spectrum helper
         run: cc -O2 config/quickshell/helpers/audio-spectrum.c -o config/quickshell/helpers/audio-spectrum -lpulse-simple -lpulse -lfftw3 -lm
       - name: Check QML components offscreen
