@@ -5,8 +5,8 @@ Button {
     id: control
     property string symbol: "󰒓"
     property bool itemEnabled: true
-    implicitHeight: 27
-    leftPadding: 10; rightPadding: 10
+    implicitHeight: 34
+    leftPadding: 13; rightPadding: 13
     hoverEnabled: true
     contentItem: Item {
         implicitWidth: 190; implicitHeight: 22

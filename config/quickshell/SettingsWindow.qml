@@ -302,7 +302,7 @@ FloatingWindow {
                     Layout.preferredWidth: window.width < 900 ? 200 : 226
                     Layout.fillHeight: true
                     clip: true
-                    padding: 6
+                    padding: 8
                     contentWidth: availableWidth
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                     background: Rectangle {
@@ -312,15 +312,15 @@ FloatingWindow {
                     }
                     ColumnLayout {
                         width: sidebar.availableWidth
-                        spacing: 0
+                        spacing: 1
                         Label {
                             text: "PERSONALIZE"
                             color: "#7c89a7"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
-                            Layout.leftMargin: 10
-                            Layout.topMargin: 4
-                            Layout.bottomMargin: 4
+                            Layout.leftMargin: 13
+                            Layout.topMargin: 6
+                            Layout.bottomMargin: 8
                         }
                         SettingsNavButton {
                             text: "Bar & layout"
@@ -342,9 +342,9 @@ FloatingWindow {
                             text: "TOPBAR ITEMS"
                             color: "#727d9a"
                             font.pixelSize: 10
-                            Layout.topMargin: 8
-                            Layout.bottomMargin: 4
-                            Layout.leftMargin: 10
+                            Layout.topMargin: 10
+                            Layout.bottomMargin: 6
+                            Layout.leftMargin: 13
                             font.letterSpacing: 1.6
                         }
                         Repeater {
