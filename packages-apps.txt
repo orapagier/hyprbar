@@ -1,6 +1,9 @@
 # Optional daily-driver apps: ./setup.sh --extra
 # Browser (omit with --skip-browser)
 chromium
+# Containers
+distrobox
+podman
 # Screen locking; enable automatic locking separately in Hyprshell Settings
 hyprlock
 hypridle

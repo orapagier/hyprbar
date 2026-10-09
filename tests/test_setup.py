@@ -69,7 +69,7 @@ class InstallerTests(unittest.TestCase):
                           'thunar', 'thunar-volman', 'thunar-archive-plugin'):
             self.assertNotIn(unrelated, targets)
         self.assertIn('Timezone: unchanged', result.stdout)
-        self.assertNotIn('Login screen:', result.stdout)
+        self.assertIn('Login screen:', result.stdout)
         self.assertFalse(self.home.exists())
 
     def test_satisfied_dependencies_and_providers_are_kept(self):
@@ -80,9 +80,9 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('All desktop packages are installed.', result.stdout)
         self.assertNotIn('Missing desktop packages:', result.stdout)
 
-    def test_greeter_and_timezone_require_explicit_options(self):
+    def test_timezone_requires_explicit_option(self):
         calls = self.mock_package_database()
-        result = self.run_setup('--dry-run', '--with-greeter',
+        result = self.run_setup('--dry-run',
                                 '--timezone', 'Europe/London')
         targets = json.loads(calls.read_text().splitlines()[-1])[1:]
         self.assertIn('Login screen:', result.stdout)
@@ -149,8 +149,10 @@ class InstallerTests(unittest.TestCase):
         result = self.run_setup()
         commands = [json.loads(line) for line in calls.read_text().splitlines()]
         installs = [c for c in commands if c[:2] == ['sudo', 'pacman']]
-        self.assertEqual(installs, [['sudo', 'pacman', '-Syu', '--needed', '--noconfirm',
-                                     'hyprland', 'quickshell', 'wpa_supplicant', 'upower']])
+        self.assertEqual(installs[0], ['sudo', 'pacman', '-Syu', '--needed', '--noconfirm',
+                                     'hyprland', 'quickshell', 'wpa_supplicant', 'upower'])
+        if ['sudo', 'pacman', '-S', '--needed', '--noconfirm', 'sddm'] in installs:
+            self.assertIn(['sudo', 'systemctl', 'enable', 'sddm.service'], commands)
         self.assertIn(['sudo', 'systemctl', 'enable', '--now',
                        'NetworkManager.service', 'bluetooth.service'], commands)
         self.assertIn(['sudo', 'systemctl', 'start', 'upower.service'], commands)

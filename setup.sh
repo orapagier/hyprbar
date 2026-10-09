@@ -6,7 +6,6 @@ umask 022
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 MODE=install
 DRY_RUN=0
-INSTALL_GREETER=0
 INSTALL_APPS=0
 SKIP_BROWSER=0
 TIMEZONE=
@@ -18,7 +17,6 @@ Usage: ./setup.sh [options]
 Run as your normal user, with sudo access, on an installed Arch Linux system.
   --dry-run          Check installed packages and show the plan; change nothing
   --config-only      Copy configs, compile helpers, and copy wallpapers only
-  --with-greeter     Install COSMIC Greeter if no display manager is configured
   --extra            Also install daily-driver apps from packages-apps.txt
   --skip-browser     Exclude Chromium from --extra
   --timezone ZONE    Set the system timezone (default: preserve current timezone)
@@ -41,9 +39,7 @@ while (( $# )); do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --config-only) MODE=config-only ;;
-    --with-greeter) INSTALL_GREETER=1 ;;
     --extra) INSTALL_APPS=1 ;;
-    --no-greeter) INSTALL_GREETER=0 ;; # Compatibility with the old installer.
     --skip-browser) SKIP_BROWSER=1 ;;
     --keep-timezone) TIMEZONE= ;;
     --timezone)
@@ -81,6 +77,18 @@ for package in "${PACKAGES[@]}"; do
 done
 PACKAGES=("${UNIQUE_PACKAGES[@]}")
 
+has_login_manager() {
+  # Preserve configured managers, including a broken alias needing repair.
+  [[ ! -e /etc/systemd/system/display-manager.service && ! -L /etc/systemd/system/display-manager.service ]] || return 0
+  # Installed but disabled managers also count; do not install a competing one.
+  local manager_units
+  manager_units=$(systemctl list-unit-files --type=service --no-legend) || die 'Could not detect installed login managers; leaving the login screen unchanged'
+  awk '
+    $1 ~ /^(display-manager|sddm|gdm|lightdm|greetd|lxdm|ly|xdm|cosmic-greeter|entrance)\.service$/ { found = 1 }
+    END { exit !found }
+  ' <<< "$manager_units"
+}
+
 check_packages() {
   log 'Checking Hyprland and Quickshell'
   local package missing_text status
@@ -112,7 +120,11 @@ if (( DRY_RUN )); then
   if [[ "$MODE" == install ]]; then
     if command -v pacman >/dev/null; then check_packages; fi
     printf 'Full Arch upgrade; ensure desktop packages: %s\n' "${PACKAGES[*]}"
-    (( INSTALL_GREETER == 0 )) || printf 'Login screen: install/enable cosmic-greeter only if no display manager is configured\n'
+    if has_login_manager; then
+      printf 'Login screen: preserve existing login manager\n'
+    else
+      printf 'Login screen: install and enable SDDM (no login manager found)\n'
+    fi
     printf 'Enable NetworkManager, Bluetooth, UPower, PipeWire, and WirePlumber; Quickshell owns the notification inbox\n'
     printf 'Timezone: %s\n' "${TIMEZONE:-unchanged}"
   fi
@@ -180,10 +192,10 @@ else
   printf 'User services are enabled and will start at the next login.\n'
 fi
 
-if (( INSTALL_GREETER )) && [[ ! -e /etc/systemd/system/display-manager.service ]]; then
-  log 'Installing the optional COSMIC login screen'
-  sudo pacman -S --needed --noconfirm cosmic-greeter
-  sudo systemctl enable cosmic-greeter.service
+if ! has_login_manager; then
+  log 'Installing SDDM because no login manager was found'
+  sudo pacman -S --needed --noconfirm sddm
+  sudo systemctl enable sddm.service
   sudo systemctl set-default graphical.target
 fi
 

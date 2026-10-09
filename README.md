@@ -54,7 +54,7 @@ captures and analyzes audio for the spectrum; Python helpers handle settings
 validation, installation, cleanup, and GitHub sync.
 
 Hyprshell uses its own Quickshell bar, launcher, menus, and notification
-handler. Waybar, Rofi, Fuzzel, and Mako are not required or bundled.
+handler.
 
 ## Requirements
 
@@ -127,7 +127,9 @@ brightness tools, NetworkManager, BlueZ, UPower, PipeWire, and WirePlumber.
 
 Existing configurations at the managed destinations can be replaced. Backups
 are created before replacement; see [backups and restoration](#backups-and-restoration).
-The installer preserves your timezone and existing display manager by default.
+The installer preserves your timezone and existing login manager. If no login
+manager is configured or detected as an installed service, it installs SDDM,
+enables it for the next boot, and selects the graphical boot target.
 It does not reboot the machine or restart the running desktop.
 
 ### Installation options
@@ -138,7 +140,6 @@ It does not reboot the machine or restart the running desktop.
 | `--config-only` | Install configurations, utilities, and wallpapers, and compile the spectrum helper; skip package and service changes. |
 | `--extra` | Also install the optional application list in `packages-apps.txt`. |
 | `--skip-browser` | Omit Chromium from the `--extra` application list. |
-| `--with-greeter` | Install and enable COSMIC Greeter if no display manager is configured. |
 | `--timezone ZONE` | Set an explicit timezone, such as `Europe/London`. |
 | `--keep-timezone` | Preserve the current timezone; this is the default. |
 | `--help` | Show command-line help. |
@@ -149,12 +150,11 @@ Examples:
 ./setup.sh --extra --dry-run
 ./setup.sh --extra
 ./setup.sh --extra --skip-browser
-./setup.sh --with-greeter
 ./setup.sh --timezone Europe/London
 ```
 
-The optional [application list](packages-apps.txt) includes Chromium,
-Hyprlock/Hypridle, archive tools, manuals and shell completion, clipboard and
+The optional [application list](packages-apps.txt) includes Chromium, Distrobox,
+Podman, Hyprlock/Hypridle, archive tools, manuals and shell completion, clipboard and
 media utilities, Android file transfer support, mpv, imv, Evince, Mousepad,
 and cmatrix. Review the list before installing it. Installing locking packages
 does not enable automatic locking.
