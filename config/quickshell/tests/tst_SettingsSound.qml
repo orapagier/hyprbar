@@ -35,7 +35,7 @@ Item {
         id: page
         width: parent.width
         services: services
-        meterComponent: Component { Item { readonly property real peak: 0.65 } }
+        meterComponent: Component { Item { readonly property real peak: 0.65; readonly property bool ready: true; readonly property string error: "" } }
     }
     TestCase {
         name: "SettingsSound"

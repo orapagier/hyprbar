@@ -215,3 +215,13 @@ Configuration Loaded after activation.
 Next: check Sound on the laptop, try a USB/Bluetooth device if available, adjust
 an app volume during playback, and check defaults after reconnect/restart. Then
 priority 6, Default apps and startup; Recovery remains next in the suggested order.
+
+
+Sound microphone follow-up — 2026-10-10: the user reported Test microphone did
+not work. Replaced the Quickshell monitor with an explicit capture stream on the
+selected source. PCM stays in memory; only levels reach the UI. Startup, connection,
+and capture errors are now visible, with a five-second no-data startup timeout.
+The existing opt-in, page-close, and device-change lifecycle is retained. Four
+microphone regression checks cover PCM conversion, active capture arguments,
+failures, the actual Loader source path, and process cleanup; Sound Qt and tone
+checks pass. Physical microphone behavior still needs a laptop retest.

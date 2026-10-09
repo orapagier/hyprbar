@@ -698,9 +698,13 @@ names. The installer restores the Sound controls and packaged test tone, with ea
 machine discovering its own hardware. Remembered volumes/defaults depend on the
 installed WirePlumber policy.
 
-**Test microphone** creates a native peak monitor only while the Sound page is
-visible and the test is enabled. Stop, page navigation, window close, or input-device
-change destroys it. Muting shows zero input. Audio is not saved or played back.
+**Test microphone** opens an active recording stream through the existing
+PipeWire PulseAudio service only while the Sound page is visible and the test is
+enabled. The microphone helper computes input peaks from in-memory PCM samples;
+it does not save or play them back. Stop, page navigation, window close, or input
+device change destroys the capture process and closes its stream. Muting shows
+zero input. Startup and capture failures appear on the page; a five-second startup
+watchdog stops a capture that supplies no data.
 **Play test sound** uses paplay from the existing libpulse dependency, with a
 0.7-second stereo 440 Hz tone, fade in/out, and reduced stream volume. It targets
 the current output by name, preserves the device volume/mute settings, and gives
@@ -711,8 +715,18 @@ an explicit click; applying this update plays no sound and starts no microphone 
 
 Validation uses simulated device/stream objects for selection, hotplug, keyboard
 and mouse volume control, mute, meter lifecycle, and narrow layouts. Native tests
-load the PipeWire meter with monitoring disabled and stub paplay to check argument
+load the input meter with capture disabled and stub paplay to check argument
 boundaries, output choice, failure, timeout, and cancellation without touching audio
 hardware. Real microphone levels, audible playback, call routing, and WirePlumber
 persistence must be checked in the desktop session; the agent sandbox cannot access
 the PipeWire socket.
+
+
+Microphone follow-up: physical testing reported an empty/nonworking microphone
+test. The input meter now uses an explicit PA_STREAM_RECORD connection to the
+selected source instead of Quickshell's monitor stream. Regression checks exercise
+the production Loader source path with a stub capture helper, verify PCM level
+calculation and the selected source/record-stream arguments, and confirm capture
+processes are gone after close or device changes. Real microphone capture remains
+a desktop-session verification item; the agent cannot confirm the physical cause
+or result while PipeWire access is restricted.

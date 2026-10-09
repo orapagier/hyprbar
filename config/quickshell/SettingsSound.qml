@@ -15,6 +15,8 @@ ColumnLayout {
     readonly property bool busy: !!(testSound && (testSound.busy || testSound.requested))
     property bool meterEnabled: false
     readonly property bool metering: meter.active
+    readonly property string meterError: meter.status === Loader.Error ? "Could not load the microphone test." : meter.item ? meter.item.error || "" : ""
+    readonly property bool meterReady: !!(meter.item && meter.item.ready)
     readonly property real inputPeak: meter.item ? meter.item.peak : 0
     property Component meterComponent: null
     onVisibleChanged: if (!visible) { meterEnabled = false; if (testSound) testSound.stop(); }
@@ -103,8 +105,8 @@ ColumnLayout {
         }
         Label {
             Layout.fillWidth: true
-            text: page.meterEnabled ? page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : "Speak to check the input level. The test stops when you leave this page." : "Start the test to view the live input level. Audio is not saved or played back."
-            wrapMode: Text.Wrap; color: "#98a5bf"
+            text: page.meterEnabled ? page.meterError ? page.meterError : !page.meterReady ? "Starting microphone test…" : page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : "Speak to check the input level. The test stops when you leave this page." : "Start the test to view the live input level. Audio is not saved or played back."
+            wrapMode: Text.Wrap; color: page.meterError ? "#f38ba8" : "#98a5bf"
         }
     }
     SettingsCard {
