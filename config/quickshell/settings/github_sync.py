@@ -77,6 +77,17 @@ def snapshot_managed_files(repo, config, home):
                 live = source / managed.name
                 if live.exists() or live.is_symlink():
                     mirror(live, managed)
+    keybindings = config / 'hyprshell/keybindings.json'
+    if keybindings.exists():
+        from keybindings import validate as validate_keybindings, render as render_keybindings
+        data = json.loads(keybindings.read_text())
+        if data.get('version') != 1:
+            raise ValueError('Unsupported keybindings version')
+        entries = validate_keybindings(data['entries'])
+        destination = repo / 'config/hyprshell'
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / 'keybindings.json').write_text(json.dumps({'version': 1, 'entries': entries}, indent=2) + '\n')
+        (destination / 'keybindings.lua').write_text(render_keybindings(entries))
     cleanup = config / 'hyprshell/cleanup.json'
     if cleanup.exists():
         from cleanup import validate as validate_cleanup

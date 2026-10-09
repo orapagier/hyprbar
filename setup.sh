@@ -130,6 +130,7 @@ if (( DRY_RUN )); then
   fi
   printf 'Config destination: %s\nWallpaper destination: %s\n' "$CONFIG_DIR" "$HOME/Pictures/Wallpapers"
   printf 'Backups: %s/hyprshell/backups/\n' "$STATE_DIR"
+  printf 'Bash shortcuts: pcm, fedora, ubuntu, and existing Distrobox names\n'
   exit 0
 fi
 
@@ -164,6 +165,7 @@ command -v python3 >/dev/null || die 'Python 3 is required for --config-only'
 [[ -f "$REPO_DIR/assets/wallpapers/default.jpg" ]] || die 'Missing bundled default wallpaper'
 log 'Installing configs and wallpapers, with backups for changed files'
 python3 "$REPO_DIR/tools/install_configs.py" "$REPO_DIR"
+python3 "$REPO_DIR/tools/install_shell_shortcuts.py" "$REPO_DIR"
 
 if [[ "$MODE" == config-only ]]; then
   log 'Configs installed. Packages, services, and timezone were left unchanged.'

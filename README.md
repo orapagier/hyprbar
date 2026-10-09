@@ -163,6 +163,14 @@ Examples:
 ./setup.sh --timezone Europe/London
 ```
 
+Setup also installs Bash shortcuts while preserving your existing `~/.bashrc`:
+`pcm package-name` runs `sudo pacman -S --needed package-name`; `fedora` and
+`ubuntu` enter the matching Distroboxes. Other existing container names become
+commands when you open a terminal, provided they do not conflict with an existing
+command. After creating a container, run `hyprshell_refresh_boxes` or open a new
+terminal. To load the shortcuts in an already open terminal, run `source ~/.bashrc`.
+These shortcuts are also installed by `--config-only`.
+
 The optional [application list](packages-apps.txt) includes Chromium, Distrobox,
 Podman, Hyprlock/Hypridle, archive tools, manuals and shell completion, clipboard and
 media utilities, Android file transfer support, mpv, imv, Evince, Mousepad,

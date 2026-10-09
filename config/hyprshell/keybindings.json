@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "17345483cff94afba0fa6baa28a5f898",
+      "original": "",
+      "shortcut": "ALT + Q",
+      "description": "Reload Hypershell",
+      "mode": "command",
+      "command": "quickshell ipc --path ~/.config/quickshell call bar reload"
+    }
+  ]
+}

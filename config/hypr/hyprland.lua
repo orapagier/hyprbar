@@ -251,73 +251,78 @@ hl.device({
 ---- KEYBINDINGS ----
 ---------------------
 
+local hyprshellKeybindings = require("keybindings")
+hyprshellKeybindings.capture()
+
 local mainMod = "SUPER" -- Sets "Windows" key as main modifier
 
 -- Example binds, see https://wiki.hypr.land/Configuring/Basics/Binds/ for more
-hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal))
-local closeWindowBind = hl.bind(mainMod .. " + Q", hl.dsp.window.close())
+hl.bind(mainMod .. " + T", hl.dsp.exec_cmd(terminal), { description = "Open terminal" })
+local closeWindowBind = hl.bind(mainMod .. " + Q", hl.dsp.window.close(), { description = "Close window" })
 -- closeWindowBind:set_enabled(false)
-hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
-hl.bind(mainMod .. " + M", hl.dsp.window.fullscreen({ mode = "maximized" }))
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
-hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
+hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"), { description = "Exit desktop session" })
+hl.bind(mainMod .. " + M", hl.dsp.window.fullscreen({ mode = "maximized" }), { description = "Maximize window" })
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager), { description = "Open file manager" })
+hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }), { description = "Toggle floating window" })
 -- Quickshell handles launcher toggling and outside clicks natively.
 hl.bind("SUPER + Super_L", hl.dsp.exec_cmd(menu), { release = true, description = "Toggle application launcher" })
-hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
-hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"))    -- dwindle only
+hl.bind(mainMod .. " + P", hl.dsp.window.pseudo(), { description = "Toggle pseudo tiling" })
+hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"), { description = "Toggle split direction" })    -- dwindle only
+
+hl.bind("SUPER + K", hl.dsp.exec_cmd('"$HOME/.local/bin/keybindings-launcher"'), { description = "Show searchable keybindings" })
 
 -- Move focus with mainMod + arrow keys
-hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
-hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }), { description = "Focus left" })
+hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }), { description = "Focus right" })
+hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }), { description = "Focus up" })
+hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }), { description = "Focus down" })
 
 -- Switch workspaces with mainMod + [0-9]
 -- Move active window to a workspace with mainMod + SHIFT + [0-9]
 for i = 1, 10 do
     local key = i % 10 -- 10 maps to key 0
-    hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}))
-    hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }))
+    hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}), { description = "Switch to workspace " .. i })
+    hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace " .. i })
 end
 
 -- Example special workspace (scratchpad)
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
+hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"), { description = "Toggle scratchpad" })
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }), { description = "Move window to scratchpad" })
 
 -- Scroll through existing workspaces with mainMod + scroll
-hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
-hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }), { description = "Next workspace" })
+hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }), { description = "Previous workspace" })
 
 -- Move/resize windows with mainMod + LMB/RMB and dragging
-hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
-hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true, description = "Drag window" })
+hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { description = "Resize window", mouse = true })
 
 -- Laptop multimedia keys for volume and LCD brightness
 -- Volume / brightness keys without needing Fn (with Fn they send XF86* symbols, already bound below)
-hl.bind("F3", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { repeating = true })
-hl.bind("F2", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { repeating = true })
-hl.bind("F4", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { repeating = true })
-hl.bind("F1", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { repeating = true })
-hl.bind("F7", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { repeating = true })
-hl.bind("F6", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { repeating = true })
+hl.bind("F3", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { description = "Increase volume", repeating = true })
+hl.bind("F2", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { repeating = true, description = "Decrease volume" })
+hl.bind("F4", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { repeating = true, description = "Toggle speaker mute" })
+hl.bind("F1", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { repeating = true, description = "Toggle microphone mute" })
+hl.bind("F7", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { repeating = true, description = "Increase brightness" })
+hl.bind("F6", hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { repeating = true, description = "Decrease brightness" })
 
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
-hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true })
-hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true })
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { description = "Increase volume", locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true, description = "Decrease volume" })
+hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true, repeating = true, description = "Toggle speaker mute" })
+hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),   { locked = true, repeating = true, description = "Toggle microphone mute" })
+hl.bind("XF86MonBrightnessUp",  hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+"),                  { locked = true, repeating = true, description = "Increase brightness" })
+hl.bind("XF86MonBrightnessDown",hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%-"),                  { locked = true, repeating = true, description = "Decrease brightness" })
 
 -- Screenshot region snipping tool: Print opens the region selector, then edit in swappy
-hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
+hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'), { description = "Capture screenshot region" })
 -- This keyboard's Print key emits KEY_INSERT, so bind it as well
-hl.bind("Insert", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'))
+hl.bind("Insert", hl.dsp.exec_cmd('grim -g "$(slurp)" - | swappy -f -'), { description = "Capture screenshot region" })
 
 -- Requires playerctl
-hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true })
-hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = true, description = "Next track" })
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { description = "Play / pause media", locked = true })
+hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { description = "Play / pause media", locked = true })
+hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true, description = "Previous track" })
 
 
 --------------------------------
@@ -419,6 +424,14 @@ hl.layer_rule({
     animation = "slide",
 })
 
+-- Frosted shortcut overlay; transparent space around the card stays clear.
+hl.layer_rule({
+    name = "hyprshell-keybindings-glass",
+    match = { namespace = "^hyprshell-keybindings$" },
+    blur = true,
+    ignore_alpha = 0.05,
+})
+
 -- Hyprland-run windowrule
 hl.window_rule({
     name  = "move-hyprland-run",
@@ -434,11 +447,11 @@ hl.on("hyprland.start", function()
     -- Wallpaper (awww, successor of swww): start daemon, then set image
     hl.exec_cmd('"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpaper-start.sh"')
 end)
-hl.bind("SUPER + B", hl.dsp.exec_cmd("uwsm app -- brave"))
+hl.bind("SUPER + B", hl.dsp.exec_cmd("uwsm app -- brave"), { description = "Open browser" })
 
 -- Wallpapers: SUPER+W = next, SUPER+SHIFT+W = previous (cycles ~/Pictures/Wallpapers)
-hl.bind("SUPER + W", hl.dsp.exec_cmd('"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpaper-cycle.sh" next'))
-hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd('"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpaper-cycle.sh" prev'))
+hl.bind("SUPER + W", hl.dsp.exec_cmd('"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpaper-cycle.sh" next'), { description = "Next wallpaper" })
+hl.bind("SUPER + SHIFT + W", hl.dsp.exec_cmd('"${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallpaper-cycle.sh" prev'), { description = "Previous wallpaper" })
 
 -- Minimize (LIFO stack): SUPER+H hides focused window,
 -- SUPER+SHIFT+H restores them one by one, most recent first
@@ -449,7 +462,7 @@ hl.bind("SUPER + H", function()
     if win == nil then return end
     table.insert(minimizedStack, win.address)
     hl.dispatch(hl.dsp.window.move({ window = win, workspace = "special:minimized" }))
-end)
+end, { description = "Minimize window" })
 
 hl.bind("SUPER + SHIFT + H", function()
     while #minimizedStack > 0 do
@@ -464,7 +477,7 @@ hl.bind("SUPER + SHIFT + H", function()
     end
     -- nothing tracked left: toggle the special workspace as a fallback
     hl.dispatch(hl.dsp.workspace.toggle_special("minimized"))
-end)
+end, { description = "Restore minimized window" })
 
 -- HyprMod managed settings
 require("hyprland-gui")
@@ -476,3 +489,6 @@ if hyprshellFile then
     hyprshellFile:close()
     dofile(hyprshellOverride)
 end
+
+-- Apply shortcuts edited in Hyprshell Settings after the base configuration.
+hyprshellKeybindings.apply()

@@ -327,3 +327,49 @@ value by one step (usually 1 px or one percentage point). Buttons stop at the
 slider limits, follow disabled controls, and use the normal autosave path.
 For inherited values, the first click adjusts the suggested value; reset
 restores inheritance.
+
+## Keybindings
+
+Open **Keybindings** in Settings to browse a searchable shortcut list. Select an
+action or click **+ New** to open the compact editor. Use **Record shortcut**
+(or **Record again**) and press the desired combination; release all keys to
+confirm. Escape cancels recording without changing the draft. Recording enables
+Quickshell's Wayland `ShortcutInhibitor` on the Settings window and releases it
+when recording ends, loses focus, or the page closes. If inhibition is unavailable,
+recording reports that instead of pretending to capture compositor shortcuts.
+**Enter manually** remains available for mouse buttons and unusual key names.
+
+Action and command fields stay out of the recording focus path. Key combinations
+appear as keycap badges; conflicts are shown inline before saving. Incomplete or
+unchanged drafts cannot be saved. Save closes the editor with a brief confirmation;
+Cancel discards the editor draft. Refresh and selecting another row wait until
+an edited draft is saved or cancelled.
+
+To add command shortcuts or edit the keys and labels of active desktop shortcuts,
+select an action in the searchable list,
+choose **Keep existing action** to preserve its Lua callback and flags, or
+choose **Run a command instead**. **Save shortcut** validates and applies the
+change immediately. Duplicate combinations are rejected. **Restore original**
+removes a saved override; **Remove shortcut** removes a newly added command.
+This page uses an explicit save so incomplete commands never become active.
+
+The Super+K QML overlay reads active Hyprland bindings on opening and refreshes
+every 1.5 seconds while open, preserving the current search. Its action labels
+come from the binding description. It remains a centered layer-shell overlay
+with keyboard focus, Escape dismissal, and dismissal on pointer movement outside.
+
+Preferences live in `hyprshell/keybindings.json`; the backend generates
+`hyprshell/keybindings.lua`. The bundled `hypr/keybindings.lua` captures original
+binding actions while loading the main Lua config, then applies overrides at
+the end. Original Lua callbacks (such as the minimize stack) and bind flags are
+preserved when remapped. Base configuration files are not rewritten by edits.
+The editor lists ordinary bindings in the default submap; custom submap and
+extra-modifier bindings remain configured in Lua.
+
+The Python backend locks writes, checks for concurrent edits, backs up replaced
+files, verifies the Lua configuration, reloads Hyprland, checks configuration
+errors, and rolls back files if validation or reload fails. Commands are passed
+as quoted Lua strings to `hl.dsp.exec_cmd` and run only on a shortcut press.
+Hyprland's [binding API](https://wiki.hypr.land/configuring/core/binds/) supplies
+the bind, unbind, and description behavior. GitHub sync captures the saved JSON
+and regenerates its Lua payload; setup restores both along with the Lua hook.

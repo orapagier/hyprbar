@@ -114,11 +114,13 @@ ShellRoot {
                 onSettingsRequested: settingsController.open()
                 onHoverChanged: inside => menuState.retain(inside)
             }
-            function closeMenu() { menuState.close(); }
+            KeybindingsPopup { id: keybindings; screen: panel.screen }
+            function closeMenu() { menuState.close(); keybindings.opened = false; }
             function refreshSettings() {
                 if (menuState.section && !bar.itemEnabled(menuState.section)) menuState.close();
             }
-            function toggleLauncher() { menuState.activate("launcher"); }
+            function toggleLauncher() { keybindings.opened = false; menuState.activate("launcher"); }
+            function toggleKeybindings() { menuState.close(); keybindings.opened = !keybindings.opened; }
         }
     }
     Connections {
@@ -137,6 +139,12 @@ ShellRoot {
         }
         function reload(): void { Quickshell.reload(true); }
         function settings(): void { settingsController.open(); }
+        function toggleKeybindings(): void {
+            let focused = Hyprland.focusedMonitor;
+            let panel = panels.instances.find(p => focused && p.screen.name === focused.name) || panels.instances[0];
+            for (let other of panels.instances) if (other !== panel) other.closeMenu();
+            if (panel) panel.toggleKeybindings();
+        }
         function toggleLauncher(): void {
             let focused = Hyprland.focusedMonitor;
             let panel = panels.instances.find(p => focused && p.screen.name === focused.name) || panels.instances[0];
