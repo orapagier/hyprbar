@@ -150,3 +150,10 @@ Hyprland IPC remain inaccessible in the agent session.
 Next: test brightness restoration, display wake, suspend/resume and lid choices
 on the real laptop, then priority 4, Notifications. Check profile selection in
 the desktop session. No live dimming, screen-off or suspend test was performed.
+
+Power activation follow-up: a live reload raced the new component copy and
+failed with “SettingsPower is not a type”, retaining the old Settings interface.
+After confirming all files were present, touching the live shell.qml triggered
+a successful reload, verified by the active instance's Configuration Loaded log.
+Future payload updates must create dependencies before replacing consumers and
+verify activation in the live log.

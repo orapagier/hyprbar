@@ -625,3 +625,17 @@ Physical brightness, display wake, suspend/resume, inhibitors, and lid behavior
 must still be checked from an accessible desktop session. The implementation
 uses the documented [Hypridle listener/sleep hooks](https://wiki.hypr.land/Hypr-Ecosystem/hypridle/)
 and [systemd lid-switch inhibition](https://www.freedesktop.org/software/systemd/man/latest/systemd-inhibit.html).
+
+### Applying new Settings components to a running shell
+
+Create new QML components and helpers before updating the QML files that refer
+to them. A hot reload during a partial copy can fail with “SettingsPower is not
+a type” and leave the previous interface running. After all matching live files
+are present, update the modification time of the live `quickshell/shell.qml`
+to trigger another watched reload, then verify the active instance's bounded
+`quickshell log --id <id> --tail 20` output reports **Configuration Loaded**.
+Do not infer activation merely from installed files or isolated UI tests.
+
+On 2026-10-10, this recovered the failed Power & battery activation without
+restarting the desktop session. Direct IPC was unavailable to the agent, but
+the filesystem-triggered reload and its success were visible in the live log.
