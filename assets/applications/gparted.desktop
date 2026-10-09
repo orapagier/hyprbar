@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=GParted
+GenericName=Partition Editor
+Comment=Create, reorganize, and delete partitions
+TryExec=/usr/bin/gparted
+Exec=hyprshell-themed-app gparted %f
+Icon=gparted
+Terminal=false
+Categories=GNOME;System;Filesystem;
+Keywords=Partition;Filesystem;Disk;
+StartupNotify=true

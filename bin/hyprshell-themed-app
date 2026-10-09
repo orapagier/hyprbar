@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Launch selected legacy GTK apps with the saved application appearance."""
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+APPS = {'xfce4-about': '/usr/bin/xfce4-about', 'gparted': '/usr/bin/gparted'}
+
+
+def selected_theme():
+    config = Path(os.environ.get('XDG_CONFIG_HOME') or Path.home() / '.config')
+    path = config / 'hyprshell/theme.json'
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text())
+    if data.get('version') != 1 or data.get('mode') not in ('dark', 'light'):
+        raise ValueError('Invalid application theme preference')
+    return 'Adwaita:dark' if data['mode'] == 'dark' else 'Adwaita'
+
+
+def launch(app, arguments):
+    if app not in APPS:
+        raise ValueError('Unsupported themed application')
+    theme = selected_theme()
+    if theme is None:
+        return subprocess.run([APPS[app], *arguments], check=False).returncode
+    if app != 'gparted':
+        environment = dict(os.environ, GTK_THEME=theme)
+        return subprocess.run([APPS[app], *arguments], env=environment, check=False).returncode
+    # GParted runs as root, whose GTK preferences differ. Keep root's HOME and
+    # credentials intact; explicitly pass only the display and fixed GTK values.
+    display = os.environ.get('DISPLAY', '')
+    if not display:
+        raise ValueError('GParted requires the desktop XWayland display')
+    query = subprocess.run(['xhost'], capture_output=True, text=True, check=True)
+    already_allowed = bool(re.search(r'SI:localuser:root\s*$', query.stdout, re.I | re.M))
+    granted = False
+    try:
+        if not already_allowed:
+            subprocess.run(['xhost', '+SI:localuser:root'], check=True, capture_output=True)
+            granted = True
+        # Retain upstream GParted's singleton checks and automount inhibition by
+        # running its wrapper, with normal administrator authentication.
+        return subprocess.run(['pkexec', '/usr/bin/env', 'DISPLAY=' + display,
+                               'GDK_BACKEND=x11', 'GTK_THEME=' + theme,
+                               APPS[app], *arguments], check=False).returncode
+    finally:
+        if granted:
+            subprocess.run(['xhost', '-SI:localuser:root'], check=True, capture_output=True)
+
+
+def main():
+    try:
+        if len(sys.argv) < 2:
+            raise ValueError('Choose gparted or xfce4-about')
+        return launch(sys.argv[1], sys.argv[2:])
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print('Could not open application: ' + str(error), file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

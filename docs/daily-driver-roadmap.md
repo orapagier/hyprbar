@@ -94,3 +94,11 @@ Vim opened normally in an isolated PTY. GParted's installed wrapper expects
 xhost, which is absent; xorg-xhost was added to packages.txt. Live installation
 requires `sudo pacman -S --needed xorg-xhost` from the user's terminal because the
 agent session cannot elevate privileges. Confirm remaining light apps by name.
+
+Confirmed light apps: GParted and About Xfce. Both link GTK 3. Scoped themed
+launcher entries now read the saved mode on each launch. About Xfce gets an
+explicit GTK variant; GParted gets it after normal administrator authentication,
+with temporary root-only display access and the upstream wrapper preserved.
+Automated tests cover dark/light, argument boundaries, cancellation/error cleanup,
+and preservation of existing display permissions. Check visual results by fully
+closing and reopening these apps from the launcher in the desktop session.

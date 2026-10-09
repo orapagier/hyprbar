@@ -504,3 +504,25 @@ using GParted. See [GParted's Wayland startup workaround](https://gparted.org/ne
 No persistent display permission change or passwordless policy is configured.
 Application-owned themes, terminal color schemes and elevated applications may
 use separate preferences from the desktop color-scheme setting.
+
+## Legacy GTK application exceptions
+
+GParted and About Xfce have managed desktop entries that call
+`hyprshell-themed-app`. The helper reads the saved application theme each time;
+About Xfce receives a scoped `GTK_THEME=Adwaita:dark` or `Adwaita` override.
+This uses GTK's documented [theme variant override](https://docs.gtk.org/gtk3/running.html)
+only for these apps; it is not exported to every app or the topbar.
+
+GParted authenticates normally through pkexec, then launches its upstream wrapper
+with fixed theme and XWayland environment values. The authentication prompt may
+identify `/usr/bin/env`, which passes those values to `/usr/bin/gparted`. Root's
+HOME is retained. Only root is temporarily granted display access; the helper
+revokes a grant it made when the command exits or authentication is cancelled.
+Pre-existing access is preserved. Upstream singleton checks and automount
+inhibition still run. No root configuration or authorization policy is edited.
+
+Setup installs the helper and the two app entries, and GitHub sync captures them
+as managed files. Entries use TryExec so absent applications are not advertised.
+If no application theme has been saved, the helper uses the ordinary upstream
+launch command. Close and reopen these apps from the launcher after a theme
+change. The ordinary `/usr/bin/gparted` command uses its normal root preferences.

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=About Xfce
+Comment=Information about the Xfce Desktop Environment
+TryExec=/usr/bin/xfce4-about
+Exec=hyprshell-themed-app xfce4-about
+Icon=org.xfce.about
+StartupNotify=false
+Terminal=false
+Categories=Utility;X-XFCE;
