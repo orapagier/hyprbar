@@ -69,3 +69,10 @@ Validation: 11 display checks passed (including native QML and real Lua parsing)
 The broader Python run passed 81 of 82 checks; the unrelated shortcut-recording
 check references a missing `config/quickshell/tests/ShortcutRecording.qml` fixture.
 Native runtime dependency checks passed. Live monitor IPC was inaccessible.
+
+Displays follow-up: fixed `hyprctl eval` rejecting a leading Lua comment as a CLI
+flag. Runtime snippets now start with executable Lua; saved files keep their
+header. Errors remain red after automatic refresh and command-help dumps are
+replaced by concise messages. All 13 display regression checks pass, including
+real CLI argument parsing in an isolated runtime. Physical preview still needs
+verification in the desktop session.

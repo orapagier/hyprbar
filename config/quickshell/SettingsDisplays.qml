@@ -65,7 +65,7 @@ ColumnLayout {
         if (pending && !decisionSent) { decisionSent = true; worker.write(action + "\n"); }
     }
     function receive(result) {
-        success = result.ok;
+        if (result.message !== undefined || !result.ok || !message) success = result.ok;
         if (result.message !== undefined) message = result.message;
         if (result.monitors) { monitors = result.monitors; entries = result.entries; saved = result.saved; loaded = true; }
         if (result.pending === true) { pending = true; seconds = result.seconds; countdown.restart(); }

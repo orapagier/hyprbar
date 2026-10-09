@@ -119,6 +119,25 @@ class DisplaysTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     displays.validate({'version': 1, 'entries': [dict(self.entry, **{key: value})]})
 
+    def test_runtime_lua_passes_real_hyprctl_argument_parser(self):
+        import subprocess
+        with patch.object(displays, 'hypr', return_value='ok') as hypr:
+            displays.apply([self.entry])
+        code = hypr.call_args.args[1]
+        self.assertTrue(code.startswith('hl.monitor('))
+        # A missing compositor socket is acceptable here; CLI usage is not.
+        environment = dict(os.environ, HYPRLAND_INSTANCE_SIGNATURE='', XDG_RUNTIME_DIR=str(self.state / 'isolated-runtime'))
+        result = subprocess.run(['hyprctl', 'eval', code], capture_output=True, text=True, timeout=5, env=environment)
+        self.assertNotIn('usage: hyprctl', result.stdout + result.stderr)
+
+    def test_command_help_is_replaced_by_short_error(self):
+        import subprocess
+        help_text = 'usage: hyprctl [flags] <command>\ncommands:\n' + 'many lines\n' * 100
+        with patch.object(displays.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, help_text, '')):
+            with self.assertRaisesRegex(ValueError, '^Hyprland rejected the display command') as caught:
+                displays.hypr('eval', 'invalid')
+        self.assertLess(len(str(caught.exception)), 120)
+
     def test_generated_lua_is_accepted_by_real_hyprland(self):
         import subprocess
         generated = self.config / 'hyprshell/displays.lua'

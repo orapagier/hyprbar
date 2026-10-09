@@ -36,6 +36,9 @@ ShellRoot {
                 page.place(1, "eDP-1", "left");
                 if (page.entries[1].position !== "-1280x0") { test.fail("scaled left placement"); return; }
                 page.monitors = oldMonitors; page.entries = oldEntries;
+                page.receive({ok: false, pending: false, message: "Display command failed."});
+                page.receive({ok: true, monitors: oldMonitors, entries: oldEntries, saved: page.saved});
+                if (page.success || page.message !== "Display command failed.") { test.fail("error became success after refresh"); return; }
                 page.request("preview"); test.phase = 1;
             } else if (test.phase === 1 && page.pending) {
                 if (page.seconds !== 15 || !test.find(page, "keepDisplays").enabled) { test.fail("confirmation"); return; }
