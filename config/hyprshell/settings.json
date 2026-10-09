@@ -355,7 +355,14 @@
     "dimPercent": 20,
     "offMinutes": 15,
     "suspendMinutes": 0,
-    "lidAction": "system",
-    "profile": "system"
+    "lidAction": "suspend",
+    "profile": "balanced"
+  },
+  "notifications": {
+    "popups": false,
+    "doNotDisturb": false,
+    "criticalBypass": true,
+    "popupSeconds": 5,
+    "apps": {}
   }
 }
