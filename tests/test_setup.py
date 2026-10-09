@@ -164,10 +164,44 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.config / 'quickshell/helpers/audio-spectrum').is_file())
         self.assertIn('float-modal-dialogs', (self.config / 'hyprshell/hyprland/windows.lua').read_text())
 
+    def test_fresh_install_restores_saved_input_overrides(self):
+        # A portable saved snapshot, installed into a completely isolated home.
+        repo = self.root / 'saved repo'
+        (repo / 'config/hyprshell').mkdir(parents=True)
+        for entry in (ROOT / 'config').iterdir():
+            if entry.name != 'hyprshell':
+                (repo / 'config' / entry.name).symlink_to(entry)
+        for entry in (ROOT / 'config/hyprshell').iterdir():
+            if entry.name != 'settings.json':
+                (repo / 'config/hyprshell' / entry.name).symlink_to(entry)
+        saved = json.loads((ROOT / 'config/hyprshell/settings.json').read_text())
+        saved['hyprland'].update(pointerSpeed=0.25, tapToClick=False,
+                                 keyboardLayouts='us,gb', layoutSwitch='grp:alt_shift_toggle')
+        (repo / 'config/hyprshell/settings.json').write_text(json.dumps(saved))
+        for name in ('bin', 'assets'):
+            (repo / name).symlink_to(ROOT / name)
+        subprocess.run(['python3', str(ROOT / 'tools/install_configs.py'), str(repo)],
+                       env=self.env, capture_output=True, text=True, check=True)
+        generated = (self.config / 'hyprshell/overrides.lua').read_text()
+        self.assertIn('sensitivity = 0.25', generated)
+        self.assertIn('tap_to_click = false', generated)
+        self.assertIn('kb_layout = "us,gb"', generated)
+        verified = subprocess.run(['Hyprland', '--verify-config', '--config',
+                                   str(self.config / 'hypr/hyprland.lua')],
+                                  env=self.env, capture_output=True, text=True, timeout=15)
+        self.assertIn('config ok', verified.stdout.lower(), verified.stdout + verified.stderr)
+
     def test_installs_current_payload_without_legacy_configs(self):
         self.install()
         self.assertIn('--ozone-platform=x11',
                       (self.config / 'chromium-flags.conf').read_text())
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('installed_settings', self.config / 'quickshell/settings/backend.py')
+        installed = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(installed)
+        saved = json.loads((self.config / 'hyprshell/settings.json').read_text())
+        self.assertEqual((self.config / 'hyprshell/overrides.lua').read_text(),
+                         installed.render_hypr(saved['hyprland'], True))
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
         self.assertTrue((self.config / 'quickshell/shell.qml').is_file())
         self.assertEqual((self.config / 'autostart/nm-applet.desktop').read_bytes(),

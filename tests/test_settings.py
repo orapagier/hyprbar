@@ -27,6 +27,49 @@ class SettingsTests(unittest.TestCase):
         self.data = copy.deepcopy(backend.DEFAULTS)
         self.path = self.config / 'hyprshell/settings.json'
 
+    def test_input_preferences_round_trip_and_real_lua_parser(self):
+        main = self.config / 'hypr/hyprland.lua'
+        main.parent.mkdir(parents=True)
+        main.write_text('-- test config\n')
+        self.data['hyprland'] = {
+            'pointerSpeed': -0.35, 'mouseNaturalScroll': True,
+            'touchpadNaturalScroll': False, 'tapToClick': True,
+            'disableWhileTyping': True, 'repeatRate': 40, 'repeatDelay': 350,
+            'keyboardLayouts': 'us,gb', 'layoutSwitch': 'grp:alt_shift_toggle',
+            'rounding': 8,
+        }
+        self.assertTrue(backend.save(self.data)['ok'])
+        self.assertEqual(json.loads(self.path.read_text())['hyprland'], self.data['hyprland'])
+        generated = self.config / 'hyprshell/overrides.lua'
+        self.assertIn('tap_to_click = true', generated.read_text())
+        main.write_text(generated.read_text())
+        result = subprocess.run(['Hyprland', '--verify-config', '--config', str(main)],
+                                capture_output=True, text=True, timeout=15)
+        self.assertIn('config ok', result.stdout.lower(), result.stdout + result.stderr)
+        conf = backend.render_hypr(self.data['hyprland'], False)
+        self.assertIn('input:kb_layout = us,gb', conf)
+        self.assertIn('input:touchpad:tap_to_click = true', conf)
+        self.data['hyprland'] = {'rounding': 8}
+        self.assertTrue(backend.save(self.data)['ok'])
+        self.assertNotIn('input', generated.read_text())
+
+    def test_input_rejects_invalid_values_before_writing(self):
+        for key, values in {
+            'pointerSpeed': [-1.01, 1.01, True, float('nan')],
+            'repeatRate': [0, 101, 3.5, False],
+            'repeatDelay': [99, 2001, 200.5],
+            'tapToClick': [1, 'true', None],
+            'keyboardLayouts': ['us;os.execute("bad")', 'US', '../us', 'us\nus', 'not_a_layout', 'us,gb,de,fr,es', []],
+            'layoutSwitch': ['grp:madeup', 'grp:caps_toggle\nexec = bad', False],
+        }.items():
+            for value in values:
+                with self.subTest(key=key, value=value):
+                    data = copy.deepcopy(self.data)
+                    data['hyprland'][key] = value
+                    with self.assertRaises(ValueError):
+                        backend.save(data)
+                    self.assertFalse(self.path.exists())
+
     def test_apply_preserves_hyprland_and_backup_can_restore_previous_settings(self):
         result = backend.save(self.data)
         self.assertTrue(result['ok'])

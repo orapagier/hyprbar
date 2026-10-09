@@ -2,6 +2,8 @@
 """Install only the public config payload; preserve replaced paths in backups."""
 from datetime import datetime
 import filecmp
+import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
@@ -26,6 +28,12 @@ def same(source, destination):
 
 
 def install(repo):
+    # Validate and regenerate portable overrides before replacing live files.
+    spec = importlib.util.spec_from_file_location('hyprshell_settings', repo / 'config/quickshell/settings/backend.py')
+    settings_backend = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(settings_backend)
+    saved_settings = settings_backend.validate(json.loads((repo / 'config/hyprshell/settings.json').read_text()))
+    overrides = settings_backend.render_hypr(saved_settings['hyprland'], True)
     home = Path(os.environ['HOME'])
     config = Path(os.environ.get('XDG_CONFIG_HOME') or home / '.config')
     state = Path(os.environ.get('XDG_STATE_HOME') or home / '.local/state')
@@ -94,6 +102,10 @@ def install(repo):
     for name in ('settings.json', 'cleanup.json', 'keybindings.json', 'keybindings.lua', 'displays.json', 'displays.lua', 'theme.json'):
         if (repo / 'config/hyprshell' / name).exists():
             put(repo / 'config/hyprshell' / name, config / 'hyprshell' / name, Path('config/hyprshell') / name)
+    with tempfile.TemporaryDirectory(prefix='hyprshell-overrides-') as temporary:
+        generated = Path(temporary) / 'overrides.lua'
+        generated.write_text(overrides)
+        put(generated, config / 'hyprshell/overrides.lua', Path('config/hyprshell/overrides.lua'))
     state.joinpath('hyprshell').mkdir(parents=True, exist_ok=True)
     state.joinpath('hyprshell/repository').write_text(str(repo.resolve()) + '\n')
     if backup.exists():

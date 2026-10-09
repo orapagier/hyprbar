@@ -526,3 +526,35 @@ as managed files. Entries use TryExec so absent applications are not advertised.
 If no application theme has been saved, the helper uses the ordinary upstream
 launch command. Close and reopen these apps from the launcher after a theme
 change. The ordinary `/usr/bin/gparted` command uses its normal root preferences.
+
+## Mouse, touchpad and keyboard
+
+Open **Mouse & keyboard** for pointer sensitivity, separate mouse/touchpad
+natural scrolling, tap-to-click, disabling the touchpad while typing, keyboard
+layouts and switching, and key repeat rate/delay. Controls share the normal
+validated autosave transaction, backups, conflict checks, and reload rollback.
+Opening the page leaves existing configuration unchanged. **Use config** or
+↺ removes only that explicit override. Slider positions are suggested values,
+not readings from connected devices; per-device configuration can take priority.
+
+Common layout presets have descriptive names. Custom input accepts one to four
+comma-separated installed XKB layout codes (for example `us,gb`). Configured
+variants remain inherited; variants and other advanced keyboard options can be
+edited in `hyprshell/hyprland/input.lua`. Switching choices are Alt+Shift,
+Super+Space, and Caps Lock. Choosing one replaces `kb_options`, including any
+existing Compose/remapping options; Use config restores the original options.
+The typing field is temporary and never saved.
+
+Settings saves layout strings as quoted Lua data. The installer validates saved
+preferences and regenerates `hyprshell/overrides.lua` before restoring them, so
+GUI input and appearance preferences survive setup on another machine. GitHub
+sync already captures the saved settings JSON. No device identifiers are saved.
+The installed Hyprland Lua parser accepts `input.touchpad.tap_to_click`; native
+config validation covers that spelling and every new input option.
+
+Validation covers invalid/injected values, fractional sensitivity, settings
+round trips, override removal, real Hyprland parsing, native UI interactions,
+and fresh-install restoration. Physical devices still require checking in an
+accessible desktop session: adjust/reset pointer speed and scroll direction,
+toggle tapping, switch between two layouts, test held-key repeat, and check
+restart persistence.

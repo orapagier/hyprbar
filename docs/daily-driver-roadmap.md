@@ -1,6 +1,6 @@
 # Daily-driver Settings roadmap
 
-Recorded 2026-10-09. Resume here tomorrow (2026-10-10).
+Recorded 2026-10-09. Updated 2026-10-10.
 
 Goal: make Hyprshell usable every day by beginners and intermediate users,
 with common tasks available through Settings rather than editing Lua.
@@ -14,7 +14,8 @@ screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync
    rotation, and timed rollback for unconfirmed changes. Implemented 2026-10-09;
    physical monitor testing remains because the agent session cannot access desktop IPC.
 2. **Mouse, touchpad and keyboard** — pointer speed, natural scrolling,
-   tap-to-click, keyboard layouts, repeat speed, and layout switching.
+   tap-to-click, keyboard layouts, repeat speed, and layout switching. Implemented
+   2026-10-10; physical device testing remains.
 3. **Power and battery** — dim/off timers, automatic suspend, lid behavior,
    brightness, and supported power profiles. Locking is a separate setting.
 4. **Notifications** — optional popups, Do Not Disturb, per-app preferences,
@@ -62,7 +63,7 @@ limits and usage.
 First check the Displays page on the real laptop (and an external screen if
 available): confirm a change, allow a timeout, then check restart persistence.
 The automated suite uses isolated settings and simulated compositor responses.
-Next planned feature: priority 2, Mouse, touchpad and keyboard.
+Priority 2 is now implemented; see the input handoff below.
 
 Validation: 11 display checks passed (including native QML and real Lua parsing),
 140 existing Qt tests passed, and native Settings lifecycle/autosave checks passed.
@@ -102,3 +103,22 @@ with temporary root-only display access and the upstream wrapper preserved.
 Automated tests cover dark/light, argument boundaries, cancellation/error cleanup,
 and preservation of existing display permissions. Check visual results by fully
 closing and reopening these apps from the launcher in the desktop session.
+
+## Input handoff — 2026-10-10
+
+Settings → Mouse & keyboard now includes pointer speed, independent mouse and
+touchpad natural scrolling, tap-to-click, disabling touchpad while typing,
+common/custom keyboard layouts, layout-switch shortcuts, repeat speed/delay,
+and a temporary typing test field. Preferences inherit existing input config
+until edited, and each override can be removed. Device-specific rules can
+still take priority. Switching overrides the existing XKB options; variants
+remain configured in input.lua.
+
+Repository and live Quickshell payloads are updated together. Setup regenerates
+GUI overrides from saved settings, including input and appearance preferences,
+so the existing GitHub snapshot is restorable. Physical input testing remains
+because desktop IPC is inaccessible from the agent session.
+
+Next: check input controls on the laptop, then priority 3, Power and battery.
+Validation: 21 settings backend checks, 15 installer checks, 147 Qt checks,
+3 native Settings lifecycle/autosave checks, and native runtime dependencies.
