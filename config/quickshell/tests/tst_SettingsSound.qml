@@ -5,6 +5,7 @@ import ".."
 Item {
     id: root
     property real testPeak: 0.65
+    property var testLevels: Array(12).fill(0.65)
     property bool testClipping: false
     width: 820; height: 1600
     QtObject { id: outputAudio; property real volume: 0.5; property bool muted: false }
@@ -37,7 +38,7 @@ Item {
         id: page
         width: parent.width
         services: services
-        meterComponent: Component { Item { readonly property real peak: root.testPeak; readonly property bool clipping: root.testClipping; readonly property bool ready: true; readonly property string error: "" } }
+        meterComponent: Component { Item { readonly property real peak: root.testPeak; readonly property var levels: root.testLevels; readonly property bool clipping: root.testClipping; readonly property bool ready: true; readonly property string error: "" } }
     }
     TestCase {
         name: "SettingsSound"
@@ -49,6 +50,7 @@ Item {
             outputAudio.volume = 0.5; inputAudio.volume = 0.5; appAudio.volume = 0.6;
             outputAudio.muted = false; inputAudio.muted = false; appAudio.muted = false;
             page.visible = true; page.meterEnabled = false;
+            root.testPeak = 0.65; root.testLevels = Array(12).fill(0.65); root.testClipping = false;
             root.width = 820;
         }
         function test_selectDevicesAndHandleHotplug() {
@@ -108,12 +110,12 @@ Item {
             mouseClick(findChild(page, "soundMeterControl"));
             tryCompare(page, "metering", true);
             tryCompare(page, "inputPeak", 0.65);
-            let bar = findChild(page, "soundInputMeter");
-            compare(bar.value, 0.65);
-            inputAudio.muted = true; compare(bar.value, 0);
-            compare(bar.contentItem.children[0].width, 0);
+            let spectrum = findChild(page, "soundInputSpectrum");
+            compare(spectrum.active, true);
+            inputAudio.muted = true; compare(spectrum.active, false);
+            for (let i = 0; i < 12; ++i) compare(findChild(spectrum, "spectrumBar" + i).height, 2);
             inputAudio.muted = false;
-            compare(bar.value, 0.65);
+            compare(spectrum.active, true);
             services.microphone = otherInput;
             compare(page.meterEnabled, false); compare(page.metering, false);
             page.meterEnabled = true;
@@ -121,20 +123,21 @@ Item {
             compare(page.meterEnabled, false); compare(page.metering, false);
             page.visible = true; compare(page.metering, false);
         }
-        function test_meterFillTracksChangingInput() {
+        function test_spectrumTracksFrequencyBandsAndSilence() {
             page.meterEnabled = true;
-            let bar = findChild(page, "soundInputMeter");
-            let fill = bar.contentItem.children[0];
-            for (let value of [0, 0.2, 0.8, 1, 0.1, 0]) {
-                root.testPeak = value;
-                waitForRendering(page);
-                compare(bar.value, value);
-                fuzzyCompare(fill.width, bar.contentItem.width * value, 0.5);
+            let spectrum = findChild(page, "soundInputSpectrum");
+            for (let levels of [Array(12).fill(0), [0, 0.2, 0.8, 1, 0.1, 0, 0.6, 0.3, 0, 0.9, 0.4, 0.7], Array(12).fill(0)]) {
+                root.testLevels = levels;
+                wait(60);
+                for (let i = 0; i < 12; ++i) {
+                    let bar = findChild(spectrum, "spectrumBar" + i);
+                    compare(bar.level, levels[i]);
+                    fuzzyCompare(bar.height, 2 + levels[i] * (spectrum.height - 2), 0.5);
+                }
             }
-            root.testPeak = 0.65;
             root.testClipping = true;
             verify(findChild(page, "soundInputStatus").text.indexOf("clipping") >= 0);
-            root.testClipping = false;
+            compare(spectrum.color, "#f38ba8");
         }
         function test_appStreamRemoval() {
             verify(findChild(page, "soundAppVolume-10") !== null);

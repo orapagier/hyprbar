@@ -19,6 +19,7 @@ ColumnLayout {
     readonly property bool inputClipping: !!(meter.item && meter.item.clipping)
     readonly property bool meterReady: !!(meter.item && meter.item.ready)
     readonly property real inputPeak: meter.item ? meter.item.peak : 0
+    readonly property var inputLevels: meter.item ? meter.item.levels || [] : []
     property Component meterComponent: null
     onVisibleChanged: if (!visible) { meterEnabled = false; if (testSound) testSound.stop(); }
     onMicrophoneChanged: meterEnabled = false
@@ -91,24 +92,28 @@ ColumnLayout {
                 item.enabled = Qt.binding(() => page.visible && page.meterEnabled);
             }
         }
-        ProgressBar {
-            id: inputLevel
+        Rectangle {
             objectName: "soundInputMeter"
             Layout.fillWidth: true
-            from: 0; to: 1
-            value: page.meterReady && !page.meterError && page.microphone && page.microphone.audio && !page.microphone.audio.muted ? page.inputPeak : 0
+            implicitHeight: 72
             visible: page.meterEnabled
-            Accessible.name: "Microphone input level"
-            background: Rectangle { implicitHeight: 10; color: "#363e58"; radius: 5 }
-            contentItem: Item {
-                implicitHeight: 10
-                Rectangle { width: parent.width * inputLevel.visualPosition; height: parent.height; radius: 5; color: page.inputClipping ? "#f38ba8" : "#a6e3a1" }
+            color: "#252c40"; radius: 8
+            Accessible.name: "Live microphone audio spectrum"
+            AudioSpectrumBars {
+                objectName: "soundInputSpectrum"
+                anchors.centerIn: parent
+                width: Math.max(0, Math.min(240, parent.width - 32))
+                height: 48
+                spacing: 5
+                levels: page.inputLevels
+                active: page.meterReady && !page.meterError && !!(page.microphone && page.microphone.audio && !page.microphone.audio.muted)
+                color: page.inputClipping ? "#f38ba8" : "#94e2d5"
             }
         }
         Label {
             Layout.fillWidth: true
             objectName: "soundInputStatus"
-            text: page.meterEnabled ? page.meterError ? page.meterError : !page.meterReady ? "Starting microphone test…" : page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : page.inputClipping ? "Input is clipping. Lower microphone volume and try speaking again." : "Input level: " + Math.round(page.inputPeak * 100) + "% · Speak to check the meter." : "Start the test to view the live input level. Audio is not saved or played back."
+            text: page.meterEnabled ? page.meterError ? page.meterError : page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : !page.meterReady ? "Starting microphone test…" : page.inputClipping ? "Input is clipping. Lower microphone volume and try speaking again." : "Speak to see your microphone’s live audio." : "Start the test to view the live input level. Audio is not saved or played back."
             wrapMode: Text.Wrap; color: page.meterError ? "#f38ba8" : "#98a5bf"
         }
     }

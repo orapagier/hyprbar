@@ -704,16 +704,19 @@ microphone slider while muted sets the new gain and unmutes it.
 
 **Test microphone** opens an active recording stream through the existing
 PipeWire PulseAudio service only while the Sound page is visible and the test is
-enabled. The microphone helper removes the constant DC offset from each 100 ms
-block and computes an RMS level from in-memory PCM samples. A square-root
-amplitude scale with a -50 dBFS floor keeps quiet noise near empty instead of
-stretching it across the bar. An envelope uses an 80 ms attack and 250 ms release
-to respond to speech without rapidly flickering. The percentage describes the
-display scale, not the volume setting. Full-scale samples still trigger a separate
-clipping warning when they make up at least 1% of a block, including constant
-clipped inputs. Audio is not saved or played back. Stop, page navigation, window close, or input
+enabled. It uses the same native FFT helper and rounded, centered spectrum bars
+as the topbar media player: twelve logarithmic frequency bands from 40 Hz to
+7.6 kHz, updated every 16 ms, with fast attacks, a smooth release, and 40 ms bar
+animations. Each band responds to its actual frequency content; the display has
+no idle or generated motion. Microphone capture requires an explicit `--source`
+argument naming the selected input. The topbar still opens only its output monitor.
+The microphone path removes DC offset and uses a -50 dBFS quiet-input floor.
+It seeds the FFT window at the initial input bias to avoid a false startup pulse.
+Full-scale raw samples trigger a separate clipping warning when they make up at
+least 1% of a capture block, including constant clipped inputs.
+Audio is not saved or played back. Stop, page navigation, window close, or input
 device change destroys the capture process and closes its stream. Muting shows
-zero input, with the rendered fill using the same value as the progress bar.
+flat, dim bars immediately while preserving its gain.
 Startup and capture failures appear on the page; a five-second startup watchdog
 stops a capture that supplies no data, and a two-second watchdog clears stalled
 readings and stops capture.
@@ -735,8 +738,10 @@ the PipeWire socket.
 
 Regression checks exercise the production Loader source path with a stub capture
 helper, verify the selected source/record-stream arguments, and confirm capture
-processes are gone after close, device changes, or stalled input. Signal checks
-cover quiet noise, DC offset, clipping, sparse spikes, and envelope response.
-Rendered checks cover changing meter fill, immediate empty fill on mute, saved
+processes are gone after close, device changes, or stalled input. Real PCM passed
+through the native FFT checks frequency placement, soft/loud response, quiet noise,
+DC offset, clipping, silence, and speech onset. The output spectrum checks still
+pass with the shared helper. Rendered checks cover independent frequency bands,
+immediate flat bars on mute, saved
 microphone gain on unmute, and volume adjustments while muted. These simulations
 do not establish the physical cause of a persistently high input level.

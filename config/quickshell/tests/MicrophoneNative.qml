@@ -21,7 +21,7 @@ ShellRoot {
                 page.meterEnabled = true;
                 test.phase = 1;
             } else if (test.phase === 1 && page.meterReady) {
-                test.check(page.inputPeak === 0.5 && !page.meterError, "default loader receives levels");
+                test.check(page.inputPeak === 0.5 && page.inputLevels.length === 12 && page.inputLevels[5] === 0.5 && page.inputLevels[0] === 0 && !page.meterError, "default loader receives frequency bands");
                 page.visible = false;
                 test.check(!page.meterEnabled && !page.metering, "close stops capture");
                 test.phase = 2;

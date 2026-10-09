@@ -46,8 +46,13 @@ resize modes, crop gravities, and animated wallpaper frames are not tracked.
   with fast attacks and a smooth release. A small C helper uses libpulse-simple
   and FFTW. Setup compiles it into `helpers/audio-spectrum` in the installed
   Quickshell directory (requires `cc` and the two development libraries).
-  It stops when playback becomes inactive. Output-device changes reconnect the monitor. No microphone
-  is monitored; `PwNodePeakMonitor` still detects non-MPRIS playback.
+  It stops when playback becomes inactive. Output-device changes reconnect the monitor.
+  The topbar opens only the output monitor; `PwNodePeakMonitor` still detects non-MPRIS playback.
+- Settings microphone test: the same FFT helper and `AudioSpectrumBars.qml`
+  renderer show twelve live input bands. An explicit `--source` argument selects
+  the microphone only after starting the test. Muting flattens the bars immediately;
+  stop, page navigation, or device changes close capture. A quiet-input floor and
+  DC removal keep the microphone visualizer still without audible input.
 - Network status, scanning, connections and passwords: `Quickshell.Networking`.
 - Bluetooth status, scanning and connections: `Quickshell.Bluetooth`.
   `bluetoothctl` supplies the BlueZ pairing agent; the prompt and PIN UI are QML.

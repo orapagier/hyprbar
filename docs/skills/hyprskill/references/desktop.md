@@ -14,7 +14,7 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 | Notifications | `quickshell/NotificationInbox.qml`, `NotificationCard.qml`; Quickshell owns `org.freedesktop.Notifications`; inbox history uses `Quickshell.statePath("notifications.json")` |
 | Settings UI | `quickshell/Settings*.qml`, `SettingsModel.js`, `SettingsStore.qml` |
 | Settings transactions and schema | `quickshell/settings/backend.py`, `defaults.json`; checkout `docs/settings.md` explains inheritance and extension points |
-| Audio / spectrum | `SettingsSound.qml`, `AudioMenu.qml`, `AudioInputMeter.qml`, `settings/microphone.py`, `SoundTest.qml`, `SettingsSound.qml`, `AudioMenu.qml`, `AudioInputMeter.qml`, `settings/microphone.py`, `SoundTest.qml`, `AudioRoute.qml`, `AudioSpectrum.qml`, `helpers/audio-spectrum.c`; built helper links libpulse and FFTW |
+| Audio / spectrum | `SettingsSound.qml`, `SoundVolume.qml`, `AudioMenu.qml`, `AudioInputMeter.qml`, `SoundTest.qml`, `AudioRoute.qml`, `AudioSpectrum.qml`, `AudioSpectrumBars.qml`, `helpers/audio-spectrum.c`; shared native helper links libpulse and FFTW; input capture requires an explicit `--source` argument |
 | Wallpaper | `hypr/wallpaper-start.sh`, `wallpaper-cycle.sh`; awww; `$HOME/Pictures/Wallpapers` |
 | Locking | `quickshell/LockingController.qml`, `hypr/hyprlock.conf`; generated `hyprshell/hypridle.conf` belongs to Hyprshell |
 | Cleanup | `hyprshell/cleanup.json`, `quickshell/settings/cleanup.py`; user `hyprshell-cleanup.timer` / `.service`; state `hyprshell/cleanup-last.json` |

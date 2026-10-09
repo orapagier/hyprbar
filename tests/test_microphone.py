@@ -1,7 +1,6 @@
-"""Active microphone capture and production QML loader without real hardware."""
-import ctypes
-import importlib.util
+"""Microphone FFT and production capture lifecycle without desktop audio sockets."""
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -9,83 +8,74 @@ import struct
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('microphone', ROOT / 'config/quickshell/settings/microphone.py')
-mic = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mic)
+RATE = 16000
+HOP = 256
+
+
+def tone(frequency=500, amplitude=0.4, hops=32, offset=0):
+    samples = [round(32767 * (offset + amplitude * math.sin(2 * math.pi * frequency * i / RATE)))
+               for i in range(HOP * hops)]
+    return struct.pack('<' + 'h' * len(samples), *samples)
 
 
 class MicrophoneTests(unittest.TestCase):
-    def test_level_scales_pcm_and_rejects_nonfinite_samples(self):
-        self.assertEqual(mic.level(struct.pack('<ffff', 0, 0, float('nan'), float('inf'))), 0)
-        self.assertGreater(mic.level(struct.pack('<ff', 0.125, -0.125)), 0.25)
-        self.assertLess(mic.level(struct.pack('<ff', 0.125, -0.125)), 0.4)
-        self.assertEqual(mic.level(struct.pack('<ff', 4, -4)), 1)
+    @classmethod
+    def setUpClass(cls):
+        cls.build = tempfile.TemporaryDirectory(prefix='hyprshell-microphone-fft-')
+        cls.addClassCleanup(cls.build.cleanup)
+        cls.helper = Path(cls.build.name) / 'audio-spectrum'
+        subprocess.run(['cc', '-O2', '-Wall', '-Wextra', '-Werror',
+                        str(ROOT / 'config/quickshell/helpers/audio-spectrum.c'),
+                        '-o', str(cls.helper), '-lpulse-simple', '-lpulse', '-lfftw3', '-lm'], check=True)
 
-    def test_capture_opens_selected_source_as_record_stream_and_frees_on_stop(self):
-        library = Mock()
-        library.pa_simple_new.return_value = 42
-        def read(stream, data, size, error):
-            ctypes.memmove(data, struct.pack('<ff', 0.125, -0.125) * (size // 8), size)
-            return 0
-        library.pa_simple_read.side_effect = read
-        rows = []
-        def emit(row):
-            rows.append(row)
-            raise InterruptedError('test stop')
-        with patch.object(mic.ctypes, 'CDLL', return_value=library), self.assertRaises(InterruptedError):
-            mic.capture('input with spaces;literal', emit)
-        args = library.pa_simple_new.call_args.args
-        self.assertEqual(args[2], 2)  # Active PA_STREAM_RECORD, rather than Monitor.
-        self.assertEqual(args[3], b'input with spaces;literal')
-        self.assertEqual((args[5]._obj.format, args[5]._obj.rate, args[5]._obj.channels), (5, 16000, 1))
-        self.assertEqual(len(rows), 1)
-        self.assertGreater(rows[0]['peak'], 0)
-        self.assertLess(rows[0]['peak'], mic.level(struct.pack('<ff', 0.125, -0.125)))
-        self.assertFalse(rows[0]['clipping'])
-        library.pa_simple_free.assert_called_once_with(42)
+    def frames(self, pcm):
+        result = subprocess.run([str(self.helper), '--source', '--stdin'], input=pcm,
+                                capture_output=True, check=True, timeout=5)
+        return [json.loads(line) for line in result.stdout.splitlines()]
 
-    def test_average_meter_does_not_stick_full_on_isolated_spikes(self):
-        spike = mic.measure(struct.pack('<' + 'f' * 1024, 1, *([0] * 1023)))
-        self.assertLess(spike['peak'], 0.6)
-        self.assertFalse(spike['clipping'])
-        full = mic.measure(struct.pack('<ffff', 1, -1, 1, -1))
-        self.assertEqual(full, {'peak': 1, 'clipping': True})
-        self.assertLess(mic.level(struct.pack('<ff', 0.02, -0.02)), mic.level(struct.pack('<ff', 0.2, -0.2)))
-        self.assertEqual(mic.level(struct.pack('<ffff', 0, 0, 0, 0)), 0)
+    def test_microphone_frequencies_use_the_same_bands_as_media(self):
+        for frequency, band in [(125, 2), (500, 5), (2000, 8), (5000, 11)]:
+            with self.subTest(frequency=frequency):
+                frame = self.frames(tone(frequency))[-1]
+                self.assertTrue(frame['ok'])
+                self.assertFalse(frame['clipping'])
+                self.assertEqual(max(range(12), key=frame['levels'].__getitem__), band)
+                self.assertGreater(frame['levels'][band], 0.75)
+                self.assertTrue(all(0 <= level <= 1 for level in frame['levels']))
 
-    def test_quiet_noise_and_dc_offset_do_not_fill_the_meter(self):
-        self.assertEqual(mic.level(struct.pack('<ff', 0.001, -0.001)), 0)
-        self.assertLess(mic.level(struct.pack('<ff', 0.02, -0.02)), 0.1)
-        self.assertEqual(mic.level(struct.pack('<ffff', 0.8, 0.8, 0.8, 0.8)), 0)
-        self.assertTrue(mic.measure(struct.pack('<ffff', 1, 1, 1, 1))['clipping'])
-        self.assertAlmostEqual(mic.level(struct.pack('<ff', 0.9, 0.7)),
-                               mic.level(struct.pack('<ff', 0.1, -0.1)), places=6)
+    def test_quieter_audio_falls_and_silence_returns_every_band_to_zero(self):
+        frames = self.frames(tone() + tone(amplitude=0.025) + tone(amplitude=0, hops=48))
+        self.assertEqual(len(frames), 112)
+        self.assertGreater(frames[31]['levels'][5], 0.75)
+        self.assertLess(frames[63]['levels'][5], 0.25)
+        self.assertGreater(frames[63]['levels'][5], 0.05)
+        self.assertEqual(frames[-1]['levels'], [0] * 12)
+        self.assertEqual(frames[-1]['peak'], 0)
 
-    def test_envelope_smooths_jitter_but_tracks_speech_and_returns_to_empty(self):
-        envelope = mic.Envelope()
-        self.assertEqual(envelope.update(0), 0)
-        speech = [envelope.update(0.6) for _ in range(3)]
-        self.assertGreater(speech[-1], 0.55)  # Speech visible within 300 ms.
-        self.assertTrue(all(a < b for a, b in zip(speech, speech[1:])))
-        jitter = [envelope.update(value) for value in [0.55, 0.65] * 5]
-        self.assertLess(max(abs(a - b) for a, b in zip(jitter, jitter[1:])), 0.08)
-        decay = [envelope.update(0) for _ in range(15)]
-        self.assertTrue(all(a >= b for a, b in zip(decay, decay[1:])))
-        self.assertEqual(decay[-1], 0)
+    def test_quiet_input_and_constant_dc_do_not_create_motion(self):
+        for pcm in [tone(amplitude=0), tone(amplitude=0.001), tone(amplitude=0, offset=0.8)]:
+            with self.subTest(pcm=pcm[:8]):
+                frames = self.frames(pcm)
+                self.assertTrue(all(frame['levels'] == [0] * 12 for frame in frames[-8:]))
 
-    def test_connection_and_read_failures(self):
-        library = Mock()
-        library.pa_simple_new.return_value = None
-        with patch.object(mic.ctypes, 'CDLL', return_value=library), self.assertRaisesRegex(RuntimeError, 'open the microphone'):
-            mic.capture('input', lambda row: None)
-        library.pa_simple_new.return_value = 42
-        library.pa_simple_read.return_value = -1
-        with patch.object(mic.ctypes, 'CDLL', return_value=library), self.assertRaisesRegex(RuntimeError, 'capture stopped'):
-            mic.capture('input', lambda row: None)
-        library.pa_simple_free.assert_called_once_with(42)
+    def test_attack_follows_speech_onset_within_two_hops(self):
+        frames = self.frames(tone(amplitude=0, hops=8) + tone(2000, hops=8))
+        self.assertEqual(frames[7]['levels'], [0] * 12)
+        self.assertGreater(frames[9]['levels'][8], 0.6)
+
+    def test_clipping_warning_uses_raw_samples(self):
+        frame = self.frames(struct.pack('<h', 32767) * HOP * 32)[-1]
+        self.assertTrue(frame['clipping'])
+        self.assertEqual(frame['levels'], [0] * 12)
+
+    def test_source_capture_requires_explicit_named_device(self):
+        for args in [[], ['alsa_input.microphone'], ['--source'], ['--source', ''],
+                     ['--source', '@DEFAULT_SOURCE@'], ['--source', '--other']]:
+            with self.subTest(args=args):
+                result = subprocess.run([str(self.helper), *args], capture_output=True, timeout=5)
+                self.assertEqual(result.returncode, 2)
 
     @unittest.skipUnless(shutil.which('quickshell'), 'Native Quickshell required')
     def test_production_loader_levels_errors_and_capture_lifecycle(self):
@@ -94,7 +84,9 @@ class MicrophoneTests(unittest.TestCase):
             payload = root / 'config/quickshell'
             shutil.copytree(ROOT / 'config/quickshell', payload, ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
             calls = root / 'calls.jsonl'; stopped = root / 'stopped'
-            (payload / 'settings/microphone.py').write_text(
+            helper = payload / 'helpers/audio-spectrum'
+            helper.write_text(
+                '#!/usr/bin/env python3\n'
                 'import json, os, signal, sys, time\n'
                 f'with open({str(calls)!r}, "a") as out: out.write(json.dumps({{"args":sys.argv[1:],"pid":os.getpid()}}) + "\\n")\n'
                 'def stop(signum, frame):\n'
@@ -104,8 +96,9 @@ class MicrophoneTests(unittest.TestCase):
                 'if sys.argv[-1] == "fail":\n'
                 '    print(json.dumps({"ok":False,"message":"Input disconnected"}), flush=True)\n'
                 '    raise SystemExit(1)\n'
-                'print(json.dumps({"ok":True,"peak":0.5}), flush=True)\n'
+                'print(json.dumps({"ok":True,"peak":0.5,"levels":[0,0,0,0,0,0.5,0,0,0,0,0,0]}), flush=True)\n'
                 'time.sleep(20)\n')
+            helper.chmod(0o755)
             entry = payload / 'MicrophoneNative.qml'
             entry.write_text((payload / 'tests/MicrophoneNative.qml').read_text().replace('import ".."', 'import "."'))
             runtime = root / 'runtime'; runtime.mkdir(mode=0o700)
@@ -118,7 +111,7 @@ class MicrophoneTests(unittest.TestCase):
                 self.assertNotIn(error, output, output)
             calls = [json.loads(line) for line in calls.read_text().splitlines()]
             commands = [call['args'] for call in calls]
-            self.assertEqual(commands, [['--device', 'input with spaces;literal'], ['--device', 'input with spaces;literal'], ['--device', 'fail'], ['--device', 'stall']])
+            self.assertEqual(commands, [['--source', 'input with spaces;literal'], ['--source', 'input with spaces;literal'], ['--source', 'fail'], ['--source', 'stall']])
             for call in calls:
                 self.assertFalse(Path('/proc', str(call['pid'])).exists(), 'Capture process outlived the test')
 

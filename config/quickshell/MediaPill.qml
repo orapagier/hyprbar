@@ -19,27 +19,16 @@ Pill {
     interactive: false
     content.horizontalAlignment: Text.AlignLeft
     clip: true
-    Row {
+    AudioSpectrumBars {
         visible: !media.settings.hideIcon
         x: Math.max(0, 9 + (media.settings.paddingLeft || 0))
+        width: 58 * media.spectrumScale
         height: 16 * media.spectrumScale
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2 * media.spectrumScale
-        Repeater {
-            model: 12
-            delegate: Rectangle {
-                required property int index
-                objectName: "spectrumBar" + index
-                readonly property real level: Math.max(0, Math.min(1, Number(media.levels[index]) || 0))
-                anchors.verticalCenter: parent.verticalCenter
-                width: 3 * media.spectrumScale
-                height: (2 + level * 14) * media.spectrumScale
-                radius: 1.5 * media.spectrumScale
-                antialiasing: true
-                color: media.settings.iconColor || ((media.colorSampler || media.settings.vibrantColor) ? media.effectiveForeground : "#94e2d5")
-                opacity: media.colorSampler ? 1 : 0.45 + level * 0.55
-                Behavior on height { NumberAnimation { duration: 40; easing.type: Easing.OutQuad } }
-            }
-        }
+        minimumHeight: 2 * media.spectrumScale
+        levels: media.levels
+        color: media.settings.iconColor || ((media.colorSampler || media.settings.vibrantColor) ? media.effectiveForeground : "#94e2d5")
+        variableOpacity: !media.colorSampler
     }
 }
