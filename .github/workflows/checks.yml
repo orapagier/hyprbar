@@ -9,16 +9,13 @@ jobs:
       - name: Install validation dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck dbus-daemon python3-gi python3-cairo python3-dbus \
-            gir1.2-gtk-3.0 gir1.2-gtklayershell-0.1 gir1.2-playerctl-2.0 libfftw3-dev libpulse-dev libwayland-dev
+          sudo apt-get install -y shellcheck dbus-daemon libfftw3-dev libpulse-dev libwayland-dev
       - name: Check shell scripts
         run: |
           bash -n setup.sh
-          shellcheck setup.sh bin/* config/quickshell/*.sh config/hypr/wallpaper-start.sh config/hypr/app-launcher.sh
+          shellcheck setup.sh bin/* config/quickshell/*.sh config/hypr/wallpaper-start.sh
       - name: Test installer in isolated home directories
         run: /usr/bin/python3 -m unittest discover -s tests -v
-      - name: Test media and panel backends without a display
-        run: /usr/bin/python3 -m unittest discover -s config/waybar/tests -v
 
   quickshell:
     runs-on: ubuntu-latest

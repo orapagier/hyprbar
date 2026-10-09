@@ -19,6 +19,29 @@ class AutosaveTests(unittest.TestCase):
     def test_lazy_loading_close_flush_failed_draft_and_reopen(self):
         self.run_ui_scenario('SettingsLifecycle', 'LIFECYCLE_OK', ('right', '#00ff00', 1))
 
+    def test_github_setup_popup(self):
+        with tempfile.TemporaryDirectory(prefix='hyprshell-github-ui-') as directory:
+            root = Path(directory)
+            payload = root / 'config/quickshell'
+            shutil.copytree(ROOT / 'config/quickshell', payload, ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
+            # Deterministic discovery: missing repo first, then newly created repo.
+            (payload / 'settings/github_sync.py').write_text(
+                'import json\nfrom pathlib import Path\n'
+                'counter = Path(__file__).with_name("checks")\n'
+                'ready = counter.exists()\ncounter.touch()\n'
+                'print(json.dumps({"ok": True, "ready": ready, "repository": "ramlej/hyprshell", '
+                '"message": "Ready" if ready else "Fork or create your repo", '
+                '"forkUrl": "" if ready else "https://github.com/orapagier/hyprshell/fork", '
+                '"createUrl": "" if ready else "https://github.com/new?name=hyprshell&owner=ramlej"}))\n')
+            entry = payload / 'GithubSetup.qml'
+            entry.write_text((payload / 'tests/GithubSetup.qml').read_text().replace('import ".."', 'import "."'))
+            runtime = root / 'runtime'
+            runtime.mkdir(mode=0o700)
+            env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software')
+            result = subprocess.run(['quickshell', '-p', str(entry)], env=env, capture_output=True, text=True, timeout=20)
+            self.assertIn('GITHUB_SETUP_OK', result.stdout + result.stderr, result.stdout + result.stderr)
+            self.assertNotIn('FAIL!', result.stdout + result.stderr)
+
     def run_ui_scenario(self, scenario, marker, expected_audio):
         with tempfile.TemporaryDirectory(prefix='hyprshell-autosave-') as directory:
             root = Path(directory)

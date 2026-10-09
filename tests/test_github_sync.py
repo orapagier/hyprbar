@@ -1,0 +1,146 @@
+import importlib.util
+import json
+import sys
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location('github_sync', ROOT / 'config/quickshell/settings/github_sync.py')
+syncer = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(syncer)
+
+
+class SyncTests(unittest.TestCase):
+    def test_snapshot_commit_push_deletions_and_retry(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo, remote, config = root / 'repo', root / 'remote', root / 'live'
+            subprocess.run(['git', 'init', '--bare', str(remote)], check=True, capture_output=True)
+            subprocess.run(['git', 'init', '-b', 'main', str(repo)], check=True, capture_output=True)
+            run = lambda *args: syncer.git(repo, *args)
+            run('config', 'user.name', 'Test')
+            run('config', 'user.email', 'test@example.com')
+            run('remote', 'add', 'origin', str(remote))
+            for name in ('hypr', 'quickshell'):
+                (repo / 'config' / name).mkdir(parents=True)
+                (repo / 'config' / name / 'old').write_text('old')
+                (config / name).mkdir(parents=True)
+                (config / name / 'current').write_text('live')
+                (config / name / 'secret.bak').write_text('backup')
+            (repo / 'config/waybar').mkdir()
+            legacy = repo / 'config/waybar/config.jsonc'
+            legacy.write_text('{}')
+            run('add', '.')
+            run('commit', '-m', 'initial')
+            legacy.unlink()
+            (repo / 'README.md').write_text('Updated user guide')
+            (repo / 'setup.sh').write_text('# Current installer')
+            (repo / 'private-notes.txt').write_text('do not publish')
+            (config / 'hyprshell').mkdir()
+            defaults = json.loads((ROOT / 'config/quickshell/settings/defaults.json').read_text())
+            (config / 'hyprshell/settings.json').write_text(json.dumps(defaults))
+            with patch.object(sys, 'path', [str(ROOT / 'config/quickshell/settings')] + sys.path):
+                message = syncer.sync(repo, config, str(remote), 'example/hyprshell')
+                self.assertEqual(message, 'Synced to example/hyprshell (main).')
+            self.assertTrue((repo / 'config/hyprshell/settings.json').exists())
+            first = run('rev-parse', 'HEAD')
+            self.assertIn('README.md', run('ls-files'))
+            self.assertIn('setup.sh', run('ls-files'))
+            self.assertNotIn('private-notes.txt', run('ls-files'))
+            message = syncer.sync(repo, config, str(remote), 'example/hyprshell')
+            self.assertEqual(message, 'Nothing to sync now.')
+            self.assertEqual(first, run('rev-parse', 'HEAD'))
+            self.assertEqual(run('remote', 'get-url', 'origin'), str(remote))
+            self.assertNotIn('config/waybar/config.jsonc', run('ls-files'))
+            self.assertFalse((repo / 'config/hypr/old').exists())
+            self.assertFalse((repo / 'config/hypr/secret.bak').exists())
+            self.assertEqual((repo / 'config/quickshell/current').read_text(), 'live')
+            self.assertEqual(first, subprocess.check_output(['git', '--git-dir', str(remote), 'rev-parse', 'main'], text=True).strip())
+            # A clean working tree can still have a commit waiting to be pushed.
+            (repo / 'README.md').write_text('Committed but not pushed')
+            run('add', 'README.md')
+            run('commit', '-m', 'pending push')
+            message = syncer.sync(repo, config, str(remote), 'example/hyprshell')
+            self.assertEqual(message, 'Synced to example/hyprshell (main).')
+            self.assertEqual(run('rev-parse', 'HEAD'), subprocess.check_output(
+                ['git', '--git-dir', str(remote), 'rev-parse', 'main'], text=True).strip())
+
+    def test_identity_is_local_and_validated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            subprocess.run(['git', 'init', str(repo)], check=True, capture_output=True)
+            syncer.identity(repo, 'Example User', 'example@users.noreply.github.com')
+            self.assertEqual(syncer.git(repo, 'config', '--local', 'user.name'), 'Example User')
+            self.assertEqual(syncer.git(repo, 'config', '--local', 'user.email'), 'example@users.noreply.github.com')
+            for name, email in [('', 'a@b'), ('Name', 'bad'), ('Name\nInjected', 'a@b')]:
+                with self.assertRaises(ValueError):
+                    syncer.identity(repo, name, email)
+
+    def test_authentication_warning_does_not_corrupt_json(self):
+        import contextlib
+        import io
+        import json
+        warning = '[glfw error 65544]: No such interface org.freedesktop.portal.Settings'
+        completed = [subprocess.CompletedProcess([], 0, '', warning),
+                     subprocess.CompletedProcess([], 0, '', '')]
+        output = io.StringIO()
+        with patch('sys.argv', ['github_sync.py', '--authenticate']), \
+             patch.object(syncer.subprocess, 'run', side_effect=completed) as run, \
+             patch.object(syncer.shutil, 'which', return_value='/usr/bin/gh'), \
+             patch.object(syncer, 'discover', return_value={'ok': True, 'ready': True, 'message': 'Ready'}), \
+             contextlib.redirect_stdout(output):
+            self.assertEqual(syncer.main(), 0)
+        self.assertTrue(json.loads(output.getvalue())['ok'])
+        self.assertNotIn('glfw', output.getvalue())
+        self.assertTrue(run.call_args_list[0].kwargs['capture_output'])
+
+    def test_authentication_cancel_is_not_reported_as_success(self):
+        import contextlib
+        import io
+        import json
+        output = io.StringIO()
+        completed = [subprocess.CompletedProcess([], 0, '', ''),
+                     subprocess.CompletedProcess([], 1, '', 'not authenticated')]
+        with patch('sys.argv', ['github_sync.py', '--authenticate']), \
+             patch.object(syncer.subprocess, 'run', side_effect=completed), \
+             patch.object(syncer.shutil, 'which', return_value='/usr/bin/gh'), \
+             contextlib.redirect_stdout(output):
+            self.assertEqual(syncer.main(), 1)
+        self.assertFalse(json.loads(output.getvalue())['ok'])
+
+    def test_discovery_accepts_fork_and_new_repository(self):
+        for fork in (True, False):
+            with self.subTest(fork=fork), patch.object(syncer.shutil, 'which', return_value='/usr/bin/gh'), patch.object(syncer, 'api', side_effect=[
+                {'login': 'ramlej', 'id': 123, 'email': None},
+                {'full_name': 'ramlej/hyprshell', 'permissions': {'push': True}, 'fork': fork}
+            ]) as api:
+                result = syncer.discover()
+                self.assertTrue(result['ready'])
+                self.assertEqual(result['repository'], 'ramlej/hyprshell')
+                self.assertEqual(result['target'], 'https://github.com/ramlej/hyprshell.git')
+                self.assertEqual(result['email'], '123+ramlej@users.noreply.github.com')
+                self.assertEqual(api.call_args_list[1].args, ('repos/ramlej/hyprshell',))
+
+    def test_missing_repository_offers_fork_and_create(self):
+        with patch.object(syncer.shutil, 'which', return_value='/usr/bin/gh'), patch.object(syncer, 'api', side_effect=[{'login': 'ramlej', 'id': 123}, None]):
+            result = syncer.discover()
+        self.assertFalse(result['ready'])
+        self.assertEqual(result['repository'], 'ramlej/hyprshell')
+        self.assertIn('/orapagier/hyprshell/fork', result['forkUrl'])
+        self.assertIn('name=hyprshell&owner=ramlej', result['createUrl'])
+
+    def test_repository_without_write_permission_is_not_ready(self):
+        with patch.object(syncer.shutil, 'which', return_value='/usr/bin/gh'), patch.object(syncer, 'api', side_effect=[{'login': 'ramlej', 'id': 123}, {'full_name': 'ramlej/hyprshell', 'permissions': {'push': False}}]):
+            self.assertFalse(syncer.discover()['ready'])
+
+    def test_api_distinguishes_missing_repository_from_connection_error(self):
+        for error, missing in [('gh: Not Found (HTTP 404)', True), ('network unavailable', False), ('gh: Forbidden (HTTP 403)', False)]:
+            with self.subTest(error=error), patch.object(syncer.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', error)):
+                if missing:
+                    self.assertIsNone(syncer.api('repos/example/hyprshell', missing_ok=True))
+                else:
+                    with self.assertRaises(RuntimeError):
+                        syncer.api('repos/example/hyprshell', missing_ok=True)

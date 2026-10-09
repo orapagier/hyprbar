@@ -85,16 +85,21 @@ def sync(repo, config, target, slug):
             settings_target.parent.mkdir(parents=True, exist_ok=True)
             settings_target.write_text(json.dumps(data, indent=2) + '\n')
             paths.append('config/hyprshell/settings.json')
-        retired = ['config/waybar', 'config/fuzzel', 'config/rofi', 'config/mako',
-                   'config/systemd/user/waybar-notification-monitor.service',
-                   'bin/cleanup-old-launchers', 'packages-fallback.txt',
-                   'docs/original-packages.txt']
-        deleted = git(repo, 'ls-files', '--deleted', '-z', '--', *retired).split('\0')
-        paths.extend(path for path in deleted if path)
+        # Publish the project that installs the snapshot as well as live configs.
+        # Keep this explicit so unrelated files in the checkout stay private.
+        project_paths = ('config', 'bin', 'assets', 'tools', 'tests', 'docs',
+                         '.github', '.gitignore', 'README.md', 'setup.sh',
+                         'packages.txt', 'packages-apps.txt', 'packages-fallback.txt')
+        tracked = git(repo, 'ls-files', '-z').split('\0')
+        paths = [path for path in project_paths
+                 if (repo / path).exists() or any(
+                     name == path or name.startswith(path + '/') for name in tracked)]
         git(repo, 'add', '-A', '--', *paths)
         if git(repo, 'diff', '--cached', '--name-only'):
             git(repo, 'commit', '-m', 'Sync Hyprshell desktop ' + datetime.now().isoformat(timespec='seconds'))
-        git(repo, 'push', target, f'HEAD:refs/heads/{branch}')
+        pushed = git(repo, 'push', '--porcelain', target, f'HEAD:refs/heads/{branch}')
+        if any(line.startswith('=\t') for line in pushed.splitlines()):
+            return 'Nothing to sync now.'
     return f'Synced to {slug} ({branch}).'
 
 

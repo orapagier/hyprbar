@@ -178,3 +178,92 @@ percentage units; reset arrows restore bundled bar defaults or the original item
 appearance as appropriate. The final item restore action retains its existing
 last-saved semantics. Hover, focus, and switch transitions use the shared native
 controls; no new configuration keys or startup services are introduced.
+
+## Screen locking
+
+The Screen locking page selects a foreground Wayland locker command, an idle
+period (0–240 whole minutes; 0 disables the timer), and locking before sleep.
+Automatic locking defaults to off. Existing preferences inherit these defaults.
+Lock now runs the last saved command without enabling automatic locking.
+Commands accept quoted arguments and `~` paths; no shell operators or environment
+variable expansion is performed. Configure the chosen locker's appearance in
+its own configuration file, for example `hypr/hyprlock.conf`.
+
+`LockingController.qml` owns a Hypridle child while automatic locking is enabled,
+restarting it only when locking preferences change. Closing Settings does not
+stop locking or a manually started locker. The controller reports startup and
+locker errors in Settings. Backend validation checks installed dependencies when
+enabling/changing automatic locking. An existing Hypridle process is left alone
+and reported as a conflict; disable its user service/autostart before enabling
+Hyprshell management. The generated `hyprshell/hypridle.conf` belongs to Hyprshell;
+`hypr/hypridle.conf` and locker configuration files are preserved. This controller
+runs only with Hyprshell; it does not install a separate background service.
+
+The backend's `--lock` executes the configured argv directly and serializes
+foreground locker requests. `--idle` generates Hypridle configuration with only
+fixed helper commands; user commands are never interpolated into Hyprlang or Lua.
+Automatic locking uses Hypridle's normal inhibitor handling and D-Bus sleep/lock
+events. Custom lockers must support your session and remain in the foreground
+until unlocked; test authentication with Lock now before relying on automation.
+
+### System cleanup
+
+Open **System cleanup** in Hyprshell Settings. Choose Off, Daily, Weekly, or
+Monthly, select cleanup categories, then click **Save cleanup settings**. This
+separate save manages `hyprshell-cleanup.timer` in your systemd user session.
+Scheduling defaults to Off; the age limit defaults to 30 days and the newest
+five Hyprshell backup sets are retained.
+
+Cleanup includes old thumbnail cache files, your own regular files in `/tmp`
+and `/var/tmp`, and old files in Hyprshell's configuration backup directory
+(`$XDG_STATE_HOME/hyprshell/backups`, normally `~/.local/state/hyprshell/backups`).
+Recently accessed, modified, or changed files are kept. Symlinks are skipped,
+empty directories remain, and active configurations are excluded.
+
+**Clean System Now…** displays the eligible paths, individual sizes, and total
+size using the saved choices. **Delete previewed files** confirms deletion;
+if the eligible files changed, preview again. Scheduled runs apply the same
+rules without prompting. Results are recorded in
+`$XDG_STATE_HOME/hyprshell/cleanup-last.json` and the service journal.
+
+The page also reports the existing system `paccache.timer` status. Package-cache
+cleanup stays with that timer; it is independent of the user cleanup schedule
+and manual file preview.
+
+
+### GitHub sync
+
+Use ** Sync to GitHub** in the settings header. Authenticate with GitHub; the
+popup automatically finds `<your-account>/hyprshell` and displays that target.
+Your GitHub username and account ID supply the commit identity using GitHub's
+noreply email, so there are no name or email fields. Sync saves that identity
+only in this checkout's Git config.
+
+Both forks and standalone repositories named `hyprshell` work. If your account
+has no accessible repository with that name, the popup offers **Fork Hyprshell**
+and **Create repository** links. Finish creating it in your own account, then
+click **Check again**. For a new standalone repo, leave README, license, and
+.gitignore initialization unchecked so the first push can populate it. Sync is
+enabled once the repository exists and the signed-in account has push access.
+
+Authenticate opens Kitty with GitHub CLI browser sign-in and sets up its Git
+credential helper. If GitHub CLI is missing, the terminal offers to install
+`github-cli` through pacman. No password or token is entered into Hyprshell.
+The account and repository are checked again on each sync, including after an
+account switch. The checkout's origin remote is preserved; the push explicitly
+targets the authenticated user's repository.
+
+Sync snapshots live `hypr/` and `quickshell/` config directories and saved
+`hyprshell/settings.json`, commits the snapshot, and pushes the current branch.
+Deleted config files are reflected in the snapshot. Backups, Python caches,
+logs, and the compiled audio helper are excluded. Project configurations, utilities, assets, tools, tests, documentation,
+workflows, package manifests, README, and installer changes are included. Files
+outside these explicit project paths are left uncommitted. The button waits for settings autosave and displays progress
+and Git errors.
+
+Setup records the checkout in `$XDG_STATE_HOME/hyprshell/repository` (default
+`~/.local/state/hyprshell/repository`); older installations fall back to
+`~/repos/hyprshell`. Re-running setup restores synced settings with the configs.
+Resolve existing staged changes or an ongoing merge/rebase first. Pushes never
+force or automatically merge remote changes. A failed push keeps the local
+commit for retry after resolving authentication or remote divergence.

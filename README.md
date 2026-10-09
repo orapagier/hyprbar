@@ -1,257 +1,658 @@
 # Hyprshell
 
-Jelmar's Hyprland desktop for Arch Linux, now using a native Quickshell bar,
-launcher, and popdowns. The transparent 32px bar has wallpaper-tinted glass
-pills, a glass Arch logo, workspace buttons, scrolling media text, a twelve-band
-audio visualizer, a Philippine calendar, a persistent notification inbox,
-audio, Wi-Fi, Bluetooth, battery, tray, and power controls. Seven wallpapers
-and the current Hyprland configuration are included.
+Hyprshell is a configurable desktop shell for **Hyprland on Arch Linux**, built
+with **Quickshell**. It brings the application launcher, status bar, desktop
+menus, notification inbox, and settings into one native Wayland interface.
 
-Pills sample the wallpaper underneath each item and adjust their foreground
-and tint for readable contrast. Hovering an icon opens its connected popdown;
-moving into the menu keeps it open, and hovering another icon switches menus.
-Click an icon to pin its menu until another click, an outside click, or Escape.
-Popdowns follow their icons when moved or reordered in Settings, centering under
-the trigger and staying within the screen edges, even while pinned open.
-Notifications use the same side margins as other popdowns. Wi-Fi and Bluetooth
-rows keep a fixed 36px height and elide long names within the menu width.
+The bar uses translucent glass surfaces that adapt to the wallpaper beneath
+each item. Its layout and appearance can be changed through a graphical
+settings window, including the position of modules and selected Hyprland
+appearance options.
 
-The native UI and service bindings use QML/JavaScript. A small C helper drives
-the audio spectrum from the speaker output monitor. The previous Waybar, GTK,
-Mako, Rofi, and Fuzzel configuration remains bundled as an optional fallback.
-Hyprshell was formerly named Hyprbar.
+This repository includes the shell, a Hyprland configuration, an Arch Linux
+installer, desktop utilities, and wallpapers. It is intended for users who
+want a complete starting point that they can customize for their own machine.
+It installs onto an existing Arch system; it does not install the operating
+system or configure disk partitions, a bootloader, or GPU drivers.
 
-## Settings app
+## Contents
 
-Open **Hyprshell Settings** from the application launcher, or run
-`~/.local/bin/hyprshell-settings` while the Hyprshell bar is running.
-Install an updated checkout with `./setup.sh --config-only` to get the app.
-The cog beside the Arch logo also opens a settings popdown: hover to open,
-click to pin, then choose **Open Hyprshell Settings**. Its colors, position,
-and visibility are configurable like other bar items.
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [First login and machine-specific configuration](#first-login-and-machine-specific-configuration)
+- [Using the desktop](#using-the-desktop)
+- [Keyboard and mouse shortcuts](#keyboard-and-mouse-shortcuts)
+- [Customizing Hyprshell](#customizing-hyprshell)
+- [Screen locking](#screen-locking)
+- [System cleanup](#system-cleanup)
+- [Saving your setup to GitHub](#saving-your-setup-to-github)
+- [Updating, backups, and restoring files](#updating-backups-and-restoring-files)
+- [Troubleshooting](#troubleshooting)
+- [Project structure and development](#project-structure-and-development)
 
-The settings window opens floating, centered horizontally and 40px above the
-vertical midpoint. Press `Super+V` to toggle between floating and tiled.
+## Features
 
-Settings runs inside the existing Quickshell process. Its UI loads only when
-opened and unloads after closing once pending saves finish. Invalid or failed
-edits are retained as a small draft and restored on reopening; the hidden
-controls and preview are released. The application-menu entry is just a shortcut
-to this module.
+| Component | What it provides |
+| --- | --- |
+| Application launcher | Search installed desktop applications and launch them from the bar or Super key. |
+| Workspace controls | Switch between Hyprland workspaces. |
+| Media display | Playback information and a twelve-band audio spectrum captured from speaker output. |
+| Calendar | Date and time with a calendar menu; bundled holiday data covers the Philippines. |
+| Notification inbox | Persistent notifications, search, expansion, dismissal, and clearing without toast popups. |
+| Audio controls | Output and microphone volume, mute controls, and output selection. |
+| Wi-Fi | NetworkManager integration for wireless connections. |
+| Bluetooth | BlueZ integration with device controls and pairing prompts. |
+| Battery | Charge and health information when available from the hardware. |
+| System tray | Application-provided tray icons. |
+| Power menu | Lock, sleep, logout, reboot, and shutdown actions. |
+| Settings | A live bar preview, drag-to-reorder modules, appearance controls, and selected Hyprland settings. |
+| Optional management tools | Screen locking, scheduled file cleanup, and GitHub configuration sync. |
 
-The native settings window includes a sample bar preview and automatic saving:
+The interface and service bindings use QML and JavaScript. A small C helper
+captures and analyzes audio for the spectrum; Python helpers handle settings
+validation, installation, cleanup, and GitHub sync.
 
-- Show or hide any built-in module, move it left/center/right, and change its order
-  by dragging in the preview. Click preview items to edit them.
-- Enable wallpaper colors globally or override the choice for each module.
-- Override text and icon glyphs, text/icon/pill/outline colors (`#RRGGBB`),
-  whole-item and pill opacity, font size, global/per-item background visibility,
-  pill radius, and extra left/right spacing per item.
-- Adjust bar height, margins, spacing, and the clock's Qt date/time format.
-- Resize icons globally or individually from 8–48 px. Individual sizes override
-  the global size; reset restores inheritance. The bar grows to fit larger icons.
-- Set Hyprland gaps, border size, window rounding and opacity, blur, shadows,
-  and animations. Empty Hyprland fields preserve the underlying configuration.
+Hyprshell uses its own Quickshell bar, launcher, menus, and notification
+handler. Waybar, Rofi, Fuzzel, and Mako are not required or bundled.
 
-Preferences are stored in `$XDG_CONFIG_HOME/hyprshell/settings.json`
-(`~/.config/hyprshell/settings.json` by default), outside the directories
-replaced by the installer. Missing preferences use bundled defaults. Changes
-save and apply automatically after a short 500 ms pause; no Apply button is
-needed. Closing the window flushes pending edits. Each save
-validates values, backs up changed files, and writes them atomically. Bar
-settings update through a watched file without restarting the notification
-service. Manual colors take priority over adaptive colors. A hidden module's
-menu closes; hiding media destroys its visualizer component. Desktop services
-continue running when their status items are hidden.
+## Requirements
 
-Hyprland overrides live in `hyprshell/overrides.lua` or `overrides.conf`, with
-a source line added to the user's main config when needed. The app supports
-both Lua and traditional `.conf` main configs. It reloads Hyprland when running
-in a desktop session and rolls back affected files if reload fails or reports
-configuration errors. Each save backs up previous files under
-`$XDG_STATE_HOME/hyprshell/backups/settings-<timestamp>/`; `manifest.json` maps
-each numbered backup to its original path and records newly created files.
-Clearing a Hyprland field automatically removes that override.
-Invalid values leave the last saved settings active and show an error; editing
-the field to a valid value resumes automatic saving.
+The supported installation target is:
 
-The Arch logo and settings cog are standalone glass vector shapes, with
-reflective fills and edges inside their silhouettes and no default backing
-pill. Hovering or pinning their menus brightens the glass.
+- An installed **x86_64 Arch Linux** system.
+- A normal user account with `sudo` access.
+- Internet access and working Arch package mirrors.
+- **Hyprland 0.56 or newer**, using its Lua configuration API.
+- Quickshell and Qt 6, installed by the setup script if missing.
+- Graphics drivers suitable for a Wayland session.
 
-This version configures **the Hyprshell Quickshell components**. It does not
-discover or rewrite arbitrary third-party QML shells. Tray application artwork
-keeps its original icons/colors; workspace styling applies to the workspace
-group. Battery and media still appear only when the corresponding hardware or
-playback is available. The preview uses sample statuses and a fallback palette,
-while the actual bar samples the wallpaper on each output. Monitor layouts,
-keybindings, window rules, popup styling, custom modules, and profile management
-remain outside the settings window for now.
+The installer uses official Arch repositories and pacman. It does not install
+an AUR helper. Other distributions may provide the underlying components, but
+the supplied installer supports Arch Linux only.
 
-See [docs/settings.md](docs/settings.md) for the configuration contract and
-extension points.
+Some modules depend on hardware: Bluetooth needs a supported adapter, battery
+information needs a battery exposed by the system, and brightness controls need
+a controllable backlight. Media information depends on application support.
 
-## Install on fresh Arch Linux
+## Installation
 
-Start with an **installed x86_64 Arch Linux system**, an internet connection,
-and a normal user with sudo access. Run these commands as that user:
+### 1. Get the repository
+
+Run the following as your normal desktop user:
 
 ```bash
 sudo pacman -Syu --needed git
 git clone https://github.com/orapagier/hyprshell.git
 cd hyprshell
+```
+
+Keep this checkout after installation. You use it for updates, and the
+installer records its location for GitHub sync.
+
+### 2. Review the installation plan
+
+```bash
+./setup.sh --dry-run
+```
+
+The preview reports package availability, installation destinations, services,
+and timezone behavior without changing files or installing packages. Review
+the machine-specific defaults described below before using the supplied
+Hyprland configuration.
+
+### 3. Install the desktop
+
+```bash
 ./setup.sh
 ```
 
-The installer checks whether **Hyprland and Quickshell are already installed**,
-then checks the remaining desktop dependencies using pacman's dependency
-database (including package providers). It performs a full Arch upgrade and
-installs missing packages with `--needed`; existing packages are updated with
-the system. All packages come from official Arch repositories.
+Do not run the script with `sudo`. Run it as your normal user; it invokes sudo
+for system operations when needed.
 
-The default install provides the native Quickshell bar, launcher, notification
-inbox, wallpaper colors and audio spectrum; UWSM, portals and the Polkit agent;
-Kitty and Thunar for the desktop shortcuts; fonts, icons and cursors; brightness
-and screenshot tools; NetworkManager with its Wi-Fi backend, BlueZ, UPower,
-and PipeWire/WirePlumber. GCC, libpulse and FFTW build the spectrum helper.
-The exact package list is in [packages.txt](packages.txt); transitive
-dependencies are resolved by pacman.
+The installer:
 
-**No browser, AUR helper, or other personal application is installed.** The
-legacy Waybar/Mako/Rofi/Fuzzel packages and COSMIC Greeter are optional. The
-installer preserves your timezone and existing login screen unless you choose
-the corresponding option. It does not reboot or restart the running desktop.
+1. Checks Hyprland, Quickshell, and the remaining package dependencies.
+2. Performs a full Arch system upgrade and installs missing desktop packages.
+3. Backs up changed destination files and installs the configurations,
+   utilities, application shortcut, and wallpapers.
+4. Builds the audio spectrum helper using GCC, libpulse, and FFTW.
+5. Checks the native runtime, QML components, and Hyprland configuration.
+6. Enables networking, Bluetooth, and user audio services, and starts UPower.
+7. Refreshes fonts and user directories.
 
-Reboot and select **Hyprland (uwsm-managed)** on the login screen, or start
-from a TTY with:
+The base package list is in [packages.txt](packages.txt). It includes Kitty,
+Nautilus, UWSM, portals, the Polkit agent, fonts and icons, screenshot and
+brightness tools, NetworkManager, BlueZ, UPower, PipeWire, and WirePlumber.
+
+Existing configurations at the managed destinations can be replaced. Backups
+are created before replacement; see [backups and restoration](#backups-and-restoration).
+The installer preserves your timezone and existing display manager by default.
+It does not reboot the machine or restart the running desktop.
+
+### Installation options
+
+| Option | Purpose |
+| --- | --- |
+| `--dry-run` | Preview the plan without making changes. |
+| `--config-only` | Install configurations, utilities, and wallpapers, and compile the spectrum helper; skip package and service changes. |
+| `--extra` | Also install the optional application list in `packages-apps.txt`. |
+| `--skip-browser` | Omit Chromium from the `--extra` application list. |
+| `--with-greeter` | Install and enable COSMIC Greeter if no display manager is configured. |
+| `--timezone ZONE` | Set an explicit timezone, such as `Europe/London`. |
+| `--keep-timezone` | Preserve the current timezone; this is the default. |
+| `--help` | Show command-line help. |
+
+Examples:
+
+```bash
+./setup.sh --extra --dry-run
+./setup.sh --extra
+./setup.sh --extra --skip-browser
+./setup.sh --with-greeter
+./setup.sh --timezone Europe/London
+```
+
+The optional [application list](packages-apps.txt) includes Chromium,
+Hyprlock/Hypridle, archive tools, manuals and shell completion, clipboard and
+media utilities, Android file transfer support, mpv, imv, Evince, Mousepad,
+and cmatrix. Review the list before installing it. Installing locking packages
+does not enable automatic locking.
+
+`--config-only` requires Python 3, a C compiler, and the libpulse/FFTW development
+files to be installed already. Use the full installer when dependencies are
+missing.
+
+### 4. Start a session
+
+After installation, reboot and select **Hyprland (uwsm-managed)** in your login
+screen. If you do not use a display manager, log in on a TTY and run:
 
 ```bash
 uwsm start -e -D Hyprland hyprland.desktop
 ```
 
-The config uses Hyprland's Lua API and requires **Hyprland 0.56 or later**.
-Arch is rolling release; `docs/original-packages.txt` records the earlier
-Waybar desktop's packages rather than freezing the current installation.
-Partitioning, the base OS, user creation, the bootloader, and proprietary GPU
-drivers remain part of your Arch setup. The laptop's monitor override lives in
-`config/hypr/hyprland-gui.lua`; other displays use the automatic preferred-mode
-rule in `hyprland.lua`.
+Use `Super+T` to open a terminal and press and release `Super` to open the
+application launcher. The Windows key is normally the Super key.
 
-## Updating configs and backups
+## First login and machine-specific configuration
+
+The supplied configuration is a starting point. Review these defaults for your
+own hardware and preferences:
+
+| Setting | Where to change it |
+| --- | --- |
+| Display resolution, refresh rate, scale, and position | `~/.config/hypr/hyprland.lua` and `hyprland-gui.lua` |
+| Keyboard layout | The `input.kb_layout` value in `~/.config/hypr/hyprland.lua`; bundled value is `us`. |
+| Terminal and file manager | The `terminal` and `fileManager` variables in `hyprland.lua`. |
+| Browser shortcut | The `Super+B` binding in `hyprland.lua`; it currently invokes Brave, which the installer does not install. |
+| Startup wallpaper | `~/.config/hypr/wallpaper-start.sh`. |
+| Clock display | Hyprshell Settings → Bar & layout. |
+| Holiday data | `~/.config/quickshell/Calendar.js`. |
+
+The main configuration has an automatic preferred-mode monitor rule, but
+`hyprland-gui.lua` also contains an explicit **`eDP-1`, 1920×1080 at 60.01 Hz,
+scale 1** rule. Update or remove that rule if it does not match your display.
+Inspect connected outputs inside Hyprland with:
 
 ```bash
-./setup.sh --dry-run                         # preview; changes nothing
-./setup.sh --config-only                     # configs, helpers, wallpapers only
-./setup.sh --with-fallback                   # also install the legacy desktop
-./setup.sh --with-greeter                     # add a login screen if none exists
-./setup.sh --timezone Europe/London          # choose another timezone
-./setup.sh --keep-timezone                   # preserve timezone (the default)
+hyprctl monitors
 ```
 
-`--config-only` requires Python 3, a C compiler, and the libpulse/FFTW development
-files already installed. It compiles the spectrum helper but does not install
-packages, enable services, reload the desktop, or change the timezone.
+After editing your installed Hyprland configuration, validate and reload it:
 
-The installer replaces its `hypr`, `quickshell`, `waybar`, `rofi`, `fuzzel`, and
-`mako` directories, installs the three session/launcher utilities from `bin/`
-into `~/.local/bin/`, and installs the fallback notification service and bundled
-wallpapers. Changed existing paths are backed up under:
+```bash
+Hyprland --verify-config --config "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/hyprland.lua"
+hyprctl reload
+```
+
+Hyprshell installs the saved preferences in `config/hyprshell/settings.json`
+when that file exists in the checkout. These can differ from the bundled
+component defaults. Review the Settings window after your first login.
+
+## Using the desktop
+
+### Bar and menus
+
+Hover over a menu icon to open its menu, then move into the menu to interact
+with it. Hovering another icon switches menus. Click an icon to pin its menu
+open; another click, an outside click, or Escape closes it.
+
+Menus follow their icons when you move or reorder modules, and stay within
+screen edges. Some items appear only when relevant, such as the battery on
+supported hardware or media information during playback.
+
+### Applications and workspaces
+
+Press and release Super, or click the launcher logo, to open the application
+launcher. Type to filter applications by name and select an entry to launch it.
+Applications are discovered through installed desktop entries.
+
+Use workspace buttons or `Super+1` through `Super+0` to switch workspaces.
+Hold Shift with those shortcuts to move the focused window to a workspace.
+Regular application windows tile; the supplied rules float common dialogs and
+file choosers.
+
+### Audio, networking, and Bluetooth
+
+The audio menu provides volume and microphone sliders, mute controls, and
+output selection. Sliders support clicking and dragging. The visualizer
+captures the **speaker output monitor**, not microphone input.
+
+The Wi-Fi menu uses NetworkManager. The Bluetooth menu uses BlueZ and handles
+pairing prompts in the interface. Their availability depends on the relevant
+services, hardware, and radio state.
+
+### Notifications
+
+Notifications appear in the bell's inbox without toast popups. Click a
+notification to expand its full title and body, scroll to read long messages,
+and use its corner × to dismiss it. Search and Clear all are available.
+
+History is stored through Quickshell at `Quickshell.statePath("notifications.json")`.
+An older notification database, if present, can be imported once using read-only
+SQLite access. Hyprshell preserves the message text supplied by applications;
+it cannot recover text an application truncated before sending.
+
+### Wallpapers
+
+Put JPG, JPEG, PNG, or WebP images in `~/Pictures/Wallpapers`. Use `Super+W` for
+the next wallpaper and `Super+Shift+W` for the previous one. The cycling script
+uses a sorted list of files in that directory.
+
+The supplied startup script selects `cloudsnight.jpg` on login. Edit
+`wallpaper-start.sh` to choose a different startup image. Wallpaper rendering
+uses `awww`; bar colors adapt to the wallpaper on each output.
+
+## Keyboard and mouse shortcuts
+
+These shortcuts belong to the bundled Hyprland configuration. Changing your
+keybindings changes the behavior described here.
+
+| Shortcut | Action |
+| --- | --- |
+| `Super+T` | Open Kitty. |
+| Press and release `Super` | Toggle the application launcher. |
+| `Super+E` | Open a Nautilus window. |
+| `Super+B` | Launch Brave if separately installed; customize this binding for your browser. |
+| `Super+Q` | Close the focused window. |
+| `Super+M` | Toggle maximized mode. |
+| `Super+V` | Toggle floating mode. |
+| `Super+Arrow keys` | Move focus between windows. |
+| `Super+1…9`, `Super+0` | Switch to workspace 1…10. |
+| `Super+Shift+1…9`, `Super+Shift+0` | Move the focused window to workspace 1…10. |
+| `Super+Mouse wheel` | Switch to the next or previous workspace. |
+| `Super+Left drag` | Move a window. |
+| `Super+Right drag` | Resize a window. |
+| `Super+P` | Toggle pseudotiling. |
+| `Super+J` | Toggle the split direction in the dwindle layout. |
+| `Super+S` | Toggle the `magic` special workspace. |
+| `Super+Shift+S` | Move the focused window to that special workspace. |
+| `Super+H` / `Super+Shift+H` | Hide / restore a window. |
+| `Super+W` / `Super+Shift+W` | Next / previous wallpaper. |
+| `Print` or `Insert` | Select a screenshot region and open it in Swappy. |
+| `F2` / `F3` | Lower / raise output volume. |
+| `F4` / `F1` | Toggle output / microphone mute. |
+| `F6` / `F7` | Lower / raise brightness. |
+| Supported media and brightness keys | Control volume, playback, microphone mute, or brightness. |
+| `Super+Shift+M` | End the Hyprland session. |
+
+Playback keybindings use `playerctl`, available through `--extra` or a separate
+package installation. Brightness bindings depend on the system's backlight
+support.
+
+## Customizing Hyprshell
+
+### Open Settings
+
+Open **Hyprshell Settings** in the application launcher, or use the cog menu
+on the bar and select **Open Hyprshell Settings**. From a terminal:
+
+```bash
+~/.local/bin/hyprshell-settings
+```
+
+The bar must be running. Settings opens inside the existing Quickshell process
+and includes a preview with sample statuses. The preview's colors and visible
+sample modules may differ from live hardware and wallpaper colors.
+
+### Layout and appearance
+
+Use the preview to select an item or drag it into the left, center, or right
+group. You can reorder items, show or hide built-in modules, and adjust:
+
+- Bar height, margins, spacing, and clock format.
+- Global and individual icon sizes from 8–48 px.
+- Per-item text and icon glyphs, font size, and extra spacing.
+- Text, icon, background, and outline colors using `#RRGGBB`.
+- Item opacity, background opacity, pill visibility, and corner radius.
+- Wallpaper-adaptive colors globally or per item.
+
+Individual overrides take priority over general settings. Choose inheritance
+or use the relevant reset control to return to the general value. Manual colors
+override the corresponding adaptive colors. Tray artwork remains supplied by
+its application; it is not replaced by custom text or icon fields.
+
+Avoid overcrowding the bar: unusually wide labels or too many center items can
+overlap other groups. Shorten text, reduce sizes, hide items, or move them to
+another group. Hiding a status item does not stop the underlying desktop
+service.
+
+### Saving and Hyprland appearance
+
+Most bar, appearance, and locking preferences save automatically after a short
+pause. Closing Settings flushes pending changes. Invalid values show an error
+and leave the last saved configuration active; correct the value to resume
+saving. System cleanup has its own explicit save action.
+
+Preferences live in:
+
+```text
+~/.config/hyprshell/settings.json
+```
+
+The Hyprland appearance page controls selected options such as gaps, borders,
+rounding, opacity, blur, shadows, and animations. Empty or “Use config” values
+leave that option controlled by your underlying Hyprland configuration.
+
+Explicit overrides are written to `hyprshell/overrides.lua` for the supplied
+Lua configuration. The settings backend also supports traditional `.conf`
+main configurations. Changes are validated and backed up; a failed Hyprland
+reload rolls back affected files.
+
+The Settings window does not manage monitor layouts, keyboard shortcuts,
+arbitrary third-party Quickshell components, or every Hyprland option. Edit
+the appropriate configuration files for those changes. See
+[the settings reference](docs/settings.md) for detailed behavior and extension
+points.
+
+## Screen locking
+
+Automatic locking starts disabled. To use the supplied locker and idle
+manager, install them through `--extra` or separately:
+
+```bash
+sudo pacman -Syu --needed hypridle hyprlock
+```
+
+Open **Settings → Screen locking**, choose your locker command, and test it
+with **Lock now**. Then enable automatic locking, choose an idle timeout, and
+optionally enable locking before sleep. A timeout of 0 disables the idle timer.
+
+Configure Hyprlock's appearance in `~/.config/hypr/hyprlock.conf`, or use your
+chosen locker's own configuration. Custom commands support quoted arguments
+and `~` paths; they do not expand environment variables or execute shell
+operators. The locker must remain in the foreground until unlocked.
+
+Hyprshell manages its own Hypridle child while automatic locking is enabled.
+Disable a separately configured Hypridle service or autostart before enabling
+this feature; Settings reports conflicts. Automatic locking runs with the
+shell, so it depends on Hyprshell continuing to run. Closing the Settings
+window does not stop it.
+
+## System cleanup
+
+Open **Settings → System cleanup** to configure cleanup of old thumbnail cache
+files, eligible temporary files owned by your user, and old Hyprshell backups.
+
+Choose Off, Daily, Weekly, or Monthly, select categories, and click **Save
+cleanup settings**. Scheduling starts Off. The default age limit is 30 days,
+and the newest five backup sets are retained.
+
+Use **Clean System Now…** to review eligible paths and sizes. **Delete previewed
+files** confirms that specific cleanup. Scheduled runs use the saved rules
+without prompting. Symlinks and active configurations are excluded, and
+recently accessed or changed files are kept.
+
+The schedule uses the systemd user timer `hyprshell-cleanup.timer`. Results are
+recorded in `~/.local/state/hyprshell/cleanup-last.json` and the service journal.
+Package-cache cleanup is separate; this page reports the existing system
+`paccache.timer` rather than including package caches in the file preview.
+
+## Saving your setup to GitHub
+
+The **Sync to GitHub** button in Settings saves a snapshot of the live desktop
+to a repository named `hyprshell` in your authenticated GitHub account.
+
+1. Open the sync popup and choose **Authenticate**.
+2. Complete GitHub CLI browser sign-in in the Kitty terminal.
+3. Use a fork of this project or create a repository named `hyprshell` in your
+   account. For an empty standalone repository, leave README, license, and
+   `.gitignore` initialization unchecked.
+4. Select **Check again** and verify the displayed account and target.
+5. Start the sync and check its result.
+
+The tool snapshots live `hypr/` and `quickshell/` configurations and saved
+`hyprshell/settings.json`. It also commits project files: configuration,
+utilities, assets, tools, tests, documentation, workflows, package manifests,
+the installer, and README. This keeps the installation guide and installer in
+sync with the desktop. Tracked deletions in these paths are included.
+
+Backups, logs, Python caches, and the compiled spectrum helper are excluded
+from the live snapshot. Files outside the explicit project paths remain
+uncommitted. Review project and custom configuration content before syncing
+to a public repository.
+
+The tool preserves the checkout's `origin` remote and sets the commit identity
+locally using the authenticated account's GitHub noreply email. It does not
+force-push or automatically merge remote changes. Finish staged changes or an
+ongoing merge/rebase before syncing. If a push fails, the local commit remains
+available for retry after you resolve the reported problem.
+
+Setup records the checkout location in
+`~/.local/state/hyprshell/repository`. Re-running setup updates that pointer.
+
+## Updating, backups, and restoring files
+
+### Updating
+
+First review local checkout changes:
+
+```bash
+git status
+```
+
+Commit or otherwise preserve your changes before pulling updates. Once your
+checkout is ready:
+
+```bash
+git pull --ff-only
+./setup.sh --dry-run
+./setup.sh
+```
+
+`git pull` follows your current branch's configured remote; after forking,
+configure the upstream relationship according to your workflow. The installer
+uses the contents of your checkout, including any local modifications.
+
+Use `./setup.sh --config-only` when dependencies are already installed and you
+only want to reinstall configuration files and helpers. It does not enable
+services or install newly required packages.
+
+Installation replaces the managed `hypr`, `quickshell`, and
+`xdg-desktop-portal` directories and installs the checkout's saved Hyprshell
+settings file when present. It also installs utilities from `bin/`, application
+shortcuts, and bundled wallpapers. **Reinstallation can replace edits made
+only in your live configuration, including saved settings.** Keep changes in
+your checkout or preserve them separately before updating.
+
+Quickshell watches QML changes and reloads automatically. Run `hyprctl reload`
+in your desktop session after changing Hyprland configuration. To explicitly
+restart Hyprshell after installation:
+
+```bash
+"${XDG_CONFIG_HOME:-$HOME/.config}/quickshell/install-and-activate.sh"
+```
+
+### Backups and restoration
+
+Changed installed paths are backed up under:
 
 ```text
 ~/.local/state/hyprshell/backups/<timestamp>/
 ```
 
-Unrelated app configs, utilities, and differently named wallpapers are preserved.
-Repeating the installation skips identical payloads. Backups made before the
-rename remain in `~/.local/state/hyprbar/backups/`; new backups use `hyprshell`.
-`XDG_CONFIG_HOME` and `XDG_STATE_HOME` are respected, including paths containing spaces. Restore a
-path by moving the installed copy aside and copying its original from the backup.
+Identical payloads are skipped. Unrelated application configurations and
+wallpapers with other filenames are preserved. A backup contains the paths
+changed by that installation, not a complete copy of your home directory.
 
-Quickshell watches QML changes and reloads automatically. When migrating from
-Waybar/Mako in an existing desktop, install the configs and run:
+To restore an installer backup, inspect its contents, move the current target
+aside, and copy the corresponding saved file or directory back to its original
+location. For example, with your chosen timestamp substituted:
 
 ```bash
-~/.config/quickshell/install-and-activate.sh
-hyprctl reload
+backup="$HOME/.local/state/hyprshell/backups/<timestamp>"
+mv "$HOME/.config/hypr" "$HOME/.config/hypr.before-restore"
+cp -a "$backup/config/hypr" "$HOME/.config/hypr"
 ```
 
-The session helper confirms the native bar and notification server are ready
-before stopping Waybar and disabling its Python notification collector. If
-Quickshell cannot start, it uses Waybar/Mako as a fallback when those optional
-packages are installed. Add them with `./setup.sh --with-fallback`. The native
-launcher retries shell startup if necessary. An existing enabled Mako user
-service may need disabling if it is independently configured to reclaim the
-notification service.
+Choose an unused destination name for the moved directory and confirm the
+backup contains `config/hypr` before running the example. Validate the restored
+configuration and reload Hyprland from the desktop session.
 
-## Controls
+Settings saves use separate `settings-<timestamp>` backup sets. Their
+`manifest.json` maps saved files to original paths and records newly created
+files; consult that manifest when restoring settings changes.
 
-| Shortcut / action | Result |
+### Configuration and state paths
+
+| Path | Purpose |
 | --- | --- |
-| `Super+T` | Kitty terminal |
-| Press and release `Super` / click Arch logo | Toggle native app launcher |
-| `Super+E` | Thunar file manager |
-| `Super+B` | Brave, if separately installed |
-| `Super+Q` | Close focused window |
-| `Super+M` | Maximize / restore |
-| `Super+V` | Toggle floating |
-| `Super+1…0` | Workspace 1…10 |
-| `Super+Shift+1…0` | Move window to workspace |
-| `Super+H` / `Super+Shift+H` | Hide / restore window |
-| `Super+W` / `Super+Shift+W` | Next / previous wallpaper |
-| `Print` / `Insert` | Select screenshot region, then edit in Swappy |
-| `Super+Shift+M` | End the Hyprland session |
-| Hover / click clock or status icon | Open / pin its popdown |
+| `~/.config/hypr/` | Hyprland configuration, wallpaper scripts, and Hyprlock configuration. |
+| `~/.config/quickshell/` | Installed shell components and helpers. |
+| `~/.config/hyprshell/settings.json` | Saved Hyprshell preferences. |
+| `~/.config/hyprshell/overrides.lua` | Generated Hyprland appearance overrides for Lua configs. |
+| `~/.config/hyprshell/hypridle.conf` | Generated idle configuration when managed by Hyprshell. |
+| `~/.config/xdg-desktop-portal/` | Desktop portal preferences. |
+| `~/.local/bin/` | Installed launcher, session, and settings utilities. |
+| `~/.local/state/hyprshell/` | Repository pointer, configuration backups, and cleanup results. |
+| `~/.local/state/quickshell/bar.log` | Session launcher output. |
+| `~/Pictures/Wallpapers/` | Wallpaper images. |
 
-Popup dialogs float and center while regular application windows remain tiled.
-Modal windows, Thunar rename/properties dialogs, file chooser portals and common
-browser dialogs have explicit rules; apps that do not advertise a dialog may
-need an additional rule. The wallpaper on login is `cloudsnight.jpg`. Audio
-controls support dragging and clicking the volume and microphone sliders,
-muting, and selecting outputs.
-Wi-Fi uses NetworkManager; Bluetooth uses BlueZ and a supported adapter, with
-pairing prompts inside the menu. Battery details include charge and health
-information when the hardware supplies them. Power controls include logout,
-which returns to the login screen.
+These are default paths. The installer and settings helpers respect
+`XDG_CONFIG_HOME` and `XDG_STATE_HOME`; use the corresponding custom locations
+if you set them. Wallpaper storage remains under `~/Pictures/Wallpapers`.
 
-Notifications go directly into the bell's inbox without toast popups. Click a
-notification to expand its complete title/body, scroll long messages, and use
-the corner × to dismiss it. Search and Clear all are included. Existing history
-is imported once from `~/.local/state/waybar/notifications/` using read-only
-SQLite access; new history uses `Quickshell.statePath("notifications.json")`.
-The media visualizer reads the speaker output monitor, never the microphone.
+## Troubleshooting
 
-## Checks and troubleshooting
+Run desktop commands inside your Hyprland session so they can access its
+Wayland socket, Hyprland socket, and user D-Bus session.
+
+### The bar does not start
+
+Check the launcher output and try starting it again:
+
+```bash
+tail -n 100 "${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/bar.log"
+~/.local/bin/start-quickshell-bar
+```
+
+Check that Quickshell is installed, the installed `quickshell/shell.qml` exists,
+and the configured startup command points to `start-quickshell-bar`. From the
+repository, check native dependencies with:
+
+```bash
+python3 tools/check_runtime.py --native
+```
+
+The launcher verifies both bar readiness and notification ownership. A startup
+failure is reported instead of launching another desktop shell.
+
+### Settings or the application launcher will not open
+
+Both communicate with the running Hyprshell instance. Start the bar first.
+If utilities or the desktop entry are missing, reinstall with
+`./setup.sh --config-only`. Applications missing from the launcher may lack
+an installed desktop entry.
+
+### Notifications are missing
+
+Ensure another notification daemon is not already holding
+`org.freedesktop.Notifications` in your user session. Disable a conflicting
+daemon's service or autostart, then restart Hyprshell. Toast popups are not
+expected; check the bell's inbox. You can send a test message with:
+
+```bash
+notify-send 'Hyprshell test' 'Check the notification inbox.'
+```
+
+### Audio, Wi-Fi, or Bluetooth controls are unavailable
+
+Check their service status:
+
+```bash
+systemctl --user status pipewire pipewire-pulse wireplumber
+systemctl status NetworkManager bluetooth
+```
+
+Also check hardware availability and radio state. No spectrum activity is
+expected when the speaker output is silent. If compilation fails during
+installation, check that GCC, libpulse, and FFTW are installed.
+
+### Display, shortcuts, or icons do not look right
+
+Review the explicit `eDP-1` monitor rule and keyboard layout described in the
+first-login section. Change shortcuts that invoke applications you do not use.
+Missing glyphs usually indicate missing fonts; install the manifest's fonts
+and restart the session. If bar groups overlap, reduce item widths or move
+modules between groups.
+
+### A settings change will not save
+
+Read the error in Settings. Correct invalid values, check file permissions,
+and resolve any concurrent edits before retrying. Malformed JSON must be
+repaired before saving. Failed Hyprland reloads restore affected files; validate
+your main configuration before trying the change again.
+
+### GitHub sync fails
+
+Check the displayed account, repository name, push permissions, and network
+access. Re-authenticate if sign-in expired. Commit or unstage existing staged
+changes, and finish any merge or rebase. If your remote branch has diverged,
+resolve it through your normal Git workflow; the sync tool never force-pushes.
+
+### Automatic locking does not work
+
+Use **Lock now** to test the saved locker command first. Check that Hypridle
+and the locker are installed, another Hypridle process is not conflicting,
+and Hyprshell is running. Review errors on the Screen locking page.
+
+## Project structure and development
+
+| Location | Contents |
+| --- | --- |
+| `config/quickshell/` | QML/JavaScript shell, service bindings, and settings helpers. |
+| `config/hypr/` | Bundled Hyprland configuration and wallpaper scripts. |
+| `config/hyprshell/` | Saved preferences installed with the desktop. |
+| `config/xdg-desktop-portal/` | Portal configuration. |
+| `bin/` | Shell launcher, application launcher, and settings shortcut. |
+| `assets/` | Wallpapers and application desktop entries. |
+| `tools/` | Installer and runtime validation helpers. |
+| `tests/` | Python tests for installation, settings, sync, locking, and cleanup. |
+| `config/quickshell/tests/` | QML component tests and spectrum checks. |
+| `packages.txt` / `packages-apps.txt` | Base desktop and optional application manifests. |
+
+For component details, see the [Quickshell guide](config/quickshell/README.md).
+For settings validation, inheritance, persistence, and extension points, see
+[the settings implementation reference](docs/settings.md).
+
+Run the relevant checks from the repository root with dependencies installed:
 
 ```bash
 python3 -m unittest discover -s tests -v
-# Optional legacy checks require the packages in packages-fallback.txt:
-python3 -m unittest discover -s config/waybar/tests -v
+Hyprland --verify-config --config "$PWD/config/hypr/hyprland.lua"
 cc -O2 config/quickshell/helpers/audio-spectrum.c \
   -o config/quickshell/helpers/audio-spectrum -lpulse-simple -lpulse -lfftw3 -lm
 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
   /usr/lib/qt6/bin/qmltestrunner -input config/quickshell/tests
 python3 config/quickshell/tests/test_spectrum.py
-Hyprland --verify-config --config "$PWD/config/hypr/hyprland.lua"
 ```
 
-Installer checks use temporary home directories. Offscreen QML checks cover the
-bar, hover and pinned menus, audio controls, notification expansion and long
-message scrolling, battery states, media bars, and wallpaper sampling/contrast.
-Synthetic audio checks verify frequency separation and capture lifecycle.
-GitHub Actions checks the installer/fallback on Ubuntu and the native desktop
-package resolution, Hyprland config, and panel on Arch Linux. These checks do
-not replace a full installation and login test on fresh hardware.
+Python installer tests use isolated temporary home directories. QML tests cover
+layout, menus, appearance, notifications, audio controls, and wallpaper sampling.
+Spectrum tests check frequency separation and capture lifecycle. Full hardware
+behavior still needs a real session with the relevant devices and services.
 
-Startup output is in `~/.local/state/quickshell/bar.log`. Native components and
-service details are documented in [config/quickshell/README.md](config/quickshell/README.md).
-To return to Waybar/Mako, run `~/.config/quickshell/restore-waybar.sh` and reload
-Hyprland. Install the optional dependencies with `./setup.sh --with-fallback`
-before using this option.
-The optional `~/.local/bin/cleanup-old-launchers` utility previews its package
-removal list; `--apply` removes the listed old launcher packages only after it
-confirms Quickshell is running. No cleanup runs during installation.
-
-The calendar's holiday rules/data live in `config/quickshell/Calendar.js`;
-special government declarations may require updates. Wallpapers are copied
-from the original desktop; no new ownership or license over those third-party
-images is claimed here.
+Bundled holiday rules may need updates for special government declarations.
+Bundled wallpapers are third-party images; inclusion here does not grant new
+ownership or licensing rights over them.

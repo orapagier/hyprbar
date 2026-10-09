@@ -25,12 +25,6 @@ def same(source, destination):
                for name in comparison.common_files + comparison.common_dirs)
 
 
-def systemd_quote(value):
-    # Escape unit specifiers and environment expansion as well as string syntax.
-    value = value.replace('\\', '\\\\').replace('"', '\\"')
-    return '"' + value.replace('%', '%%').replace('$', '$$') + '"'
-
-
 def install(repo):
     home = Path(os.environ['HOME'])
     config = Path(os.environ.get('XDG_CONFIG_HOME') or home / '.config')
@@ -63,7 +57,7 @@ def install(repo):
                 raise
         print('Installed:', destination)
 
-    for name in ('hypr', 'waybar', 'fuzzel', 'rofi', 'mako'):
+    for name in ('hypr', 'xdg-desktop-portal'):
         put(repo / 'config' / name, config / name, Path('config') / name)
 
     # Compile before replacing the destination, so a failed build leaves it intact.
@@ -83,19 +77,14 @@ def install(repo):
         put(desktop, home / '.local/share/applications' / desktop.name,
             Path('.local/share/applications') / desktop.name)
 
-    with tempfile.TemporaryDirectory(prefix='hyprshell-service-') as temporary:
-        service = Path(temporary) / 'waybar-notification-monitor.service'
-        text = (repo / 'config/systemd/user' / service.name).read_text()
-        text = text.replace('/usr/bin/python3 %h/.config/waybar/notification-monitor.py',
-                            '/usr/bin/python3 ' + systemd_quote(str(config / 'waybar/notification-monitor.py')))
-        service.write_text(text)
-        service.chmod(0o644)
-        put(service, config / 'systemd/user' / service.name, Path('config/systemd/user') / service.name)
-
     for wallpaper in sorted((repo / 'assets/wallpapers').iterdir()):
         if wallpaper.is_file():
             put(wallpaper, home / 'Pictures/Wallpapers' / wallpaper.name,
                 Path('Pictures/Wallpapers') / wallpaper.name)
+    if (repo / 'config/hyprshell/settings.json').exists():
+        put(repo / 'config/hyprshell/settings.json', config / 'hyprshell/settings.json', Path('config/hyprshell/settings.json'))
+    state.joinpath('hyprshell').mkdir(parents=True, exist_ok=True)
+    state.joinpath('hyprshell/repository').write_text(str(repo.resolve()) + '\n')
     if backup.exists():
         print('Backup directory:', backup)
 

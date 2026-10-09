@@ -1,0 +1,27 @@
+# Optional daily-driver apps: ./setup.sh --extra
+# Browser (omit with --skip-browser)
+chromium
+# Screen locking; enable automatic locking separately in Hyprshell Settings
+hyprlock
+hypridle
+# Documentation, shell completion, package maintenance, and terminal fun
+man-db
+man-pages
+bash-completion
+pacman-contrib
+cmatrix
+# Archives
+unzip
+zip
+7zip
+file-roller
+# Desktop integration, Wayland clipboard, media control, Android file transfer
+xdg-utils
+wl-clipboard
+playerctl
+gvfs-mtp
+# Video/audio, images, PDFs, and a graphical text editor
+mpv
+imv
+evince
+mousepad

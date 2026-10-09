@@ -6,8 +6,9 @@ umask 022
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 MODE=install
 DRY_RUN=0
-INSTALL_FALLBACK=0
 INSTALL_GREETER=0
+INSTALL_APPS=0
+SKIP_BROWSER=0
 TIMEZONE=
 
 usage() {
@@ -17,14 +18,16 @@ Usage: ./setup.sh [options]
 Run as your normal user, with sudo access, on an installed Arch Linux system.
   --dry-run          Check installed packages and show the plan; change nothing
   --config-only      Copy configs, compile helpers, and copy wallpapers only
-  --with-fallback    Also install the legacy Waybar/Mako/Rofi/Fuzzel dependencies
   --with-greeter     Install COSMIC Greeter if no display manager is configured
+  --extra            Also install daily-driver apps from packages-apps.txt
+  --skip-browser     Exclude Chromium from --extra
   --timezone ZONE    Set the system timezone (default: preserve current timezone)
   --keep-timezone    Leave the system timezone unchanged
   -h, --help         Show this help
 
 Hyprland and Quickshell are checked first; missing desktop dependencies are
-installed from official Arch repositories. No browsers or AUR apps are installed.
+installed from official Arch repositories. Daily-driver apps are opt-in;
+no AUR apps are installed. --config-only skips all package installation.
 Existing configs are backed up under ~/.local/state/hyprshell/backups/.
 XDG_CONFIG_HOME and XDG_STATE_HOME are respected. A reboot is recommended.
 HELP
@@ -38,10 +41,10 @@ while (( $# )); do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --config-only) MODE=config-only ;;
-    --with-fallback) INSTALL_FALLBACK=1 ;;
     --with-greeter) INSTALL_GREETER=1 ;;
+    --extra) INSTALL_APPS=1 ;;
     --no-greeter) INSTALL_GREETER=0 ;; # Compatibility with the old installer.
-    --skip-browser) : ;; # Browsers are never installed; retain old invocations.
+    --skip-browser) SKIP_BROWSER=1 ;;
     --keep-timezone) TIMEZONE= ;;
     --timezone)
       (( $# >= 2 )) || die '--timezone requires a timezone name'
@@ -59,10 +62,24 @@ STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}
 [[ "$CONFIG_DIR" == /* && "$STATE_DIR" == /* ]] || die 'XDG paths must be absolute'
 [[ -f "$REPO_DIR/config/quickshell/shell.qml" && -f "$REPO_DIR/packages.txt" ]] || die 'Run setup.sh from a complete clone of the repository'
 mapfile -t PACKAGES < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$REPO_DIR/packages.txt")
-if (( INSTALL_FALLBACK )); then
-  mapfile -t FALLBACK_PACKAGES < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$REPO_DIR/packages-fallback.txt")
-  PACKAGES+=("${FALLBACK_PACKAGES[@]}")
+if (( INSTALL_APPS )); then
+  [[ -f "$REPO_DIR/packages-apps.txt" ]] || die 'Missing packages-apps.txt; use a complete clone of the repository'
+  mapfile -t APP_PACKAGES < <(sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' "$REPO_DIR/packages-apps.txt")
+  for package in "${APP_PACKAGES[@]}"; do
+    if (( SKIP_BROWSER )) && [[ "$package" == chromium ]]; then continue; fi
+    PACKAGES+=("$package")
+  done
 fi
+# Optional lists may share packages (for example playerctl).
+declare -A SEEN_PACKAGES=()
+UNIQUE_PACKAGES=()
+for package in "${PACKAGES[@]}"; do
+  if [[ -z "${SEEN_PACKAGES[$package]:-}" ]]; then
+    UNIQUE_PACKAGES+=("$package")
+    SEEN_PACKAGES[$package]=1
+  fi
+done
+PACKAGES=("${UNIQUE_PACKAGES[@]}")
 
 check_packages() {
   log 'Checking Hyprland and Quickshell'
@@ -141,9 +158,6 @@ fi
 
 log 'Validating the installed configuration and refreshing fonts'
 python3 "$REPO_DIR/tools/check_runtime.py" --native
-if (( INSTALL_FALLBACK )); then
-  python3 "$REPO_DIR/tools/check_runtime.py" "$CONFIG_DIR/waybar"
-fi
 # Arch's unqualified qmltestrunner may be Qt 5; this config requires Qt 6.
 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software /usr/lib/qt6/bin/qmltestrunner -input "$CONFIG_DIR/quickshell/tests"
 Hyprland --verify-config --config "$CONFIG_DIR/hypr/hyprland.lua"
@@ -176,5 +190,5 @@ fi
 log 'Setup complete'
 printf 'Reboot, then select "Hyprland (uwsm-managed)" if you use a login screen.\n'
 printf 'From a TTY run: uwsm start -e -D Hyprland hyprland.desktop\n'
-printf 'SUPER+T opens a terminal; press and release SUPER for the launcher.\n'
+printf 'SUPER+T opens Kitty; SUPER+E opens Nautilus; press and release SUPER for the launcher.\n'
 printf 'Existing config backups: %s/hyprshell/backups/\n' "$STATE_DIR"

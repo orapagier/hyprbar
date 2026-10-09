@@ -25,9 +25,7 @@ pop-icon-theme
 adwaita-cursors
 # Terminal and file manager for the desktop shortcuts
 kitty
-thunar
-thunar-volman
-tumbler
+nautilus
 gvfs
 xdg-user-dirs
 # Networking, pairing, and battery data
@@ -56,3 +54,7 @@ sqlite
 util-linux
 procps-ng
 libnotify
+
+# GitHub sync and browser authentication
+git
+github-cli
