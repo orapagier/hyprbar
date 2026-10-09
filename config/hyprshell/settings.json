@@ -340,11 +340,22 @@
       "popdownTranslucency": -1
     }
   ],
-  "hyprland": {},
+  "hyprland": {
+    "touchpadNaturalScroll": true,
+    "tapToClick": true
+  },
   "locking": {
     "enabled": true,
     "command": "hyprlock",
     "idleMinutes": 60,
     "beforeSleep": true
+  },
+  "power": {
+    "dimMinutes": 5,
+    "dimPercent": 20,
+    "offMinutes": 15,
+    "suspendMinutes": 0,
+    "lidAction": "system",
+    "profile": "system"
   }
 }
