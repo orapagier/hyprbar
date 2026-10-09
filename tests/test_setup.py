@@ -168,6 +168,8 @@ class InstallerTests(unittest.TestCase):
         self.install()
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
         self.assertTrue((self.config / 'quickshell/shell.qml').is_file())
+        self.assertEqual((self.config / 'autostart/nm-applet.desktop').read_bytes(),
+                         (ROOT / 'config/autostart/nm-applet.desktop').read_bytes())
         self.assertIn('uwsm app -- nautilus --new-window',
                       (self.config / 'hypr/hyprland.lua').read_text())
         self.assertTrue(os.access(self.config / 'quickshell/helpers/audio-spectrum', os.X_OK))
@@ -196,6 +198,10 @@ class InstallerTests(unittest.TestCase):
         unrelated = self.config / 'unrelated-app/settings'
         unrelated.parent.mkdir()
         unrelated.write_text('keep me')
+        applet = self.config / 'autostart/nm-applet.desktop'
+        applet.write_text('[Desktop Entry]\nHidden=false\n')
+        other_autostart = self.config / 'autostart/other-app.desktop'
+        other_autostart.write_text('[Desktop Entry]\nExec=other-app\n')
         self.install()
         backups = list((self.state / 'hyprshell/backups').iterdir())
         self.assertEqual(len(backups), 1)
@@ -204,6 +210,11 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual((backups[0] / 'config/xdg-desktop-portal/hyprland-portals.conf').read_text(), '[preferred]\ndefault=gtk\n')
         self.assertEqual(portal.read_bytes(), (ROOT / 'config/xdg-desktop-portal/hyprland-portals.conf').read_bytes())
         self.assertEqual(unrelated.read_text(), 'keep me')
+        self.assertEqual((backups[0] / 'config/autostart/nm-applet.desktop').read_text(),
+                         '[Desktop Entry]\nHidden=false\n')
+        self.assertEqual(applet.read_bytes(),
+                         (ROOT / 'config/autostart/nm-applet.desktop').read_bytes())
+        self.assertEqual(other_autostart.read_text(), '[Desktop Entry]\nExec=other-app\n')
         self.install()
         self.assertEqual(list((self.state / 'hyprshell/backups').iterdir()), backups)
 

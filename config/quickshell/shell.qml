@@ -20,6 +20,7 @@ ShellRoot {
     SettingsController {
         id: settingsController
         store: preferences
+        wallpaperSources: wallpapers.sources
         lockingError: locking.error
         onLockRequested: locking.lockNow()
         // Reopening an existing window must activate it, even on another

@@ -32,19 +32,65 @@ Item {
     function side(id) {
         return Settings.item(settings, id).side || defaultSides[id] || "right";
     }
-    function itemX(id) {
+    function pillName(id) { return Settings.item(settings, id).pillGroup || ""; }
+    function orderedItems(sideName) {
         let keys = Object.keys(moduleItems);
-        let group = keys.filter(k => side(k) === side(id) && moduleItems[k].visible);
-        group.sort((a, b) => ((Settings.item(settings, a).order ?? keys.indexOf(a)) - (Settings.item(settings, b).order ?? keys.indexOf(b))) || keys.indexOf(a) - keys.indexOf(b));
+        let sorted = keys.filter(k => side(k) === sideName && moduleItems[k].visible);
+        sorted.sort((a, b) => ((Settings.item(settings, a).order ?? keys.indexOf(a)) - (Settings.item(settings, b).order ?? keys.indexOf(b))) || keys.indexOf(a) - keys.indexOf(b));
+        let result = [], seen = new Set();
+        for (let id of sorted) {
+            if (!pillName(id)) result.push(id);
+            else if (!seen.has(pillName(id))) {
+                seen.add(pillName(id));
+                result.push(...sorted.filter(k => pillName(k) === pillName(id)));
+            }
+        }
+        return result;
+    }
+    readonly property var sharedPills: {
+        let result = [];
+        for (let sideName of ["left", "center", "right"]) {
+            let seen = new Set();
+            for (let id of orderedItems(sideName)) {
+                let name = pillName(id);
+                if (name && !seen.has(name)) {
+                    seen.add(name);
+                    result.push({name:name, side:sideName, ids:orderedItems(sideName).filter(k => pillName(k) === name)});
+                }
+            }
+        }
+        return result;
+    }
+    function sharedRect(ids) {
+        let first = moduleItems[ids[0]], last = moduleItems[ids[ids.length - 1]];
+        let h = Math.max(...ids.map(id => moduleItems[id].height));
+        return Qt.rect(first.x, (height-h)/2, last.x + last.width - first.x, h);
+    }
+    function appearance(id) {
+        return Settings.appearance(settings, id, wallpaperSource.toString());
+    }
+    function sharedStyle(id) {
+        let style = bar.appearance(id);
+        style.background = "on";
+        style.hideText = true;
+        style.hideIcon = true;
+        return style;
+    }
+    function itemX(id) {
+        let group = orderedItems(side(id));
         let spacing = settings.bar ? (settings.bar.spacing ?? 3) : 3;
         let left = k => Settings.item(settings, k).spacingLeft || 0;
         let right = k => Settings.item(settings, k).spacingRight || 0;
-        let total = group.reduce((n, k) => n + left(k) + moduleItems[k].width + right(k), 0) + Math.max(0, group.length - 1) * spacing;
-        let cursor = side(id) === "right" ? width - total : side(id) === "center" ? (width - total) / 2 : 0;
-        for (let k of group) {
+        let leading = group.length ? Math.max(0, left(group[0])) : 0;
+        let trailing = group.length ? Math.max(0, right(group[group.length - 1])) : 0;
+        let gap = i => Math.max(0, (pillName(group[i]) && pillName(group[i]) === pillName(group[i + 1]) ? (settings.bar?.groupSpacing ?? 3) : spacing) + right(group[i]) + left(group[i + 1]));
+        let total = leading + trailing + group.reduce((n, k, i) => n + moduleItems[k].width + (i < group.length - 1 ? gap(i) : 0), 0);
+        let cursor = (side(id) === "right" ? width - total : side(id) === "center" ? (width - total) / 2 : 0) + leading;
+        for (let i = 0; i < group.length; i++) {
+            let k = group[i];
             if (k === id)
-                return cursor + left(k);
-            cursor += left(k) + moduleItems[k].width + right(k) + spacing;
+                return cursor;
+            cursor += moduleItems[k].width + (i < group.length - 1 ? gap(i) : 0);
         }
         return cursor;
     }
@@ -118,13 +164,32 @@ Item {
     implicitHeight: Math.max(settings.bar ? (settings.bar.height || 32) : 32,
         ...Object.keys(moduleItems).filter(id => moduleItems[id].visible).map(id => moduleItems[id].height + 4))
     height: implicitHeight
+    Repeater {
+        model: bar.sharedPills
+        delegate: Pill {
+            required property var modelData
+            objectName: "sharedPill_" + modelData.name
+            readonly property var bounds: bar.sharedRect(modelData.ids)
+            readonly property string leader: modelData.ids[0]
+            x: bounds.x; y: bounds.y; width: bounds.width; height: bounds.height
+            z: -1
+            interactive: false
+            settings: bar.sharedStyle(leader)
+            foreground: bar.moduleItems[leader].foreground ?? "#cdd6f4"
+            tint: bar.moduleItems[leader].tint ?? Qt.rgba(30/255, 30/255, 46/255, 0.28)
+            outline: bar.moduleItems[leader].outline ?? Qt.rgba(1, 1, 1, 0.16)
+            colorSampler: Settings.adaptive(bar.settings, leader) ? bar.wallpaperColors : null
+            colorRoot: bar
+            opacity: Settings.item(bar.settings, leader).opacity ?? 1
+        }
+    }
     BarMenuButton {
         id: arch
         bar: bar
         menu: "launcher"
         x: bar.itemX("launcher")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "launcher")
+        settings: bar.appearance("launcher")
         opacity: Settings.item(bar.settings, "launcher").opacity ?? 1
         visible: bar.itemEnabled("launcher")
         text: ""
@@ -132,9 +197,9 @@ Item {
         family: "GoMono Nerd Font"
         pixelSize: 20
         bold: false
-        minimumTextWidth: Math.max(28, (settings.iconSize || settings.fontSize || 22) + 6)
+        minimumTextWidth: settings.iconSize || settings.fontSize || 22
         implicitHeight: Math.max(28, (settings.iconSize || settings.fontSize || 22) + 6)
-        leftPadding: 5
+        leftPadding: 2
         rightPadding: 2
         backgroundVisible: false
         content.opacity: arch.settings.text || arch.settings.icon ? 1 : 0
@@ -153,7 +218,7 @@ Item {
         id: settingsCog
         bar: bar; menu: "settings"
         x: bar.itemX("settings"); y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "settings")
+        settings: bar.appearance("settings")
         opacity: settings.opacity ?? 1
         visible: bar.itemEnabled("settings")
         text: "󰒓"
@@ -172,7 +237,7 @@ Item {
         }
         foreground: "#b4befe"
         tint: bar.rgba("#b4befe", 0.18); outline: bar.rgba("#b4befe", 0.26)
-        leftPadding: 8; rightPadding: 8
+        leftPadding: 2; rightPadding: 2
     }
     Row {
         id: workspaceRow
@@ -183,13 +248,13 @@ Item {
         objectName: "workspacesSlot"
         height: Math.max(28, ...Array.from(children).map(child => child.height || 0))
         spacing: 2
-        leftPadding: 1
-        rightPadding: 3
+        leftPadding: Math.max(0, 1 + (Settings.item(bar.settings, "workspaces").paddingLeft || 0))
+        rightPadding: Math.max(0, 3 + (Settings.item(bar.settings, "workspaces").paddingRight || 0))
         Repeater {
             model: (bar.statusData.workspaces || []).filter(w => !bar.outputName || w.monitor === bar.outputName)
             delegate: Pill {
                 objectName: "workspace" + modelData.id
-                settings: Settings.appearance(bar.settings, "workspaces")
+                settings: Object.assign({}, bar.appearance("workspaces"), {paddingLeft:0, paddingRight:0})
                 colorSampler: Settings.adaptive(bar.settings, "workspaces") ? bar.wallpaperColors : null
                 colorRoot: bar
                 required property var modelData
@@ -217,7 +282,7 @@ Item {
         active: bar.itemEnabled("media") && !!bar.mediaData && bar.mediaData.playing === true
         visible: active
         sourceComponent: MediaPill {
-            settings: Settings.appearance(bar.settings, "media")
+            settings: bar.appearance("media")
             colorSampler: Settings.adaptive(bar.settings, "media") ? bar.wallpaperColors : null
             colorRoot: bar
             text: bar.mediaData.title || ""
@@ -232,7 +297,7 @@ Item {
         menu: "calendar"
         x: bar.itemX("calendar")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "calendar")
+        settings: bar.appearance("calendar")
         opacity: Settings.item(bar.settings, "calendar").opacity ?? 1
         visible: bar.itemEnabled("calendar")
         text: bar.clockText
@@ -244,19 +309,19 @@ Item {
         id: trayPill
         x: bar.itemX("tray")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "tray")
+        settings: bar.appearance("tray")
         opacity: Settings.item(bar.settings, "tray").opacity ?? 1
         colorSampler: Settings.adaptive(bar.settings, "tray") ? bar.wallpaperColors : null
         colorRoot: bar
         foreground: "#cba6f7"
         interactive: false
         visible: bar.itemEnabled("tray") && trayIcons.count > 0
-        width: trayRow.width + 22
+        width: trayRow.width + effectiveLeftPadding + effectiveRightPadding
         implicitHeight: Math.max(28, trayIconSize + 8)
         readonly property int trayIconSize: settings.iconSize || 16
         Row {
             id: trayRow
-            x: 11
+            x: trayPill.effectiveLeftPadding
             anchors.verticalCenter: parent.verticalCenter
             visible: !trayPill.settings.hideIcon
             spacing: 0
@@ -294,7 +359,7 @@ Item {
         menu: "notifications"
         x: bar.itemX("notifications")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "notifications")
+        settings: bar.appearance("notifications")
         opacity: Settings.item(bar.settings, "notifications").opacity ?? 1
         visible: bar.itemEnabled("notifications")
         objectName: "notificationBell"
@@ -326,7 +391,7 @@ Item {
         id: audio
         x: bar.itemX("audio")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "audio")
+        settings: bar.appearance("audio")
         opacity: Settings.item(bar.settings, "audio").opacity ?? 1
         visible: bar.itemEnabled("audio")
         bar: bar
@@ -341,7 +406,7 @@ Item {
         id: wifi
         x: bar.itemX("wifi")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "wifi")
+        settings: bar.appearance("wifi")
         opacity: Settings.item(bar.settings, "wifi").opacity ?? 1
         visible: bar.itemEnabled("wifi")
         bar: bar
@@ -360,7 +425,7 @@ Item {
         id: bluetooth
         x: bar.itemX("bluetooth")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "bluetooth")
+        settings: bar.appearance("bluetooth")
         opacity: Settings.item(bar.settings, "bluetooth").opacity ?? 1
         visible: bar.itemEnabled("bluetooth")
         bar: bar
@@ -379,7 +444,7 @@ Item {
         id: battery
         x: bar.itemX("battery")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "battery")
+        settings: bar.appearance("battery")
         opacity: Settings.item(bar.settings, "battery").opacity ?? 1
         bar: bar
         menu: "battery"
@@ -395,7 +460,7 @@ Item {
         id: power
         x: bar.itemX("power")
         y: (bar.height - height) / 2
-        settings: Settings.appearance(bar.settings, "power")
+        settings: bar.appearance("power")
         opacity: Settings.item(bar.settings, "power").opacity ?? 1
         visible: bar.itemEnabled("power")
         bar: bar

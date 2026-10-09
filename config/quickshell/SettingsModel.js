@@ -1,10 +1,31 @@
 .pragma library
 
+// Wallpaper-seeded shuffles keep the preview and live bars in agreement.
+var vibrantPalette = ['#ff6b9d', '#ff895c', '#ffd45c', '#b5ef63', '#5ee8a5', '#54e3da',
+    '#5dccff', '#86a6ff', '#b88aff', '#e27fff', '#ff79d1', '#ff6575'];
+var vibrantSessionSeed = Math.floor(Math.random() * 0x7fffffff) || 1;
+function wallpaperPalette(source) {
+    let seed = vibrantSessionSeed;
+    let key = String(source || "");
+    for (let i = 0; i < key.length; ++i)
+        seed = Math.imul(seed ^ key.charCodeAt(i), 16777619);
+    seed = seed || 1;
+    let palette = vibrantPalette.slice();
+    for (let n = palette.length - 1; n > 0; --n) {
+        seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
+        let swap = (seed >>> 0) % (n + 1);
+        [palette[n], palette[swap]] = [palette[swap], palette[n]];
+    }
+    return palette;
+}
+var vibrantIds = ['launcher', 'settings', 'workspaces', 'media', 'calendar', 'tray',
+    'notifications', 'audio', 'wifi', 'bluetooth', 'battery', 'power'];
+
 function copy(value) { return JSON.parse(JSON.stringify(value)); }
 function item(config, id) { return (config.items || []).find(i => i.id === id) || {}; }
 function adaptive(config, id) {
     let mode = item(config, id).adaptiveColors;
-    return mode === 'on' || (mode !== 'off' && (!config.bar || config.bar.adaptiveColors !== false));
+    return mode === 'on' || (mode !== 'off' && (!config.bar || config.bar.randomVibrantColors || config.bar.adaptiveColors !== false));
 }
 function merge(defaults, saved) {
     if (!saved || saved.version !== 1) throw new Error('Unsupported settings version');
@@ -20,10 +41,15 @@ function merge(defaults, saved) {
 }
 
 // Resolve item appearance while preserving component defaults in inherit mode.
-function appearance(config, id) {
+function appearance(config, id, wallpaperSource) {
     let result = Object.assign({}, item(config, id));
     if (!result.background || result.background === 'inherit')
         result.background = (config.bar && config.bar.background) || 'inherit';
+    if (result.pillGroup) result.background = 'off';
+    // Explicit item adaptation choices override the global random mode.
+    if (config.bar && config.bar.randomVibrantColors &&
+            (!result.adaptiveColors || result.adaptiveColors === 'inherit'))
+        result.vibrantColor = wallpaperPalette(wallpaperSource)[Math.max(0, vibrantIds.indexOf(id))];
     result.iconSize = result.iconSize || (config.bar && config.bar.iconSize) || 0;
     return result;
 }
@@ -38,6 +64,7 @@ function reorder(config, id, side, beforeId) {
     let group = next.items.filter(i => i.id !== id && i.side === side).sort((a, b) => a.order - b.order);
     let index = group.findIndex(i => i.id === beforeId);
     group.splice(index < 0 ? group.length : index, 0, moving);
+    if (previousSide !== side) moving.pillGroup = '';
     moving.side = side;
     group.forEach((i, n) => i.order = n);
     if (previousSide !== side)
@@ -64,4 +91,19 @@ function restoreItem(config, saved, id) {
         beforeId = after < group.length ? group[after].id : "";
     }
     return reorder(next, id, previous.side, beforeId);
+}
+
+// A named pill follows its first member's alignment. Members retain their IDs.
+function setPillGroup(config, id, name) {
+    let next = copy(config), moving = item(next, id);
+    let peer = next.items.find(i => i.id !== id && i.pillGroup === name && name);
+    moving.pillGroup = name;
+    if (peer) moving.side = peer.side;
+    return next;
+}
+function setItemSide(config, id, side) {
+    let next = copy(config), moving = item(next, id);
+    for (let entry of next.items)
+        if (entry.id === id || (moving.pillGroup && entry.pillGroup === moving.pillGroup)) entry.side = side;
+    return next;
 }

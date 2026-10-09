@@ -60,6 +60,11 @@ def install(repo):
     for name in ('hypr', 'xdg-desktop-portal'):
         put(repo / 'config' / name, config / name, Path('config') / name)
 
+    # Install only managed entries; keep other applications' autostart files.
+    for desktop in sorted((repo / 'config/autostart').glob('*.desktop')):
+        put(desktop, config / 'autostart' / desktop.name,
+            Path('config/autostart') / desktop.name)
+
     # Compile before replacing the destination, so a failed build leaves it intact.
     with tempfile.TemporaryDirectory(prefix='hyprshell-quickshell-') as temporary:
         payload = Path(temporary) / 'quickshell'

@@ -40,6 +40,18 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual((backup / entry['file']).read_text(), original)
         self.assertFalse(json.loads(self.path.read_text())['items'][0]['enabled'])
 
+    def test_random_vibrant_colors_validation_and_round_trip(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['randomVibrantColors']
+        self.assertFalse(backend.validate(legacy)['bar']['randomVibrantColors'])
+        self.data['bar']['randomVibrantColors'] = True
+        self.assertTrue(backend.save(self.data)['ok'])
+        self.assertTrue(json.loads(self.path.read_text())['bar']['randomVibrantColors'])
+        for invalid in (1, 'true', None):
+            self.data['bar']['randomVibrantColors'] = invalid
+            with self.assertRaises(ValueError):
+                backend.validate(self.data)
+
     def test_invalid_and_unknown_values_write_nothing(self):
         variants = []
         for key, value in [('opacity', 2), ('backgroundOpacity', -0.5), ('textColor', 'red'), ('side', 'bottom'), ('order', True)]:
@@ -66,13 +78,53 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(backend.validate(legacy), self.data)
         self.data['bar']['background'] = 'off'
         wifi = next(i for i in self.data['items'] if i['id'] == 'wifi')
-        wifi.update(spacingLeft=7, spacingRight=10, background='on')
+        wifi.update(spacingLeft=-7, spacingRight=-200, background='on')
         backend.save(self.data)
         self.assertEqual(json.loads(self.path.read_text()), self.data)
 
+    def test_shared_pills_round_trip_and_validate(self):
+        self.data['bar']['groupSpacing'] = 8
+        for entry in self.data['items']:
+            entry['pillGroup'] = 'Connections' if entry['id'] in ('wifi', 'bluetooth', 'audio') else ''
+        backend.save(self.data)
+        self.assertEqual(json.loads(self.path.read_text()), self.data)
+        for value in (True, None, 'x' * 41, 'bad\nname'):
+            data = copy.deepcopy(self.data)
+            data['items'][0]['pillGroup'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                backend.validate(data)
+        for value in (-1, 31, True, 1.5):
+            data = copy.deepcopy(self.data)
+            data['bar']['groupSpacing'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                backend.validate(data)
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['groupSpacing']
+        for entry in legacy['items']:
+            del entry['pillGroup']
+        restored = backend.validate(legacy)
+        self.assertEqual(restored['bar']['groupSpacing'], 3)
+        self.assertTrue(all(i['pillGroup'] == '' for i in restored['items']))
+
+    def test_individual_padding_round_trip_and_validation(self):
+        self.data['items'][0].update(paddingLeft=12, paddingRight=-2)
+        backend.save(self.data)
+        self.assertEqual(json.loads(self.path.read_text()), self.data)
+        for key in ('paddingLeft', 'paddingRight'):
+            for value in (-201, 201, 0.5, True, '5'):
+                data = copy.deepcopy(self.data)
+                data['items'][0][key] = value
+                with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                    backend.validate(data)
+        legacy = copy.deepcopy(self.data)
+        for entry in legacy['items']:
+            del entry['paddingLeft']
+            del entry['paddingRight']
+        self.assertTrue(all(i['paddingLeft'] == i['paddingRight'] == 0 for i in backend.validate(legacy)['items']))
+
     def test_invalid_spacing_and_global_background_are_rejected(self):
         for key in ('spacingLeft', 'spacingRight'):
-            for value in (-1, 201, 0.5, True, '5', float('inf')):
+            for value in (-201, 201, 0.5, True, '5', float('inf')):
                 with self.subTest(key=key, value=value):
                     data = copy.deepcopy(self.data)
                     data['items'][0][key] = value

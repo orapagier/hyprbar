@@ -9,6 +9,7 @@ import "SettingsModel.js" as Model
 FloatingWindow {
     id: window
     required property var store
+    property var wallpaperSources: ({})
     property string lockingError: ""
     signal lockRequested()
     signal focusRequested()
@@ -20,13 +21,15 @@ FloatingWindow {
     property var submitted: Model.copy(store.defaults)
     property bool editingSession: false
     readonly property bool saving: writer.running
-    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !githubSync.running
+    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !hyprskillPage.busy && !githubSync.running
     onDraftChanged: if (editingSession) autoSave.restart()
     onVisibleChanged: if (!visible && editingSession && dirty) apply()
     property int section: -1
     onSectionChanged: Qt.callLater(() => { if (editorScroll.contentItem) editorScroll.contentItem.contentY = 0; })
     property string message: ""
     property bool success: true
+    property string savedNotice: ""
+    property string submittedNotice: ""
     readonly property bool dirty: JSON.stringify(draft) !== JSON.stringify(initial)
     readonly property var selected: section >= 0 ? draft.items[section] : ({})
     readonly property var names: ({
@@ -72,6 +75,8 @@ FloatingWindow {
             visible = true;
             return;
         }
+        savedNotice = "";
+        savedNoticeTimer.stop();
         editingSession = false;
         initial = Model.copy(store.config);
         draft = Model.copy(store.config);
@@ -82,7 +87,9 @@ FloatingWindow {
     }
     function updateItem(key, value) {
         let next = Model.copy(draft);
-        next.items[section][key] = value;
+        if (key === "pillGroup") next = Model.setPillGroup(draft, selected.id, value);
+        else if (key === "side") next = Model.setItemSide(draft, selected.id, value);
+        else next.items[section][key] = value;
         draft = next;
     }
     function resetItem() {
@@ -121,6 +128,17 @@ FloatingWindow {
         group.forEach((item, n) => item.order = n);
         draft = next;
     }
+    function saveNotice(before, after) {
+        let labels = [];
+        if (JSON.stringify(before.bar) !== JSON.stringify(after.bar)) labels.push("Bar & layout");
+        if (JSON.stringify(before.hyprland) !== JSON.stringify(after.hyprland)) labels.push("Hyprland appearance");
+        if (JSON.stringify(before.locking) !== JSON.stringify(after.locking)) labels.push("Screen locking");
+        after.items.forEach(item => {
+            let previous = before.items.find(entry => entry.id === item.id);
+            if (JSON.stringify(previous) !== JSON.stringify(item)) labels.push(names[item.id] || item.id);
+        });
+        return labels.length ? labels.join(", ") + " settings saved!" : "Settings saved!";
+    }
     function apply() {
         if (writer.running || !dirty) return;
         if (store.error || !store.loaded) {
@@ -130,6 +148,9 @@ FloatingWindow {
         }
         autoSave.stop();
         submitted = Model.copy(draft);
+        submittedNotice = saveNotice(initial, submitted);
+        savedNotice = "";
+        savedNoticeTimer.stop();
         success = true;
         message = "Saving changes…";
         writer.command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--save-json", JSON.stringify(submitted), "--expected-json", JSON.stringify(initial)];
@@ -139,6 +160,11 @@ FloatingWindow {
         id: autoSave
         interval: 500
         onTriggered: window.apply()
+    }
+    Timer {
+        id: savedNoticeTimer
+        interval: 2000
+        onTriggered: window.savedNotice = ""
     }
     Process {
         id: writer
@@ -154,8 +180,10 @@ FloatingWindow {
                 try {
                     let result = JSON.parse(text);
                     window.success = result.ok;
-                    window.message = result.ok ? result.message.replace("Settings applied.", "Saved automatically.") : result.message;
+                    window.message = result.ok ? "" : result.message;
                     if (result.ok) {
+                        window.savedNotice = window.submittedNotice;
+                        savedNoticeTimer.restart();
                         window.initial = Model.copy(window.submitted);
                         window.store.config = Model.copy(window.submitted);
                         window.store.reload();
@@ -330,11 +358,6 @@ FloatingWindow {
                 Item {
                     Layout.fillWidth: true
                 }
-                Label {
-                    text: window.saving ? "●  Saving…" : !window.success ? "●  Check your changes" : window.dirty ? "●  Saving soon…" : "●  Saved automatically"
-                    font.pixelSize: 11
-                    color: !window.success ? "#f38ba8" : window.dirty ? "#e7ca98" : "#9eafb7"
-                }
                 SettingsButton {
                     objectName: "githubSyncButton"
                     text: githubSync.running ? "Syncing…" : "  Sync to GitHub"
@@ -389,6 +412,7 @@ FloatingWindow {
                     scale: Math.min(1, (parent.width - 24) / width)
                     transformOrigin: Item.TopLeft
                     settings: window.draft
+                    wallpaperSource: window.screen ? window.wallpaperSources[window.screen.name] || "" : ""
                     trayModel: [{icon: Qt.resolvedUrl("icons/preview-tray.svg")} ]
                     clockText: Qt.formatDateTime(new Date(), window.draft.bar.clockFormat)
                     statusData: ({
@@ -499,6 +523,14 @@ FloatingWindow {
                             highlighted: window.section === -4
                             onClicked: window.section = -4
                         }
+                        SettingsNavButton {
+                            symbol: "󰒓"
+                            text: "Hyprskill"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -5
+                            onClicked: window.section = -5
+                        }
                         Label {
                             text: "TOPBAR ITEMS"
                             color: "#727d9a"
@@ -541,19 +573,19 @@ FloatingWindow {
                         width: editorScroll.availableWidth
                         spacing: 20
                         Label {
-                            text: window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
+                            text: window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
                             color: "#8796b5"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
+                            text: window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
                             color: "#939bb3"
                         }
@@ -567,6 +599,7 @@ FloatingWindow {
                             visible: window.section >= 0
                             Layout.fillWidth: true
                             settings: window.selected
+                            allItems: window.draft.items
                             barSettings: window.draft.bar
                             saving: window.saving
                             onEdited: (key, value) => window.updateItem(key, value)
@@ -587,6 +620,11 @@ FloatingWindow {
                             visible: window.section === -4
                             Layout.fillWidth: true
                         }
+                        SettingsHyprskill {
+                            id: hyprskillPage
+                            visible: window.section === -5
+                            Layout.fillWidth: true
+                        }
                         SettingsAppearance {
                             visible: window.section === -2
                             Layout.fillWidth: true
@@ -598,7 +636,10 @@ FloatingWindow {
             }
             Label {
                 Layout.fillWidth: true
-                text: window.section === -4 ? "Cleanup choices apply when you click Save cleanup settings" : !window.success ? (window.message || window.store.error) : "Changes save and apply automatically"
+                objectName: "settingsSaveNotice"
+                Layout.minimumHeight: implicitHeight || 14
+                text: !window.success ? (window.message || window.store.error) : window.savedNotice
+                horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
                 font.pixelSize: 11
                 color: window.success ? "#939bb3" : "#f38ba8"

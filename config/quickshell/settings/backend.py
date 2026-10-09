@@ -61,11 +61,13 @@ def validate(data):
     bar = result['bar']
     if type(bar['adaptiveColors']) is not bool:
         raise ValueError('adaptiveColors must be boolean')
+    if type(bar['randomVibrantColors']) is not bool:
+        raise ValueError('randomVibrantColors must be boolean')
     if bar['iconSize'] != 0 or type(bar['iconSize']) is bool:
         number(bar['iconSize'], 8, 48, True)
     if bar['background'] not in ('inherit', 'on', 'off'):
         raise ValueError('Invalid global background')
-    for key, low, high in [('height', 28, 80), ('marginTop', 0, 100), ('marginSide', 0, 200), ('spacing', 0, 30)]:
+    for key, low, high in [('height', 28, 80), ('marginTop', 0, 100), ('marginSide', 0, 200), ('spacing', 0, 30), ('groupSpacing', 0, 30)]:
         number(bar[key], low, high, True)
     if not isinstance(bar['clockFormat'], str) or not 1 <= len(bar['clockFormat']) <= 100:
         raise ValueError('Clock format must contain 1–100 characters')
@@ -88,13 +90,15 @@ def validate(data):
         for key, choices in [('side', ('left', 'center', 'right')), ('adaptiveColors', ('inherit', 'on', 'off')), ('background', ('inherit', 'on', 'off'))]:
             if target[key] not in choices:
                 raise ValueError(f'Invalid {key}')
+        if not isinstance(target['pillGroup'], str) or len(target['pillGroup']) > 40 or any(ord(c) < 32 for c in target['pillGroup']):
+            raise ValueError('Pill group must be a name of at most 40 characters')
         for key in ('text', 'icon'):
             if not isinstance(target[key], str) or len(target[key]) > 200:
                 raise ValueError('Text/icon must be at most 200 characters')
         for key in ('textColor', 'iconColor', 'backgroundColor', 'outlineColor'):
             if not isinstance(target[key], str) or (target[key] and not re.fullmatch(r'#[0-9a-fA-F]{6}', target[key])):
                 raise ValueError(f'{key} must be empty or #RRGGBB')
-        for key, low, high, integer in [('order', 0, 1000, True), ('opacity', 0, 1, False), ('fontSize', 0, 48, True), ('radius', -1, 50, True), ('spacingLeft', 0, 200, True), ('spacingRight', 0, 200, True)]:
+        for key, low, high, integer in [('order', 0, 1000, True), ('opacity', 0, 1, False), ('fontSize', 0, 48, True), ('radius', -1, 50, True), ('spacingLeft', -200, 200, True), ('spacingRight', -200, 200, True), ('paddingLeft', -200, 200, True), ('paddingRight', -200, 200, True)]:
             number(target[key], low, high, integer)
         if target['iconSize'] != 0 or type(target['iconSize']) is bool:
             number(target['iconSize'], 8, 48, True)

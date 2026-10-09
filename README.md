@@ -56,6 +56,16 @@ validation, installation, cleanup, and GitHub sync.
 Hyprshell uses its own Quickshell bar, launcher, menus, and notification
 handler.
 
+The installer disables NetworkManager's separate `nm-applet` tray icon with a
+user autostart override in `config/autostart/nm-applet.desktop`. Hyprshell's
+Wi-Fi menu uses NetworkManager directly. Other apps' autostart entries are
+preserved.
+
+Desktop and machine customizations should be preserved in this repository,
+with any required installation steps wired into `setup.sh`, so a fresh Arch
+installation can restore the saved setup. Keep hardware-specific settings
+adaptable to a replacement laptop and keep credentials out of the repository.
+
 ## Requirements
 
 The supported installation target is:
@@ -656,3 +666,9 @@ behavior still needs a real session with the relevant devices and services.
 Bundled holiday rules may need updates for special government declarations.
 Bundled wallpapers are third-party images; inclusion here does not grant new
 ownership or licensing rights over them.
+
+## Agent machine context
+
+[Hyprskill](docs/hyprskill.md) gives Codex, Claude Code, and OpenCode reusable
+context about this desktop from any working directory. Install its global links
+with `python3 tools/install_hyprskill.py`; desktop installation stays separate.

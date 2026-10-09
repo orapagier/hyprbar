@@ -15,9 +15,55 @@ function contrast(a, b) {
 }
 function alpha(color, opacity) { return Qt.rgba(color.r, color.g, color.b, opacity); }
 
+// Preserve bright hues; contrast comes from the pill or a thin glyph outline.
+function vibrantForeground(sample, accent) {
+    let foreground = Qt.hsva(accent.hsvHue, accent.hsvSaturation,
+                             Math.max(0.92, accent.hsvValue), 1);
+    let backing = Qt.rgba(0.035, 0.04, 0.06, 1);
+    for (let i = 0; i < 30 && contrast(foreground, backing) < 5.2; ++i)
+        foreground = mix(foreground, Qt.rgba(1, 1, 1, 1), 0.04);
+    return foreground;
+}
+
+function vibrantPalette(sample, accent, minimum, maximum) {
+    let foreground = vibrantForeground(sample, accent);
+    let base = Qt.rgba(0.035, 0.04, 0.06, 1);
+    let background = mix(base, accent, 0.04);
+    let opacity = 0.22;
+    // Protect the bright foreground against the lightest sampled pixels,
+    // including hover/selection fills and the pill's white glass highlight.
+    function minimumContrast() {
+        let result = 100;
+        for (let state of [0, 1, 2]) {
+            let fill = mix(background, foreground, state * 0.03);
+            for (let under of [minimum, maximum]) {
+                let composite = mix(under, fill, Math.min(0.96, opacity + state * 0.06));
+                result = Math.min(result, contrast(foreground, mix(composite, Qt.rgba(1,1,1,1), 0.08)));
+            }
+        }
+        return result;
+    }
+    while (opacity < 0.96 && minimumContrast() < 4.6)
+        opacity = Math.min(0.96, opacity + 0.02);
+    // Very dark source accents need a small brightness lift for glass highlights.
+    for (let i = 0; i < 30 && minimumContrast() < 4.6; ++i)
+        foreground = mix(foreground, Qt.rgba(1,1,1,1), 0.04);
+    return {
+        foreground: foreground,
+        tint: alpha(background, opacity),
+        hover: alpha(mix(background, foreground, 0.03), Math.min(0.96, opacity + 0.06)),
+        selected: alpha(mix(background, foreground, 0.06), Math.min(0.96, opacity + 0.12)),
+        outline: alpha(foreground, 0.24),
+        selectedOutline: alpha(foreground, 0.55),
+        glyphOutline: base
+    };
+}
+
 function palette(sample, accent, minimum, maximum, style) {
     minimum = minimum || sample;
     maximum = maximum || sample;
+    if (style === "vibrant" || style === "vibrant-bare")
+        return vibrantPalette(sample, accent, minimum, maximum);
     let light = luminance(sample) > 0.179;
     if (style === "muted") {
         let gray = 0.2126 * sample.r + 0.7152 * sample.g + 0.0722 * sample.b;

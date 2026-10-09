@@ -6,6 +6,7 @@ import "SettingsModel.js" as Model
 Item {
     id: controller
     required property var store
+    property var wallpaperSources: ({})
     property string lockingError: ""
     readonly property var window: editor.item
     readonly property bool loaded: editor.active
@@ -51,6 +52,7 @@ Item {
         SettingsWindow {
             id: settingsWindow
             store: controller.store
+            wallpaperSources: controller.wallpaperSources
             lockingError: controller.lockingError
             onFocusRequested: controller.focusRequested(settingsWindow)
             onLockRequested: controller.lockRequested()

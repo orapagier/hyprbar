@@ -18,8 +18,8 @@ Item {
     property var colorSampler: null
     property Item colorRoot: null
     property string colorStyle: "normal"
-    readonly property var adaptivePalette: colorSampler ? colorSampler.paletteFor(pill, colorRoot, foreground, colorStyle) : null
-    readonly property color effectiveForeground: adaptivePalette ? adaptivePalette.foreground : foreground
+    readonly property var adaptivePalette: colorSampler ? colorSampler.paletteFor(pill, colorRoot, settings.vibrantColor ? Qt.color(settings.vibrantColor) : foreground, settings.vibrantColor ? (backgroundShown ? "vibrant" : "vibrant-bare") : colorStyle) : null
+    readonly property color effectiveForeground: adaptivePalette ? adaptivePalette.foreground : settings.vibrantColor || foreground
     property color tint: Qt.rgba(30/255, 30/255, 46/255, 0.28)
     property color outline: Qt.rgba(1, 1, 1, 0.16)
     property string family: "DejaVu Sans"
@@ -27,6 +27,8 @@ Item {
     property bool bold: true
     property int leftPadding: 11
     property int rightPadding: 11
+    property int effectiveLeftPadding: Math.max(0, leftPadding + (settings.paddingLeft || 0))
+    readonly property int effectiveRightPadding: Math.max(0, rightPadding + (settings.paddingRight || 0))
     property int minimumTextWidth: 0
     property int maximumWidth: 10000
     property int textFormat: Text.PlainText
@@ -46,7 +48,7 @@ Item {
     readonly property int effectiveIconSize: settings.iconSize || settings.fontSize || iconSize
     readonly property int effectiveGlyphSize: settings.iconSize || settings.fontSize || pixelSize
     readonly property int iconWidth: shownIcon.length ? effectiveIconSize + 5 : 0
-    implicitWidth: Math.min(maximumWidth, Math.max(minimumTextWidth, label.implicitWidth) + iconWidth + leftPadding + rightPadding)
+    implicitWidth: Math.min(maximumWidth, Math.max(minimumTextWidth, label.implicitWidth) + iconWidth + effectiveLeftPadding + effectiveRightPadding)
     implicitHeight: Math.max(28, shownIcon.length ? effectiveIconSize + 8 : 0, labelIsIcon && shownText.length ? effectiveGlyphSize + 8 : 0)
     Rectangle {
         visible: pill.backgroundShown
@@ -76,25 +78,29 @@ Item {
         }
     }
     Text {
-        x: pill.leftPadding
+        x: pill.effectiveLeftPadding
         anchors.verticalCenter: parent.verticalCenter
         objectName: "pillIcon"
         width: pill.effectiveIconSize
         visible: pill.shownIcon.length > 0
         text: pill.shownIcon
         color: pill.iconColor
+        style: pill.settings.vibrantColor && !pill.backgroundShown && !pill.settings.iconColor ? Text.Outline : Text.Normal
+        styleColor: pill.adaptivePalette && pill.adaptivePalette.glyphOutline ? pill.adaptivePalette.glyphOutline : "#090a0f"
         font.family: "GoMono Nerd Font"; font.pixelSize: pill.effectiveIconSize
         horizontalAlignment: Text.AlignHCenter
         renderType: Text.NativeRendering
     }
     Text {
         id: label
-        x: pill.leftPadding + pill.iconWidth
+        x: pill.effectiveLeftPadding + pill.iconWidth
         anchors.verticalCenter: parent.verticalCenter
-        width: parent.width - pill.leftPadding - pill.rightPadding - pill.iconWidth
+        width: parent.width - pill.effectiveLeftPadding - pill.effectiveRightPadding - pill.iconWidth
         text: pill.shownText
         textFormat: pill.textFormat
         color: pill.textColor
+        style: pill.settings.vibrantColor && !pill.backgroundShown && !pill.settings.textColor && !(pill.labelIsIcon && pill.settings.iconColor) ? Text.Outline : Text.Normal
+        styleColor: pill.adaptivePalette && pill.adaptivePalette.glyphOutline ? pill.adaptivePalette.glyphOutline : "#090a0f"
         font.family: pill.family
         font.pixelSize: pill.labelIsIcon ? pill.effectiveGlyphSize : pill.settings.fontSize || pill.pixelSize
         font.bold: pill.bold

@@ -2,13 +2,15 @@
   "version": 1,
   "bar": {
     "adaptiveColors": true,
+    "randomVibrantColors": false,
     "height": 32,
     "marginTop": 5,
     "marginSide": 10,
     "spacing": 3,
     "clockFormat": "MMM dd   hh:mm AP   ddd",
     "background": "inherit",
-    "iconSize": 0
+    "iconSize": 0,
+    "groupSpacing": 3
   },
   "items": [
     {
@@ -32,7 +34,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "settings",
@@ -55,7 +60,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "workspaces",
@@ -78,7 +86,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "media",
@@ -101,7 +112,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "calendar",
@@ -124,7 +138,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "tray",
@@ -147,7 +164,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "notifications",
@@ -170,7 +190,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "audio",
@@ -193,7 +216,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "wifi",
@@ -216,7 +242,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "bluetooth",
@@ -239,7 +268,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "battery",
@@ -262,7 +294,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     },
     {
       "id": "power",
@@ -285,7 +320,10 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0
+      "iconSize": 0,
+      "pillGroup": "",
+      "paddingLeft": 0,
+      "paddingRight": 0
     }
   ],
   "hyprland": {},

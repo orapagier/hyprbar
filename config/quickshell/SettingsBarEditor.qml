@@ -11,7 +11,7 @@ ColumnLayout {
     SettingsCard {
         Layout.fillWidth: true
         title: "Layout & spacing"
-        subtitle: "Give your bar room to breathe. Drag items in the preview to arrange them."
+        subtitle: "Set the global gap here. Select a module in the sidebar or preview to adjust its individual spacing."
         GridLayout {
             Layout.fillWidth: true
             columns: root.width >= 600 ? 2 : 1
@@ -21,7 +21,8 @@ ColumnLayout {
             Repeater {
                 model: [
                     {key: "height", label: "Bar height", min: 28, max: 80, fallback: 32},
-                    {key: "spacing", label: "Between items", min: 0, max: 30, fallback: 3},
+                    {key: "groupSpacing", label: "Inside shared pills", min: 0, max: 30, fallback: 3},
+                    {key: "spacing", label: "Between items / pills", min: 0, max: 30, fallback: 3},
                     {key: "marginTop", label: "Top margin", min: 0, max: 100, fallback: 5},
                     {key: "marginSide", label: "Side margins", min: 0, max: 200, fallback: 10}
                 ]
@@ -47,6 +48,20 @@ ColumnLayout {
             text: "Adapt colors to wallpaper"
             checked: root.settings.adaptiveColors
             onToggled: root.edited("adaptiveColors", checked)
+        }
+        SettingsSwitch {
+            objectName: "randomVibrantColorsControl"
+            Layout.fillWidth: true
+            text: "Random vibrant item colors"
+            checked: root.settings.randomVibrantColors === true
+            onToggled: root.edited("randomVibrantColors", checked)
+        }
+        Label {
+            Layout.fillWidth: true
+            text: "Give each item a bright color. Colors reshuffle when the wallpaper changes and stay readable. Turn off to use the current theme. Individual colors and wallpaper choices take priority."
+            wrapMode: Text.WordWrap
+            color: "#939bb3"
+            font.pixelSize: 11
         }
         SettingsBackgroundControl {
             Layout.fillWidth: true

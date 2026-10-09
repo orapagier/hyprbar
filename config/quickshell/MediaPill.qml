@@ -15,12 +15,13 @@ Pill {
     bold: false
     leftPadding: 9 + spectrumWidth + 8
     rightPadding: 9
+    effectiveLeftPadding: Math.max(0, 9 + (settings.paddingLeft || 0)) + spectrumWidth + 8
     interactive: false
     content.horizontalAlignment: Text.AlignLeft
     clip: true
     Row {
         visible: !media.settings.hideIcon
-        x: 9
+        x: Math.max(0, 9 + (media.settings.paddingLeft || 0))
         height: 16 * media.spectrumScale
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2 * media.spectrumScale
@@ -35,7 +36,7 @@ Pill {
                 height: (2 + level * 14) * media.spectrumScale
                 radius: 1.5 * media.spectrumScale
                 antialiasing: true
-                color: media.settings.iconColor || (media.colorSampler ? media.effectiveForeground : "#94e2d5")
+                color: media.settings.iconColor || ((media.colorSampler || media.settings.vibrantColor) ? media.effectiveForeground : "#94e2d5")
                 opacity: media.colorSampler ? 1 : 0.45 + level * 0.55
                 Behavior on height { NumberAnimation { duration: 40; easing.type: Easing.OutQuad } }
             }

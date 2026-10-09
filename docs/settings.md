@@ -34,13 +34,27 @@ using saved neighbours after drag operations renumber a group. It never loads
 bundled item defaults. The button waits for any in-flight save to finish.
 Because edits autosave, already saved edits become the new reset point.
 
+**Bar & layout → Default appearance → Random vibrant item colors** gives
+inheriting item icons and labels distinct bright colors. The shuffled palette
+reshuffles when the wallpaper image changes, while staying stable during edits
+and matching the preview to the live bar on the same screen. Returning to a
+wallpaper restores its palette for the current session. Colors stay bright on pale and dark wallpapers. Pill backgrounds become darker
+and more opaque where needed for contrast; icons without pills use a thin dark
+outline. Restarting the shell reshuffles the palette. Turning it off restores the current
+theme. Manual text/icon colors and explicit item adaptation on/off choices take
+priority. Pill backgrounds adapt with the vibrant accent for contrast, and tray artwork remains
+application-provided. The preference defaults to off on existing installations.
+
 Background controls use an explicit **Show background pill** switch: switching
 off removes the pill immediately in the preview and saves that choice. The
 general control affects all inheriting items; each item can set its own switch
 or choose **Use general setting** to follow the global choice again.
 
 The editor keeps a draft and saves it automatically after 500 ms without an
-edit. Closing the window flushes pending edits. Native window closes also reset
+edit. A bottom status message names the settings in the successfully saved
+snapshot (for example, “Bluetooth settings saved!”) and clears after two seconds.
+Opening the window shows no save confirmation; save errors remain visible.
+Closing the window flushes pending edits. Native window closes also reset
 the requested visibility, so subsequent launches remap it correctly. Opening
 an already visible Settings window requests focus by its existing window address
 without resetting the draft or its tiled/floating state. Each save invokes
@@ -70,8 +84,12 @@ The three groups are positioned independently, so unusually wide custom text
 or an overcrowded center group can overlap adjacent groups. Shorten overrides,
 reduce font size, hide modules, or distribute items between groups in that case.
 
-`bar.spacing` sets the general gap between visible items. Each item's
-`spacingLeft` and `spacingRight` add 0–200 px of space outside its pill;
+`bar.spacing` sets the general gap between visible items. Select a module in
+the sidebar or preview and use its **Item spacing** card to adjust **Space before adjustment** and **Space after adjustment** independently of that global gap.
+Reset either slider to restore the global gap on that side. Each item's
+`spacingLeft` and `spacingRight` adjust space outside its pill by −200–200 px; negative values reduce gaps,
+positive values add space, and the final gap is clamped at zero to avoid overlap.
+Outer group margins are also clamped at zero;
 these margins also count toward group alignment. For example, general spacing
 of 5 plus Wi-Fi's `spacingRight: 10` leaves 15 px before Bluetooth (with
 Bluetooth's left spacing at 0). Hidden items contribute no spacing.
@@ -267,3 +285,40 @@ Setup records the checkout in `$XDG_STATE_HOME/hyprshell/repository` (default
 Resolve existing staged changes or an ongoing merge/rebase first. Pushes never
 force or automatically merge remote changes. A failed push keeps the local
 commit for retry after resolving authentication or remote divergence.
+
+## Shared bar pills
+
+Select a module and open **Shared pill**. Enter a group name to create a pill,
+then select that name on any other modules to join it. Choose **Own pill** or
+clear the name to remove a module. All built-in modules can share a pill;
+there is no smaller membership limit. Modules remain individually clickable,
+and their menus follow their positions. Hidden modules do not occupy space.
+
+Members are kept together in their existing order. Joining a pill adopts its
+alignment; changing a member's alignment moves the whole pill. Dragging a
+member to another alignment removes it from its old pill. Dragging within the
+same alignment retains membership. Use Earlier/Later or the preview to reorder.
+**Bar & layout → Inside shared pills** sets the base gap between members;
+individual before/after adjustments still apply. The regular gap separates
+pills and standalone items.
+
+The first visible member supplies the shared pill's background colors, opacity,
+and radius. Individual backgrounds are suppressed while grouped, preserving
+each module's stored appearance for removal. Named pills display a shared
+background even when the global background switch is off. Group names
+(`items[].pillGroup`, up to 40 characters) and internal spacing
+(`bar.groupSpacing`, 0–30 px) use the normal validated autosave. Existing saved
+settings default to separate pills.
+
+Per-module **Padding inside pill** adjusts the left and right space inside
+its click area. Increase the first member's left padding or the last member's
+right padding to inset content from a shared pill's edges. Unlike gap adjustments,
+this space is covered by the shared background. `paddingLeft` and `paddingRight`
+are signed adjustments (−200–200 px) to original padding; final padding stops at
+zero. Reset restores the original padding. Media keeps space for its spectrum.
+
+Every Settings slider includes **−** and **+** buttons to change its displayed
+value by one step (usually 1 px or one percentage point). Buttons stop at the
+slider limits, follow disabled controls, and use the normal autosave path.
+For inherited values, the first click adjusts the suggested value; reset
+restores inheritance.

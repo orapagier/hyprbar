@@ -7,6 +7,8 @@ ColumnLayout {
     id: root
     required property var settings
     required property var barSettings
+    property var allItems: []
+    readonly property var pillGroups: ["Own pill", ...Array.from(new Set(allItems.map(i => i.pillGroup).filter(name => !!name)))]
     property bool saving: false
     signal edited(string key, var value)
     signal moveRequested(int direction)
@@ -50,6 +52,31 @@ ColumnLayout {
                 }
             }
         }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Shared pill"
+        subtitle: "Join a named pill or create one, then assign other modules to it. Each module keeps its own actions. The first module supplies the shared background style."
+        SettingsComboBox {
+            objectName: "pillGroupControl"
+            Layout.fillWidth: true
+            model: root.pillGroups
+            currentIndex: root.settings.pillGroup ? Math.max(0, root.pillGroups.indexOf(root.settings.pillGroup, 1)) : 0
+            onActivated: root.edited("pillGroup", currentIndex === 0 ? "" : root.pillGroups[currentIndex])
+        }
+        SettingField {
+            Layout.fillWidth: true
+            label: "Pill group name"
+            hint: "For example: Connections"
+            description: "Use the same name to share a pill. Clear the name to give this module its own pill. Alignment moves the entire pill; dragging to another alignment removes this module from it."
+            value: root.settings.pillGroup || ""
+            onEdited: value => root.edited("pillGroup", value)
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Item spacing"
+        subtitle: "Negative values reduce the gap; positive values add space. Gaps stop at zero. Base spacing: " + (root.settings.pillGroup ? (root.barSettings.groupSpacing ?? 3) : (root.barSettings.spacing ?? 3)) + " px."
         GridLayout {
             Layout.fillWidth: true
             columns: root.width >= 600 ? 2 : 1
@@ -57,15 +84,40 @@ ColumnLayout {
             columnSpacing: 28
             rowSpacing: 20
             Repeater {
-                model: [{key: "spacingLeft", label: "Space before"}, {key: "spacingRight", label: "Space after"}]
+                model: [{key: "spacingLeft", label: "Space before adjustment"}, {key: "spacingRight", label: "Space after adjustment"}]
                 delegate: SettingsSlider {
                     required property var modelData
                     objectName: modelData.key + "Control"
                     Layout.fillWidth: true
                     label: modelData.label
                     settingValue: root.settings[modelData.key] ?? 0
-                    to: 200; suffix: " px"
-                    resetDescription: "Remove extra spacing"
+                    from: -200; to: 200; suffix: " px"
+                    resetDescription: "Use global spacing"
+                    onEdited: value => root.edited(modelData.key, value === "" ? 0 : value)
+                }
+            }
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Padding inside pill"
+        subtitle: "Adjust space inside this item's click area, between its content and the pill edges. Positive values add space; negative values reduce the original padding. Works in shared pills too."
+        GridLayout {
+            Layout.fillWidth: true
+            columns: root.width >= 600 ? 2 : 1
+            uniformCellWidths: true
+            columnSpacing: 28
+            rowSpacing: 20
+            Repeater {
+                model: [{key:"paddingLeft", label:"Left padding adjustment"}, {key:"paddingRight", label:"Right padding adjustment"}]
+                delegate: SettingsSlider {
+                    required property var modelData
+                    objectName: modelData.key + "Control"
+                    Layout.fillWidth: true
+                    label: modelData.label
+                    settingValue: root.settings[modelData.key] ?? 0
+                    from: -200; to: 200; suffix: " px"
+                    resetDescription: "Restore original padding"
                     onEdited: value => root.edited(modelData.key, value === "" ? 0 : value)
                 }
             }
