@@ -85,3 +85,12 @@ Application theme is now available separately from topbar appearance: Dark/Light
 updates desktop and GTK preferences and enables GTK integration for newly opened
 Qt applications. Saved mode travels through setup and GitHub sync. Native toggle
 and transaction checks cover failure recovery and unchanged bar preferences.
+
+Launcher follow-up: desktop entries now launch through UWSM services so they
+inherit the updated Qt theme environment and honor Terminal=true. UWSM's default
+terminal selection chose Kitty's URL launcher; xdg-terminals.list now prefers the
+real Kitty terminal. Real command generation resolves Vim to `kitty -- vim`.
+Vim opened normally in an isolated PTY. GParted's installed wrapper expects
+xhost, which is absent; xorg-xhost was added to packages.txt. Live installation
+requires `sudo pacman -S --needed xorg-xhost` from the user's terminal because the
+agent session cannot elevate privileges. Confirm remaining light apps by name.

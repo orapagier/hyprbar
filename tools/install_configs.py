@@ -60,6 +60,8 @@ def install(repo):
     for name in ('hypr', 'xdg-desktop-portal'):
         put(repo / 'config' / name, config / name, Path('config') / name)
 
+    put(repo / 'config/xdg-terminals.list', config / 'xdg-terminals.list', Path('config/xdg-terminals.list'))
+
     # Install only managed entries; keep other applications' autostart files.
     for desktop in sorted((repo / 'config/autostart').glob('*.desktop')):
         put(desktop, config / 'autostart' / desktop.name,

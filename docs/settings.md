@@ -482,3 +482,25 @@ new backup. Credentials and unrelated GTK preferences are not imported into Git.
 The installer explicitly includes GTK 3, GLib's GSettings tools, and GNOME desktop
 schemas. Tests isolate desktop preferences and files and exercise the native toggle,
 failed saves, rollback, sync, and preservation of topbar settings.
+
+## Application launching and theme propagation
+
+The launcher opens desktop entry IDs using `uwsm app -t service`. UWSM processes
+Terminal, field codes and working directory metadata, and systemd starts the
+application with the current user-manager environment. This carries the selected
+Qt platform theme into new launcher apps even when Quickshell started before the
+application-theme toggle was changed. Existing application processes may need
+closing fully before relaunching (including background instances).
+
+`xdg-terminals.list` selects `kitty.desktop` and excludes Kitty's URL launcher;
+setup restores this managed file, and GitHub sync captures user edits to it.
+The [Quickshell DesktopEntry API](https://quickshell.org/docs/v0.2.0/types/Quickshell/DesktopEntry/)
+exposes terminal metadata, which the original direct launch path did not handle.
+
+GParted's installed wrapper uses `xhost` to grant root temporary XWayland access
+and revokes access when it exits. Hyprshell now includes `xorg-xhost` in its
+package list; existing installations missing it must install that package before
+using GParted. See [GParted's Wayland startup workaround](https://gparted.org/news.php?item=214).
+No persistent display permission change or passwordless policy is configured.
+Application-owned themes, terminal color schemes and elevated applications may
+use separate preferences from the desktop color-scheme setting.

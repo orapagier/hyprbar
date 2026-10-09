@@ -57,6 +57,9 @@ def mirror(source, destination):
 
 def snapshot_managed_files(repo, config, home):
     """Capture installer-owned files without importing unrelated user files."""
+    terminal = config / 'xdg-terminals.list'
+    if terminal.is_file():
+        mirror(terminal, repo / 'config/xdg-terminals.list')
     portal = config / 'xdg-desktop-portal'
     if portal.is_dir():
         # Other applications may own portal files; copy only our managed names.
