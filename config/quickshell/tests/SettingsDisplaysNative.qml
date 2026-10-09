@@ -27,16 +27,6 @@ ShellRoot {
                 if (page.entries[0].mode !== "1920x1080@120.00Hz") { test.fail("refresh edit"); return; }
                 resolution.currentIndex = 2; resolution.activated(2);
                 if (page.entries[0].mode !== "1280x720@60.00Hz" || page.saved.entries.length) { test.fail("resolution draft"); return; }
-                let scale = test.find(page, "displayScale");
-                if (!scale || scale.stepSize !== 5) { test.fail("scale step"); return; }
-                scale.adjust(1);
-                if (page.entries[0].scale !== 1.05) { test.fail("scale increase"); return; }
-                scale.adjust(-1);
-                if (page.entries[0].scale !== 1) { test.fail("scale decrease"); return; }
-                scale.edited("");
-                if (page.entries[0].scale !== "auto") { test.fail("automatic scale reset"); return; }
-                scale.adjust(1);
-                if (page.entries[0].scale !== 1.05) { test.fail("scale from automatic"); return; }
                 let oldEntries = page.entries;
                 let oldMonitors = page.monitors;
                 page.monitors = [{name: "eDP-1", width: 1920, height: 1080, scale: 1, x: 0, y: 0}, {name: "HDMI-A-1", width: 2560, height: 1440, scale: 2, x: 1920, y: 0}];

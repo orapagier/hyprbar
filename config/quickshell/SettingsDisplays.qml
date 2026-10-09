@@ -168,16 +168,21 @@ ColumnLayout {
                         onActivated: page.edit(card.index, "mode", card.rates[currentIndex])
                     }
                 }
-                SettingsSlider {
-                    objectName: "displayScale"
+                ColumnLayout {
                     Layout.fillWidth: true
-                    label: "Scale"
-                    from: 50; to: 400; stepSize: 5; suffix: "%"
-                    inheritedText: "Automatic"
-                    resetDescription: "Use automatic display scaling"
-                    defaultValue: (card.modelData.scale || 1) * 100
-                    settingValue: card.entry.scale === "auto" ? undefined : card.entry.scale * 100
-                    onEdited: value => page.edit(card.index, "scale", value === "" ? "auto" : value / 100)
+                    Label { text: "Scale"; color: "#aeb9d2" }
+                    SettingsComboBox {
+                        objectName: "displayScale"
+                        Layout.fillWidth: true
+                        readonly property var scales: {
+                            let list = ["auto", 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4];
+                            if (!list.includes(card.entry.scale)) list.push(card.entry.scale);
+                            return list;
+                        }
+                        model: scales.map(s => s === "auto" ? "Automatic" : Math.round(s * 100) + "%")
+                        currentIndex: scales.indexOf(card.entry.scale)
+                        onActivated: page.edit(card.index, "scale", scales[currentIndex])
+                    }
                 }
                 ColumnLayout {
                     Layout.fillWidth: true

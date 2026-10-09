@@ -423,8 +423,8 @@ Open **Displays** in Settings. Each active monitor shows its advertised resoluti
 and refresh rates, scale, rotation (including flipped orientations), and position.
 **Recommended (automatic)** selects the preferred mode. Resolution choices come
 from the monitor’s advertised modes; a panel advertising only 1920×1080 has
-that resolution plus Recommended. Scale uses a 50–400% slider with 5-percentage-point
-steps for dragging, keyboard arrows and −/+ buttons. Reset selects automatic scaling. **Arrange automatically**
+that resolution plus Recommended. Scale uses the preset dropdown: Automatic, 75%, 100%, 125%, 150%, 175%,
+200%, 250%, 300%, and 400%. **Arrange automatically**
 lets Hyprland position that output. For multiple screens, choose another output and
 use **Left / Right / Above / Below**; the placement accounts for scale and rotation
 and fixes both positions. Logical X/Y fields allow precise adjustment.
