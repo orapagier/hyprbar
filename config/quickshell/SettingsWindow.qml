@@ -12,6 +12,7 @@ FloatingWindow {
     property var wallpaperSources: ({})
     property string lockingError: ""
     property string powerError: ""
+    property var notificationApps: []
     property var batteryInfo: ({})
     signal lockRequested()
     signal focusRequested()
@@ -114,6 +115,11 @@ FloatingWindow {
             next.hyprland[key] = value;
         draft = next;
     }
+    function updateNotifications(key, value) {
+        let next = Model.copy(draft);
+        next.notifications[key] = value;
+        draft = next;
+    }
     function updatePower(key, value) {
         let next = Model.copy(draft);
         next.power[key] = value;
@@ -141,6 +147,7 @@ FloatingWindow {
         let inputKeys = ["pointerSpeed", "mouseNaturalScroll", "touchpadNaturalScroll", "tapToClick", "disableWhileTyping", "repeatRate", "repeatDelay", "keyboardLayouts", "layoutSwitch"];
         if (inputKeys.some(key => before.hyprland[key] !== after.hyprland[key])) labels.push("Mouse, touchpad & keyboard");
         if (Object.keys(Object.assign({}, before.hyprland, after.hyprland)).some(key => inputKeys.indexOf(key) < 0 && before.hyprland[key] !== after.hyprland[key])) labels.push("Hyprland appearance");
+        if (JSON.stringify(before.notifications) !== JSON.stringify(after.notifications)) labels.push("Notification delivery");
         if (JSON.stringify(before.power) !== JSON.stringify(after.power)) labels.push("Power & battery");
         if (JSON.stringify(before.locking) !== JSON.stringify(after.locking)) labels.push("Screen locking");
         after.items.forEach(item => {
@@ -550,6 +557,14 @@ FloatingWindow {
                             onClicked: window.section = -10
                         }
                         SettingsNavButton {
+                            symbol: "󰂚"
+                            text: "Notification delivery"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -11
+                            onClicked: window.section = -11
+                        }
+                        SettingsNavButton {
                             symbol: "󰌾"
                             text: "Screen locking"
                             Layout.fillWidth: true
@@ -615,13 +630,13 @@ FloatingWindow {
                         width: editorScroll.availableWidth
                         spacing: 20
                         Label {
-                            text: window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
+                            text: window.section === -11 ? "Notification delivery" : window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
                             color: "#8796b5"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -11 ? "Choose popups, quiet hours, and preferences for each application." : window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
@@ -691,6 +706,13 @@ FloatingWindow {
                             runtimeError: window.powerError
                             batteryInfo: window.batteryInfo
                             onEdited: (key, value) => window.updatePower(key, value)
+                        }
+                        SettingsNotifications {
+                            visible: window.section === -11
+                            Layout.fillWidth: true
+                            settings: window.draft.notifications
+                            applications: window.notificationApps
+                            onEdited: (key, value) => window.updateNotifications(key, value)
                         }
                         SettingsInput {
                             visible: window.section === -9

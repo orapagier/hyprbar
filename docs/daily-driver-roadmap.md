@@ -20,7 +20,8 @@ screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync
    brightness, and supported power profiles. Implemented 2026-10-10; locking
    remains separate. Physical suspend/lid/wake testing remains.
 4. **Notifications** — optional popups, Do Not Disturb, per-app preferences,
-   and critical alerts. Currently notifications go straight to the inbox.
+   and critical alerts. Implemented 2026-10-10; popups default off.
+   Physical delivery and popup placement testing remains.
 5. **Sound improvements** — microphone device selection, input meter,
    test sound, and per-app volume. Output selection and microphone volume/mute exist.
 6. **Default apps and startup** — browser, file associations, startup toggles,
@@ -157,3 +158,31 @@ After confirming all files were present, touching the live shell.qml triggered
 a successful reload, verified by the active instance's Configuration Loaded log.
 Future payload updates must create dependencies before replacing consumers and
 verify activation in the live log.
+
+
+## Notifications handoff — 2026-10-10
+
+Settings → Notification delivery now offers optional popups, Do Not Disturb,
+critical bypass, popup duration, and per-app Follow defaults / Inbox only / Off.
+Popups remain disabled by default. Critical alerts can bypass quiet mode when
+popups are enabled; explicit per-app choices take precedence. The inbox labels
+critical alerts and preserves history when popups close or time out. One top-right
+stack shows at most three recent alerts. Critical alerts have no automatic timer;
+overflow remains available in the inbox.
+
+Saved preferences use the existing settings transaction, backups, conflict checks,
+autosave, installer, and GitHub sync. Reload does not replay tracked notifications
+as new popups. Repository and live payloads are updated together, dependencies
+before consumers. Notification history was not read or copied to the repository.
+
+Validation: 3 notification backend/native lifecycle checks, 22 settings checks,
+153 Qt checks, 3 native Settings lifecycle/autosave checks, 15 installer checks,
+10 GitHub-sync checks and native runtime dependencies. Desktop-session D-Bus delivery
+and Wayland placement remain untested because the sandbox blocks socket access.
+
+Live activation: the running shell logged Configuration Loaded after the payload
+update. No popup preference was enabled during installation.
+
+Next: enable popups on the laptop, send normal and critical alerts with Do Not
+Disturb on/off, test per-app preferences, actions, and restart persistence. Then
+continue with priority 5, Sound improvements, or Recovery from the suggested order.

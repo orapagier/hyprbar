@@ -354,5 +354,12 @@
     "suspendMinutes": 0,
     "lidAction": "system",
     "profile": "system"
+  },
+  "notifications": {
+    "popups": false,
+    "doNotDisturb": false,
+    "criticalBypass": true,
+    "popupSeconds": 5,
+    "apps": {}
   }
 }

@@ -77,7 +77,7 @@ their default pill backgrounds are hidden. Offset glass silhouettes add depth,
 with a bright front rim and a smooth reflective face. The cog uses a standard
 settings silhouette with an open hub.
 
-The top-level keys are `version`, `bar`, `items`, `hyprland`, `locking`, and `power`. Item entries
+The top-level keys are `version`, `bar`, `items`, `hyprland`, `locking`, `power`, and `notifications`. Item entries
 are keyed by `id`; missing entries/properties inherit bundled defaults.
 `side` accepts `left`, `center`, or `right`; `order` sorts within that side.
 The three groups are positioned independently, so unusually wide custom text
@@ -639,3 +639,41 @@ Do not infer activation merely from installed files or isolated UI tests.
 On 2026-10-10, this recovered the failed Power & battery activation without
 restarting the desktop session. Direct IPC was unavailable to the agent, but
 the filesystem-triggered reload and its success were visible in the live log.
+
+
+## Notification delivery
+
+Settings → **Notification delivery** controls optional popups, Do Not Disturb,
+critical alert bypass, popup duration (2–30 seconds), and application preferences.
+Popups default off, preserving the existing bell inbox. Do Not Disturb suppresses
+normal popups while keeping inbox entries and unread counts. Critical popups may
+bypass Do Not Disturb only when popups are enabled and critical bypass is enabled.
+The bell tooltip reports Do Not Disturb; critical entries are labelled in the inbox.
+
+Applications use their desktop-entry ID when supplied, otherwise their exact app
+name. Applications seen in inbox history appear automatically; IDs/names can also
+be entered manually. **Follow defaults** removes the override. **Inbox only**
+suppresses all popups from that app. **Off** ignores new notifications, including
+critical alerts; existing history is retained. Changing preferences removes any
+currently visible popup that no longer qualifies and does not replay old alerts.
+
+One popup stack appears at the top right of Quickshell's selected/default screen,
+with at most three recent alerts visible. Overflow remains in the inbox. Normal
+popups use fixed deadlines so removing a neighbouring popup cannot extend their
+lifetime. Critical popups have no timer, but can be displaced by newer alerts.
+Closing a popup retains its inbox entry. Actions use the same tracked notification
+as the inbox; app expiry can remove a popup sooner. Critical notifications do not
+use the shell's automatic expiry timer. Reloaded tracked notifications restore
+history without replaying popups. Popup summaries/bodies are bounded plain text;
+the inbox retains complete details. Popup display deadlines are temporary and do
+not enter saved settings or history.
+
+Notification preferences use the existing validated, backed-up settings transaction,
+autosave and conflict checks. Setup and GitHub sync carry them through settings.json;
+notification history stays outside the repository. Native tests cover simulated
+delivery, replacement, reload replay suppression, timeout, critical persistence,
+quiet mode, and app blocking. Real notification D-Bus delivery and Wayland popup
+placement require a desktop-session check; the agent sandbox cannot access those
+sockets. To check manually, enable popups, send a normal notification, enable Do
+Not Disturb and send another, then send a critical alert. Check the inbox in all
+three cases, test an app's Inbox only/Off modes, and reopen Settings after restart.

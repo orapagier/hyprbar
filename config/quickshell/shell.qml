@@ -24,6 +24,7 @@ ShellRoot {
         wallpaperSources: wallpapers.sources
         lockingError: locking.error
         powerError: [locking.error, power.error].filter(Boolean).join("\n")
+        notificationApps: notificationInbox.applications
         batteryInfo: desktopServices.batteryInfo
         onLockRequested: locking.lockNow()
         // Reopening an existing window must activate it, even on another
@@ -41,7 +42,8 @@ ShellRoot {
     LockingController { id: locking; store: preferences }
     PowerController { id: power; store: preferences }
     DesktopServices { id: desktopServices }
-    NotificationInbox { id: notificationInbox }
+    NotificationInbox { id: notificationInbox; preferences: preferences.config.notifications }
+    NotificationPopups { inbox: notificationInbox }
     Tray { id: tray }
     WallpaperWatcher { id: wallpapers }
     Component.onCompleted: updateClock()

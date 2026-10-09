@@ -29,7 +29,7 @@ ColumnLayout {
                     objectName: "notificationApp"
                     Layout.fillWidth: true
                     Layout.minimumWidth: 0
-                    text: card.notification.app
+                    text: (card.notification.critical ? "Critical · " : "") + card.notification.app
                     font.pixelSize: 11
                     color: "#a6adc8"
                     wrapMode: Text.Wrap

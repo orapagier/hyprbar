@@ -149,6 +149,23 @@ def validate(data):
             raise ValueError(f'{key} must be boolean')
     number(locking['idleMinutes'], 0, 240, True)
     lock_argv(locking['command'])
+    notifications = data.get('notifications', {})
+    if not isinstance(notifications, dict) or set(notifications) - set(result['notifications']):
+        raise ValueError('Unknown notification setting')
+    result['notifications'].update(notifications)
+    notifications = result['notifications']
+    for key in ('popups', 'doNotDisturb', 'criticalBypass'):
+        if type(notifications[key]) is not bool:
+            raise ValueError(f'{key} must be boolean')
+    number(notifications['popupSeconds'], 2, 30, True)
+    apps = notifications['apps']
+    if not isinstance(apps, dict) or len(apps) > 200:
+        raise ValueError('Expected at most 200 notification app preferences')
+    for app, mode in apps.items():
+        if not isinstance(app, str) or not app.strip() or len(app) > 200 or any(c in app for c in '\n\r\0'):
+            raise ValueError('Invalid notification application name')
+        if mode not in ('inbox', 'off'):
+            raise ValueError('Unknown application notification preference')
     power = data.get('power', {})
     if not isinstance(power, dict) or set(power) - set(result['power']):
         raise ValueError('Unknown power setting')

@@ -9,6 +9,7 @@ Item {
     property var wallpaperSources: ({})
     property string lockingError: ""
     property string powerError: ""
+    property var notificationApps: []
     property var batteryInfo: ({})
     readonly property var window: editor.item
     readonly property bool loaded: editor.active
@@ -57,6 +58,7 @@ Item {
             wallpaperSources: controller.wallpaperSources
             lockingError: controller.lockingError
             powerError: controller.powerError
+            notificationApps: controller.notificationApps
             batteryInfo: controller.batteryInfo
             onFocusRequested: controller.focusRequested(settingsWindow)
             onLockRequested: controller.lockRequested()

@@ -27,6 +27,23 @@ class SettingsTests(unittest.TestCase):
         self.data = copy.deepcopy(backend.DEFAULTS)
         self.path = self.config / 'hyprshell/settings.json'
 
+    def test_notification_preferences_round_trip_backup_and_conflict(self):
+        self.assertTrue(backend.save(self.data)['ok'])
+        original = self.path.read_text()
+        expected = copy.deepcopy(self.data)
+        self.data['notifications'].update(popups=True, doNotDisturb=True, popupSeconds=8,
+                                          apps={'org.test.App': 'inbox', 'Other': 'off'})
+        result = backend.save(self.data, expected)
+        self.assertTrue(result['ok'])
+        self.assertEqual(json.loads(self.path.read_text())['notifications'], self.data['notifications'])
+        backup = Path(result['backup'])
+        manifest = json.loads((backup / 'manifest.json').read_text())
+        entry = next(i for i in manifest if i['path'] == str(self.path))
+        self.assertEqual((backup / entry['file']).read_text(), original)
+        with self.assertRaisesRegex(ValueError, 'changed outside'):
+            backend.save(expected, expected)
+        self.assertEqual(json.loads(self.path.read_text())['notifications'], self.data['notifications'])
+
     def test_input_preferences_round_trip_and_real_lua_parser(self):
         main = self.config / 'hypr/hyprland.lua'
         main.parent.mkdir(parents=True)
