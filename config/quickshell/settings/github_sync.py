@@ -88,6 +88,13 @@ def snapshot_managed_files(repo, config, home):
         destination.mkdir(parents=True, exist_ok=True)
         (destination / 'keybindings.json').write_text(json.dumps({'version': 1, 'entries': entries}, indent=2) + '\n')
         (destination / 'keybindings.lua').write_text(render_keybindings(entries))
+    theme = config / 'hyprshell/theme.json'
+    if theme.exists():
+        from theme import validate as validate_theme
+        data = validate_theme(json.loads(theme.read_text()))
+        destination = repo / 'config/hyprshell/theme.json'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(data, indent=2) + '\n')
     displays = config / 'hyprshell/displays.json'
     if displays.exists():
         from displays import validate as validate_displays, render as render_displays

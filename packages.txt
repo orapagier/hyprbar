@@ -7,6 +7,9 @@ hyprpolkitagent
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
+glib2
+gsettings-desktop-schemas
+gtk3
 qt6-declarative
 qt6-svg
 qt6-wayland

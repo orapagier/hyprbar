@@ -455,3 +455,30 @@ Display fields follow the official [Hyprland monitor API](https://wiki.hypr.land
 Regression tests cover preview/confirm/revert, hotplug, stale writers, rejected modes,
 file-write rollback, sync, and real Quickshell controls with a simulated backend.
 Physical modes and authentication-free desktop IPC require an accessible live session.
+
+## Application theme
+
+Open **Application theme** and toggle **Dark theme**; off selects Light. The
+change saves immediately, independently of topbar preferences. The backend sets
+`org.gnome.desktop.interface` color-scheme and GTK theme (Adwaita/Adwaita-dark),
+and merges theme keys into GTK 3/4 `settings.ini` while keeping unrelated keys.
+The [libadwaita appearance API](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.8/property.StyleManager.color-scheme.html)
+defines how apps follow the system preference. Applications can override it.
+
+New Qt apps launched through UWSM use the installed `gtk3` platform theme plugin.
+The helper updates the user manager environment and a managed block in
+`uwsm/env-hyprland`. Existing apps may need reopening. If user-manager access
+fails, Qt integration takes effect on next login. Hyprshell's explicit topbar
+colors are not edited by this setting. Apps with custom styles or their own
+appearance choice may require selecting Follow system.
+
+Confirmed preferences are saved in `hyprshell/theme.json`, captured by GitHub
+sync, restored by setup, and reapplied at Hyprland session startup. Without a
+saved preference, startup leaves application appearance alone. Writes are locked,
+checked for stale preferences, backed up, and rolled back together with the
+GSettings keys after failure. Reapplying an already matching theme creates no
+new backup. Credentials and unrelated GTK preferences are not imported into Git.
+
+The installer explicitly includes GTK 3, GLib's GSettings tools, and GNOME desktop
+schemas. Tests isolate desktop preferences and files and exercise the native toggle,
+failed saves, rollback, sync, and preservation of topbar settings.

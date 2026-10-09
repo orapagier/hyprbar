@@ -80,3 +80,8 @@ verification in the desktop session.
 The 5-percentage-point scale slider was reverted after physical testing showed
 errors at values such as 105% and 110%. Scaling uses the previous preset dropdown. The laptop panel's kernel mode list reports only
 1920×1080; resolution choices continue to use advertised modes.
+
+Application theme is now available separately from topbar appearance: Dark/Light
+updates desktop and GTK preferences and enables GTK integration for newly opened
+Qt applications. Saved mode travels through setup and GitHub sync. Native toggle
+and transaction checks cover failure recovery and unchanged bar preferences.

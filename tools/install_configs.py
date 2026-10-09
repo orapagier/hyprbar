@@ -86,7 +86,7 @@ def install(repo):
         if wallpaper.is_file():
             put(wallpaper, home / 'Pictures/Wallpapers' / wallpaper.name,
                 Path('Pictures/Wallpapers') / wallpaper.name)
-    for name in ('settings.json', 'cleanup.json', 'keybindings.json', 'keybindings.lua', 'displays.json', 'displays.lua'):
+    for name in ('settings.json', 'cleanup.json', 'keybindings.json', 'keybindings.lua', 'displays.json', 'displays.lua', 'theme.json'):
         if (repo / 'config/hyprshell' / name).exists():
             put(repo / 'config/hyprshell' / name, config / 'hyprshell' / name, Path('config/hyprshell') / name)
     state.joinpath('hyprshell').mkdir(parents=True, exist_ok=True)
