@@ -6,7 +6,7 @@ if ! pgrep -x awww-daemon >/dev/null 2>&1; then
 fi
 for (( attempt=0; attempt<50; attempt++ )); do
   if awww query >/dev/null 2>&1; then
-    exec awww img "$HOME/Pictures/Wallpapers/cloudsnight.jpg" \
+    exec awww img "$HOME/Pictures/Wallpapers/default.jpg" \
       --transition-type grow --transition-pos center --transition-step 90
   fi
   sleep 0.1

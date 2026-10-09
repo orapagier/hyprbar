@@ -160,6 +160,8 @@ PY
 fi
 
 command -v python3 >/dev/null || die 'Python 3 is required for --config-only'
+# The bundled default.jpg is selected by hypr/wallpaper-start.sh.
+[[ -f "$REPO_DIR/assets/wallpapers/default.jpg" ]] || die 'Missing bundled default wallpaper'
 log 'Installing configs and wallpapers, with backups for changed files'
 python3 "$REPO_DIR/tools/install_configs.py" "$REPO_DIR"
 

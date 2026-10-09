@@ -177,7 +177,11 @@ class InstallerTests(unittest.TestCase):
             self.assertTrue(os.access(self.home / '.local/bin' / script, os.X_OK))
         for name in ('waybar', 'mako', 'rofi', 'fuzzel', 'systemd'):
             self.assertFalse((self.config / name).exists())
-        self.assertEqual(len(list((self.home / 'Pictures/Wallpapers').glob('*.jpg'))), 7)
+        self.assertEqual(len(list((self.home / 'Pictures/Wallpapers').glob('*.jpg'))), 8)
+        self.assertEqual((self.home / 'Pictures/Wallpapers/default.jpg').read_bytes(),
+                         (ROOT / 'assets/wallpapers/default.jpg').read_bytes())
+        self.assertIn('Wallpapers/default.jpg',
+                      (self.config / 'hypr/wallpaper-start.sh').read_text())
         self.assertFalse((self.state / "hyprshell/backups").exists())
         self.assertEqual((self.state / "hyprshell/repository").read_text().strip(), str(ROOT))
 

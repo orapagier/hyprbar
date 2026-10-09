@@ -381,14 +381,6 @@ FloatingWindow {
                     }
                 }
             }
-            Label {
-                Layout.fillWidth: true
-                visible: window.syncMessage !== ""
-                text: window.syncMessage
-                wrapMode: Text.WrapAnywhere
-                color: window.syncSuccess ? "#9eafb7" : "#f38ba8"
-                font.pixelSize: 11
-            }
             Rectangle {
                 Layout.fillWidth: true
                 visible: window.section >= -1

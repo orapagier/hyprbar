@@ -425,9 +425,19 @@ Item {
         outline: bar.rgba("#94e2d5", 0.26)
         family: "GoMono Nerd Font"
         pixelSize: 15
-        minimumTextWidth: 20
-        leftPadding: 6
-        rightPadding: 13
+        implicitWidth: implicitHeight
+        leftPadding: 4
+        rightPadding: 4
+        // Center the visible glyph rather than the font's advance box.
+        content.horizontalAlignment: Text.AlignLeft
+        content.elide: Text.ElideNone
+        content.x: (wifi.width - wifiGlyphMetrics.tightBoundingRect.width) / 2
+                   - wifiGlyphMetrics.tightBoundingRect.x
+        TextMetrics {
+            id: wifiGlyphMetrics
+            font: wifi.content.font
+            text: wifi.content.text
+        }
     }
     BarMenuButton {
         id: bluetooth
@@ -444,9 +454,9 @@ Item {
         outline: bar.rgba("#b4befe", 0.28)
         family: "GoMono Nerd Font"
         pixelSize: 15
-        minimumTextWidth: 20
-        leftPadding: bar.statusData.bluetooth.powered && !bar.statusData.bluetooth.connected ? 9 : 8
-        rightPadding: bar.statusData.bluetooth.powered && !bar.statusData.bluetooth.connected ? 10 : 11
+        implicitWidth: implicitHeight
+        leftPadding: 4
+        rightPadding: 4
     }
     BarMenuButton {
         id: battery
