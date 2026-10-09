@@ -698,13 +698,25 @@ names. The installer restores the Sound controls and packaged test tone, with ea
 machine discovering its own hardware. Remembered volumes/defaults depend on the
 installed WirePlumber policy.
 
+Muting the microphone displays an empty volume slider and a Muted label while
+preserving its gain. Unmute restores the slider to the saved gain. Raising the
+microphone slider while muted sets the new gain and unmutes it.
+
 **Test microphone** opens an active recording stream through the existing
 PipeWire PulseAudio service only while the Sound page is visible and the test is
-enabled. The microphone helper computes an RMS average level from in-memory PCM samples;
-it does not save or play them back. Stop, page navigation, window close, or input
+enabled. The microphone helper removes the constant DC offset from each 100 ms
+block and computes an RMS level from in-memory PCM samples. A square-root
+amplitude scale with a -50 dBFS floor keeps quiet noise near empty instead of
+stretching it across the bar. An envelope uses an 80 ms attack and 250 ms release
+to respond to speech without rapidly flickering. The percentage describes the
+display scale, not the volume setting. Full-scale samples still trigger a separate
+clipping warning when they make up at least 1% of a block, including constant
+clipped inputs. Audio is not saved or played back. Stop, page navigation, window close, or input
 device change destroys the capture process and closes its stream. Muting shows
-zero input. Startup and capture failures appear on the page; a five-second startup
-watchdog stops a capture that supplies no data.
+zero input, with the rendered fill using the same value as the progress bar.
+Startup and capture failures appear on the page; a five-second startup watchdog
+stops a capture that supplies no data, and a two-second watchdog clears stalled
+readings and stops capture.
 **Play test sound** uses paplay from the existing libpulse dependency, with a
 0.7-second stereo 440 Hz tone, fade in/out, and reduced stream volume. It targets
 the current output by name, preserves the device volume/mute settings, and gives
@@ -721,24 +733,10 @@ hardware. Real microphone levels, audible playback, call routing, and WirePlumbe
 persistence must be checked in the desktop session; the agent sandbox cannot access
 the PipeWire socket.
 
-
-Microphone follow-up: physical testing reported an empty/nonworking microphone
-test. The input meter now uses an explicit PA_STREAM_RECORD connection to the
-selected source instead of Quickshell's monitor stream. Regression checks exercise
-the production Loader source path with a stub capture helper, verify PCM level
-calculation and the selected source/record-stream arguments, and confirm capture
-processes are gone after close or device changes. Real microphone capture remains
-a desktop-session verification item; the agent cannot confirm the physical cause
-or result while PipeWire access is restricted.
-
-
-Microphone meter follow-up: the moving bar now uses average signal level on a
--60 to 0 dBFS scale, rather than the maximum sample in each block. Sparse loud
-spikes no longer peg it at full. A separate warning identifies inputs with at
-least 1% full-scale samples, and the page shows a live level percentage. A capture
-that stops sending samples for two seconds is stopped with a visible error and
-an empty bar, rather than leaving its last reading frozen. Tests verify rendered
-fill width across changing levels, clipping warnings, sparse-spike calculation,
-and stalled-process cleanup. These simulated checks do not establish the physical
-cause of the user's full meter; retest the laptop and use the level/status message
-to distinguish a loud/clipping input from a capture failure.
+Regression checks exercise the production Loader source path with a stub capture
+helper, verify the selected source/record-stream arguments, and confirm capture
+processes are gone after close, device changes, or stalled input. Signal checks
+cover quiet noise, DC offset, clipping, sparse spikes, and envelope response.
+Rendered checks cover changing meter fill, immediate empty fill on mute, saved
+microphone gain on unmute, and volume adjustments while muted. These simulations
+do not establish the physical cause of a persistently high input level.

@@ -7,12 +7,14 @@ ColumnLayout {
     id: control
     required property var node
     property string label: "Volume"
+    property bool showMutedAsZero: false
     readonly property bool available: !!(node && node.audio)
+    readonly property bool displayMuted: available && showMutedAsZero && node.audio.muted
     spacing: 6
     RowLayout {
         Layout.fillWidth: true
         Label { Layout.fillWidth: true; text: control.label; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: "#ecebff" }
-        Label { text: control.available ? Math.round(control.node.audio.volume * 100) + "%" : "—"; color: "#b4befe" }
+        Label { text: control.displayMuted ? "Muted" : control.available ? Math.round(control.node.audio.volume * 100) + "%" : "—"; color: "#b4befe" }
         SettingsButton {
             objectName: "soundMuteControl"
             text: control.available && control.node.audio.muted ? "Unmute" : "Mute"
@@ -27,8 +29,12 @@ ColumnLayout {
         implicitHeight: 32
         from: 0; to: 1; stepSize: 0.01
         enabled: control.available
-        value: control.available ? control.node.audio.volume : 0
-        onMoved: if (control.available) control.node.audio.volume = value
+        value: control.available && !control.displayMuted ? control.node.audio.volume : 0
+        onMoved: if (control.available) {
+            let volume = value;
+            control.node.audio.volume = volume;
+            if (control.showMutedAsZero && volume > 0) control.node.audio.muted = false;
+        }
         Accessible.name: control.label
         background: Rectangle {
             implicitWidth: 200; implicitHeight: 4

@@ -74,7 +74,7 @@ ColumnLayout {
             color: page.microphone ? "#98a5bf" : "#f38ba8"
             textFormat: Text.PlainText; wrapMode: Text.Wrap
         }
-        SoundVolume { objectName: "soundInputVolume"; Layout.fillWidth: true; node: page.microphone; label: "Microphone volume" }
+        SoundVolume { objectName: "soundInputVolume"; Layout.fillWidth: true; node: page.microphone; label: "Microphone volume"; showMutedAsZero: true }
         SettingsButton {
             objectName: "soundMeterControl"
             text: page.meterEnabled ? "Stop microphone test" : "Test microphone"
@@ -92,16 +92,17 @@ ColumnLayout {
             }
         }
         ProgressBar {
+            id: inputLevel
             objectName: "soundInputMeter"
             Layout.fillWidth: true
             from: 0; to: 1
-            value: page.microphone && page.microphone.audio && !page.microphone.audio.muted ? page.inputPeak : 0
+            value: page.meterReady && !page.meterError && page.microphone && page.microphone.audio && !page.microphone.audio.muted ? page.inputPeak : 0
             visible: page.meterEnabled
             Accessible.name: "Microphone input level"
             background: Rectangle { implicitHeight: 10; color: "#363e58"; radius: 5 }
             contentItem: Item {
                 implicitHeight: 10
-                Rectangle { width: parent.width * Math.min(1, page.inputPeak); height: parent.height; radius: 5; color: page.inputClipping ? "#f38ba8" : "#a6e3a1"; visible: !!(page.microphone && page.microphone.audio && !page.microphone.audio.muted) }
+                Rectangle { width: parent.width * inputLevel.visualPosition; height: parent.height; radius: 5; color: page.inputClipping ? "#f38ba8" : "#a6e3a1" }
             }
         }
         Label {

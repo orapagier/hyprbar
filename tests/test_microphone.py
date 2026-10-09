@@ -2,7 +2,6 @@
 import ctypes
 import importlib.util
 import json
-import math
 import os
 from pathlib import Path
 import shutil
@@ -21,14 +20,15 @@ spec.loader.exec_module(mic)
 class MicrophoneTests(unittest.TestCase):
     def test_level_scales_pcm_and_rejects_nonfinite_samples(self):
         self.assertEqual(mic.level(struct.pack('<ffff', 0, 0, float('nan'), float('inf'))), 0)
-        self.assertAlmostEqual(mic.level(struct.pack('<ff', 0.125, -0.125)), (20 * math.log10(0.125) + 60) / 60)
-        self.assertEqual(mic.level(struct.pack('<f', 4)), 1)
+        self.assertGreater(mic.level(struct.pack('<ff', 0.125, -0.125)), 0.25)
+        self.assertLess(mic.level(struct.pack('<ff', 0.125, -0.125)), 0.4)
+        self.assertEqual(mic.level(struct.pack('<ff', 4, -4)), 1)
 
     def test_capture_opens_selected_source_as_record_stream_and_frees_on_stop(self):
         library = Mock()
         library.pa_simple_new.return_value = 42
         def read(stream, data, size, error):
-            ctypes.memmove(data, struct.pack('<f', 0.125) * (size // 4), size)
+            ctypes.memmove(data, struct.pack('<ff', 0.125, -0.125) * (size // 8), size)
             return 0
         library.pa_simple_read.side_effect = read
         rows = []
@@ -42,7 +42,8 @@ class MicrophoneTests(unittest.TestCase):
         self.assertEqual(args[3], b'input with spaces;literal')
         self.assertEqual((args[5]._obj.format, args[5]._obj.rate, args[5]._obj.channels), (5, 16000, 1))
         self.assertEqual(len(rows), 1)
-        self.assertAlmostEqual(rows[0]['peak'], mic.level(struct.pack('<f', 0.125)))
+        self.assertGreater(rows[0]['peak'], 0)
+        self.assertLess(rows[0]['peak'], mic.level(struct.pack('<ff', 0.125, -0.125)))
         self.assertFalse(rows[0]['clipping'])
         library.pa_simple_free.assert_called_once_with(42)
 
@@ -52,8 +53,28 @@ class MicrophoneTests(unittest.TestCase):
         self.assertFalse(spike['clipping'])
         full = mic.measure(struct.pack('<ffff', 1, -1, 1, -1))
         self.assertEqual(full, {'peak': 1, 'clipping': True})
-        self.assertLess(mic.level(struct.pack('<f', 0.02)), mic.level(struct.pack('<f', 0.2)))
+        self.assertLess(mic.level(struct.pack('<ff', 0.02, -0.02)), mic.level(struct.pack('<ff', 0.2, -0.2)))
         self.assertEqual(mic.level(struct.pack('<ffff', 0, 0, 0, 0)), 0)
+
+    def test_quiet_noise_and_dc_offset_do_not_fill_the_meter(self):
+        self.assertEqual(mic.level(struct.pack('<ff', 0.001, -0.001)), 0)
+        self.assertLess(mic.level(struct.pack('<ff', 0.02, -0.02)), 0.1)
+        self.assertEqual(mic.level(struct.pack('<ffff', 0.8, 0.8, 0.8, 0.8)), 0)
+        self.assertTrue(mic.measure(struct.pack('<ffff', 1, 1, 1, 1))['clipping'])
+        self.assertAlmostEqual(mic.level(struct.pack('<ff', 0.9, 0.7)),
+                               mic.level(struct.pack('<ff', 0.1, -0.1)), places=6)
+
+    def test_envelope_smooths_jitter_but_tracks_speech_and_returns_to_empty(self):
+        envelope = mic.Envelope()
+        self.assertEqual(envelope.update(0), 0)
+        speech = [envelope.update(0.6) for _ in range(3)]
+        self.assertGreater(speech[-1], 0.55)  # Speech visible within 300 ms.
+        self.assertTrue(all(a < b for a, b in zip(speech, speech[1:])))
+        jitter = [envelope.update(value) for value in [0.55, 0.65] * 5]
+        self.assertLess(max(abs(a - b) for a, b in zip(jitter, jitter[1:])), 0.08)
+        decay = [envelope.update(0) for _ in range(15)]
+        self.assertTrue(all(a >= b for a, b in zip(decay, decay[1:])))
+        self.assertEqual(decay[-1], 0)
 
     def test_connection_and_read_failures(self):
         library = Mock()

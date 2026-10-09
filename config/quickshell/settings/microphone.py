@@ -9,6 +9,11 @@ import math
 import sys
 
 
+SAMPLE_RATE = 16000
+FRAME_SAMPLES = 1600  # Ten meter updates per second.
+NOISE_FLOOR = 10 ** (-50 / 20)
+
+
 class SampleSpec(ctypes.Structure):
     _fields_ = [('format', ctypes.c_int), ('rate', ctypes.c_uint32), ('channels', ctypes.c_uint8)]
 
@@ -22,18 +27,36 @@ def measure(data):
     samples.frombytes(data)
     if sys.byteorder != 'little':
         samples.byteswap()
-    amplitudes = [abs(sample) if math.isfinite(sample) else 0 for sample in samples]
-    if not amplitudes:
+    samples = [max(-1, min(1, sample)) if math.isfinite(sample) else 0 for sample in samples]
+    if not samples:
         return {'peak': 0, 'clipping': False}
-    rms = math.sqrt(sum(min(1, sample) ** 2 for sample in amplitudes) / len(amplitudes))
-    # A -60 to 0 dBFS average-level meter avoids pegging the bar on isolated spikes.
-    db = 20 * math.log10(rms) if rms > 0 else -60
-    return {'peak': max(0, min(1, (db + 60) / 60)),
-            'clipping': sum(sample >= 0.99 for sample in amplitudes) / len(amplitudes) >= 0.01}
+    # A constant DC offset is not sound. Measure variation around the block mean.
+    mean = sum(samples) / len(samples)
+    rms = math.sqrt(sum((sample - mean) ** 2 for sample in samples) / len(samples))
+    # Compress amplitude instead of stretching every faint noise across a dB bar.
+    # Quiet inputs below -50 dBFS are empty; full-scale audio still fills the bar.
+    floor = math.sqrt(NOISE_FLOOR)
+    return {'peak': max(0, min(1, (math.sqrt(rms) - floor) / (1 - floor))),
+            'clipping': sum(abs(sample) >= 0.99 for sample in samples) / len(samples) >= 0.01}
 
 
 def level(data):
     return measure(data)['peak']
+
+
+class Envelope:
+    """Respond quickly to speech and let the display fall without jitter."""
+    def __init__(self):
+        self.peak = 0
+
+    def update(self, target):
+        seconds = FRAME_SAMPLES / SAMPLE_RATE
+        time_constant = 0.08 if target > self.peak else 0.25
+        weight = 1 - math.exp(-seconds / time_constant)
+        self.peak += weight * (target - self.peak)
+        if target == 0 and self.peak < 0.005:
+            self.peak = 0
+        return self.peak
 
 
 def capture(device, emit):
@@ -48,19 +71,23 @@ def capture(device, emit):
     library.pa_simple_read.restype = ctypes.c_int
     library.pa_simple_free.argtypes = [ctypes.c_void_p]
     library.pa_simple_free.restype = None
-    spec = SampleSpec(5, 16000, 1)  # PA_SAMPLE_FLOAT32LE, mono.
-    attrs = BufferAttr(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 4096)
+    spec = SampleSpec(5, SAMPLE_RATE, 1)  # PA_SAMPLE_FLOAT32LE, mono.
+    frame_bytes = FRAME_SAMPLES * 4
+    attrs = BufferAttr(0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, frame_bytes)
     error = ctypes.c_int()
     stream = library.pa_simple_new(None, b'Hyprshell microphone test', 2, device.encode(),
                                    b'Microphone level', ctypes.byref(spec), None, ctypes.byref(attrs), ctypes.byref(error))
     if not stream:
         raise RuntimeError('Could not open the microphone. Check the input device and PipeWire connection.')
     try:
-        data = ctypes.create_string_buffer(4096)
+        data = ctypes.create_string_buffer(frame_bytes)
+        envelope = Envelope()
         while True:
             if library.pa_simple_read(stream, data, len(data), ctypes.byref(error)) < 0:
                 raise RuntimeError('Microphone capture stopped. Check that the input device is still connected.')
-            emit(dict(ok=True, **measure(data.raw)))
+            result = measure(data.raw)
+            result['peak'] = envelope.update(result['peak'])
+            emit(dict(ok=True, **result))
     finally:
         library.pa_simple_free(stream)
 

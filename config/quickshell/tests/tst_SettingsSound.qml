@@ -81,8 +81,27 @@ Item {
                 mouseClick(findChild(groups[i], "soundMuteControl"));
                 compare(audios[i].muted, true);
                 audios[i].volume = 0.3;
-                compare(slider.value, 0.3);
+                compare(slider.value, i === 1 ? 0 : 0.3);
             }
+        }
+        function test_microphoneMuteEmptiesVolumeAndUnmuteRestoresGain() {
+            let group = findChild(page, "soundInputVolume");
+            let slider = findChild(group, "soundVolumeControl");
+            let mute = findChild(group, "soundMuteControl");
+            inputAudio.volume = 1;
+            mouseClick(mute);
+            compare(mute.text, "Unmute");
+            compare(slider.value, 0);
+            compare(slider.background.children[0].width, 0);
+            compare(inputAudio.volume, 1);
+            mouseClick(mute);
+            compare(slider.value, 1);
+            compare(inputAudio.volume, 1);
+            mouseClick(mute);
+            mouseClick(slider, slider.width * 0.4, slider.height / 2);
+            compare(inputAudio.muted, false);
+            verify(inputAudio.volume > 0.3 && inputAudio.volume < 0.5);
+            compare(slider.value, inputAudio.volume);
         }
         function test_microphoneMeterRequiresStartAndStopsOnLeaveOrDeviceChange() {
             compare(page.metering, false);
@@ -92,7 +111,9 @@ Item {
             let bar = findChild(page, "soundInputMeter");
             compare(bar.value, 0.65);
             inputAudio.muted = true; compare(bar.value, 0);
+            compare(bar.contentItem.children[0].width, 0);
             inputAudio.muted = false;
+            compare(bar.value, 0.65);
             services.microphone = otherInput;
             compare(page.meterEnabled, false); compare(page.metering, false);
             page.meterEnabled = true;
