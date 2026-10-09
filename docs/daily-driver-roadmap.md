@@ -76,3 +76,7 @@ header. Errors remain red after automatic refresh and command-help dumps are
 replaced by concise messages. All 13 display regression checks pass, including
 real CLI argument parsing in an isolated runtime. Physical preview still needs
 verification in the desktop session.
+
+Display scaling now uses a slider and −/+ buttons in 5-percentage-point steps,
+with reset to Automatic. The laptop panel's kernel mode list reports only
+1920×1080; resolution choices continue to use advertised modes.
