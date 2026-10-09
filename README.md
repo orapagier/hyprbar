@@ -201,10 +201,10 @@ own hardware and preferences:
 
 | Setting | Where to change it |
 | --- | --- |
-| Display resolution, refresh rate, scale, and position | `~/.config/hypr/hyprland.lua` and `hyprland-gui.lua` |
-| Keyboard layout | The `input.kb_layout` value in `~/.config/hypr/hyprland.lua`; bundled value is `us`. |
-| Terminal and file manager | The `terminal` and `fileManager` variables in `hyprland.lua`. |
-| Browser shortcut | The `Super+B` binding in `hyprland.lua`; it currently invokes Brave, which the installer does not install. |
+| Display resolution, refresh rate, scale, and position | `~/.config/hyprshell/hyprland/monitors.lua` and generated `hypr/hyprland-gui.lua` |
+| Keyboard layout | The `input.kb_layout` value in `~/.config/hyprshell/hyprland/input.lua`; bundled value is `us`. |
+| Terminal and file manager | The `terminal` and `fileManager` entries in `~/.config/hyprshell/hyprland/programs.lua`. |
+| Browser shortcut | The `Super+B` default binding in `hyprshell/hyprland/shortcuts.lua`; it currently invokes Brave, which the installer does not install. |
 | Startup wallpaper | `~/.config/hypr/wallpaper-start.sh`. |
 | Clock display | Hyprshell Settings → Bar & layout. |
 | Holiday data | `~/.config/quickshell/Calendar.js`. |

@@ -57,6 +57,9 @@ def mirror(source, destination):
 
 def snapshot_managed_files(repo, config, home):
     """Capture installer-owned files without importing unrelated user files."""
+    sections = config / 'hyprshell/hyprland'
+    if sections.is_dir():
+        mirror(sections, repo / 'config/hyprshell/hyprland')
     terminal = config / 'xdg-terminals.list'
     if terminal.is_file():
         mirror(terminal, repo / 'config/xdg-terminals.list')

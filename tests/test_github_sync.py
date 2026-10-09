@@ -110,7 +110,12 @@ class SyncTests(unittest.TestCase):
                 (source / 'private').write_text('private')
             (repo / 'config/chromium-flags.conf').write_text('repo flags')
             (config / 'chromium-flags.conf').write_text('--ozone-platform=x11\n')
+            sections = config / 'hyprshell/hyprland'
+            sections.mkdir(parents=True)
+            (sections / 'programs.lua').write_text('return {terminal = \"kitty\"}\n')
             syncer.snapshot_managed_files(repo, config, home)
+            self.assertEqual((repo / 'config/hyprshell/hyprland/programs.lua').read_bytes(),
+                             (sections / 'programs.lua').read_bytes())
             self.assertEqual((repo / 'config/chromium-flags.conf').read_text(),
                              '--ozone-platform=x11\n')
             for payload in ('config/xdg-desktop-portal', 'config/autostart', 'bin',

@@ -89,6 +89,8 @@ def install(repo):
         if wallpaper.is_file():
             put(wallpaper, home / 'Pictures/Wallpapers' / wallpaper.name,
                 Path('Pictures/Wallpapers') / wallpaper.name)
+    put(repo / 'config/hyprshell/hyprland', config / 'hyprshell/hyprland',
+        Path('config/hyprshell/hyprland'))
     for name in ('settings.json', 'cleanup.json', 'keybindings.json', 'keybindings.lua', 'displays.json', 'displays.lua', 'theme.json'):
         if (repo / 'config/hyprshell' / name).exists():
             put(repo / 'config/hyprshell' / name, config / 'hyprshell' / name, Path('config/hyprshell') / name)

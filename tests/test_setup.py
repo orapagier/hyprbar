@@ -162,7 +162,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('will start at the next login', result.stdout)
         self.assertIn('Setup complete', result.stdout)
         self.assertTrue((self.config / 'quickshell/helpers/audio-spectrum').is_file())
-        self.assertIn('float-modal-dialogs', (self.config / 'hypr/hyprland.lua').read_text())
+        self.assertIn('float-modal-dialogs', (self.config / 'hyprshell/hyprland/window-rules.lua').read_text())
 
     def test_installs_current_payload_without_legacy_configs(self):
         self.install()
@@ -173,7 +173,14 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual((self.config / 'autostart/nm-applet.desktop').read_bytes(),
                          (ROOT / 'config/autostart/nm-applet.desktop').read_bytes())
         self.assertIn('uwsm app -- nautilus --new-window',
-                      (self.config / 'hypr/hyprland.lua').read_text())
+                      (self.config / 'hyprshell/hyprland/programs.lua').read_text())
+        for section in (ROOT / 'config/hyprshell/hyprland').iterdir():
+            self.assertEqual((self.config / 'hyprshell/hyprland' / section.name).read_bytes(),
+                             section.read_bytes())
+        verified = subprocess.run(['Hyprland', '--verify-config', '--config',
+                                   str(self.config / 'hypr/hyprland.lua')],
+                                  env=self.env, capture_output=True, text=True, timeout=15)
+        self.assertIn('config ok', verified.stdout.lower(), verified.stdout + verified.stderr)
         self.assertTrue(os.access(self.config / 'quickshell/helpers/audio-spectrum', os.X_OK))
         for script in ('app-launcher', 'start-quickshell-bar'):
             self.assertTrue(os.access(self.home / '.local/bin' / script, os.X_OK))
