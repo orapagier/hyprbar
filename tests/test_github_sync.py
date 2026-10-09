@@ -54,6 +54,7 @@ class SyncTests(unittest.TestCase):
                 self.assertEqual(message, 'Synced to example/hyprshell (main).')
             self.assertTrue((repo / 'config/hyprshell/settings.json').exists())
             first = run('rev-parse', 'HEAD')
+            self.assertTrue(run('log', '-1', '--format=%s').startswith('Sync Hyprshell desktop '))
             self.assertIn('README.md', run('ls-files'))
             self.assertIn('setup.sh', run('ls-files'))
             self.assertNotIn('private-notes.txt', run('ls-files'))
@@ -69,11 +70,25 @@ class SyncTests(unittest.TestCase):
             # A clean working tree can still have a commit waiting to be pushed.
             (repo / 'README.md').write_text('Committed but not pushed')
             run('add', 'README.md')
-            run('commit', '-m', 'pending push')
+            description = 'Clarify desktop setup instructions\n\nExplain the saved configuration and how to restore it.'
+            run('commit', '-m', description)
+            agent_commit = run('rev-parse', 'HEAD')
             message = syncer.sync(repo, config, str(remote), 'example/hyprshell')
             self.assertEqual(message, 'Synced to example/hyprshell (main).')
             self.assertEqual(run('rev-parse', 'HEAD'), subprocess.check_output(
                 ['git', '--git-dir', str(remote), 'rev-parse', 'main'], text=True).strip())
+            self.assertEqual(run('rev-parse', 'HEAD'), agent_commit)
+            self.assertEqual(subprocess.check_output(
+                ['git', '--git-dir', str(remote), 'log', '-1', '--format=%B', 'main'],
+                text=True).strip(), description)
+            # Manual edits get their own generic commit without rewriting the agent commit.
+            (config / 'hypr/current').write_text('Manual monitor adjustment')
+            syncer.sync(repo, config, str(remote), 'example/hyprshell')
+            self.assertEqual(run('rev-parse', 'HEAD^'), agent_commit)
+            self.assertTrue(run('log', '-1', '--format=%s').startswith('Sync Hyprshell desktop '))
+            self.assertEqual(subprocess.check_output(
+                ['git', '--git-dir', str(remote), 'log', '-1', '--format=%B', 'main^'],
+                text=True).strip(), description)
 
     def test_managed_payload_uses_live_files_without_importing_private_files(self):
         with tempfile.TemporaryDirectory() as directory:

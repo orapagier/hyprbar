@@ -21,10 +21,27 @@ as needed, then apply the matching live change. Keep hardware-specific settings
 adaptable and credentials outside the repository. Do not promise identical
 hardware behavior on a different laptop.
 
+The user authorizes local Git commits as a standing preference. After each
+completed, validated Hyprshell change, commit the task's repository changes
+with a meaningful subject describing the result; add a body when the reason,
+behavior, or validation needs explanation. Stage only task-related changes,
+preserve unrelated work and staged files, and report the local commit. Include
+documentation and installer changes when needed to restore the setup. Apply
+matching live payload changes before committing so Settings sync does not
+replace them with older installed copies. Do not create empty commits.
+
+Settings → Sync to GitHub pushes existing local commits with their original
+subjects and bodies. Keep that history intact: do not squash, amend, or replace
+agent commits with a generic sync message. Its generic timestamped commit is
+for remaining uncommitted manual edits captured by the live snapshot. Local
+commit authorization does not authorize a push; let the user trigger Settings
+sync unless they explicitly request a push. If committing fails, retain the
+changes and report the failure instead of claiming completion.
+
 Read only the reference needed:
 - [Desktop map](references/desktop.md): ownership, exact paths, settings workflow, checks, logs, and reloads.
 - [Machine facts](references/machine.md): this laptop's observed hardware and personal configuration; read for hardware or machine-specific questions.
 
 Use targeted reads and bounded logs; do not inventory packages or read the entire README on every request. Verify changing facts only when relevant. Session socket/D-Bus access failures in an agent sandbox do not establish that the desktop or services are broken. Report inaccessible checks precisely; do not guess socket paths or bypass sandbox restrictions.
 
-Do not run the full installer for a small edit: it upgrades packages and config-only still replaces config directories. Validate the affected component before reloading. Commit/push, cleanup deletion, and ending the session require task authorization; this skill does not supply it. Keep credentials, notification contents, and unrelated personal files out of repository documentation. Update these references when a verified setup change makes them stale.
+Do not run the full installer for a small edit: it upgrades packages and config-only still replaces config directories. Validate the affected component before reloading. Pushing, cleanup deletion, and ending the session require task authorization; local commits are authorized by the standing preference above. Keep credentials, notification contents, and unrelated personal files out of repository documentation. Update these references when a verified setup change makes them stale.

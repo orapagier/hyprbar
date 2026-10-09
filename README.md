@@ -481,6 +481,12 @@ from the live snapshot. Files outside the explicit project paths remain
 uncommitted. Review project and custom configuration content before syncing
 to a public repository.
 
+Agent changes are committed locally with meaningful descriptions under the
+Hyprskill workflow. Settings sync pushes those commits with their original
+messages intact. A generic `Sync Hyprshell desktop <timestamp>` commit is
+created only when the snapshot or project still has uncommitted edits, such as
+manual changes made since the last local commit.
+
 The tool preserves the checkout's `origin` remote and sets the commit identity
 locally using the authenticated account's GitHub noreply email. It does not
 force-push or automatically merge remote changes. Finish staged changes or an
