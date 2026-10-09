@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 
 PanelWindow {
     id: popup
@@ -18,7 +19,28 @@ PanelWindow {
     }
     property bool opened: false
     property bool pointerReady: false
-    onOpenedChanged: { pointerReady = false; if (opened) pointerDelay.restart(); else pointerDelay.stop(); }
+    onOpenedChanged: {
+        pointerReady = false;
+        headerPointer.stop();
+        if (opened) {
+            headerPointer.restart();
+            pointerDelay.restart();
+        } else pointerDelay.stop();
+    }
+    // Move into the header before mouse-leave dismissal becomes active.
+    Timer {
+        id: headerPointer
+        interval: 100
+        onTriggered: {
+            if (!popup.opened) return;
+            let monitor = Hyprland.monitorFor(popup.screen);
+            if (!monitor) return;
+            let header = headerRow.mapToItem(popup.contentItem, headerRow.width / 2, headerRow.height / 2);
+            let x = Math.round(monitor.x + header.x);
+            let y = Math.round(monitor.y + header.y);
+            Hyprland.dispatch("hl.dsp.cursor.move({ x = " + x + ", y = " + y + " })");
+        }
+    }
     Timer { id: pointerDelay; interval: 150; onTriggered: popup.pointerReady = true }
     visible: opened
     anchors { top: true; bottom: true; left: true; right: true }
@@ -71,6 +93,7 @@ PanelWindow {
             anchors.margins: 24
             spacing: 18
             Item {
+                id: headerRow
                 Layout.fillWidth: true
                 implicitHeight: 44
                 Rectangle {
