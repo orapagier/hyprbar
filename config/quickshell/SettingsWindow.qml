@@ -175,11 +175,18 @@ FloatingWindow {
     }
     property string syncMessage: ""
     property bool syncSuccess: true
+    property bool syncReady: false
+    property string syncRepository: ""
+    property string syncForkUrl: ""
+    property string syncCreateUrl: ""
     Process {
         id: githubSync
         property string action: ""
         function request(action, extra) {
             githubSync.action = action;
+            window.syncReady = false;
+            window.syncForkUrl = "";
+            window.syncCreateUrl = "";
             window.syncSuccess = true;
             window.syncMessage = action === "--status" ? "Checking GitHub setup…" : action === "--authenticate" ? "Complete sign-in in the authentication window…" : "Syncing your desktop to GitHub…";
             command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/github_sync.py").toString().replace(/^file:\/\//, ""))].concat(action ? [action] : []).concat(extra || []);
@@ -191,10 +198,10 @@ FloatingWindow {
                     let result = JSON.parse(text);
                     window.syncSuccess = result.ok;
                     window.syncMessage = result.message;
-                    if (githubSync.action === "--status" && result.ok) {
-                        commitName.text = result.name || "";
-                        commitEmail.text = result.email || "";
-                    }
+                    window.syncReady = result.ok && result.ready === true;
+                    window.syncRepository = result.repository || "";
+                    window.syncForkUrl = result.forkUrl || "";
+                    window.syncCreateUrl = result.createUrl || "";
                 } catch (e) {
                     window.syncSuccess = false;
                     window.syncMessage = "Could not read GitHub sync results.";
@@ -221,44 +228,66 @@ FloatingWindow {
         contentItem: ColumnLayout {
             spacing: 14
             Label { text: "  Sync to GitHub"; color: "#ecebff"; font.pixelSize: 20; font.bold: true }
-            Label { text: "orapagier/hyprshell"; color: "#b4a2ff" }
-            Label { Layout.fillWidth: true; text: "Your commit identity is saved for this repository. Sign in separately to allow GitHub pushes."; wrapMode: Text.WordWrap; color: "#939bb3" }
-            Label { text: "Commit name / username"; color: "#ecebff" }
-            TextField {
-                id: commitName
-                objectName: "githubCommitName"
-                Layout.fillWidth: true
-                enabled: !githubSync.running
-                placeholderText: "Your name or GitHub username"
-                color: "#ecebff"; placeholderTextColor: "#939bb3"
-                background: Rectangle { color: "#10131c"; radius: 6; border.color: "#545d79" }
-            }
-            Label { text: "Commit email"; color: "#ecebff" }
-            TextField {
-                id: commitEmail
-                objectName: "githubCommitEmail"
-                Layout.fillWidth: true
-                enabled: !githubSync.running
-                placeholderText: "Email or GitHub noreply email"
-                color: "#ecebff"; placeholderTextColor: "#939bb3"
-                background: Rectangle { color: "#10131c"; radius: 6; border.color: "#545d79" }
-            }
-            Label { Layout.fillWidth: true; text: "Authenticate opens a terminal and browser. If GitHub CLI is missing, the terminal offers to install it."; wrapMode: Text.WordWrap; color: "#939bb3"; font.pixelSize: 11 }
+            Label { objectName: "githubRepositoryLabel"; text: window.syncRepository || "Sign in to find your repository"; color: "#b4a2ff" }
             Label { Layout.fillWidth: true; text: window.syncMessage; wrapMode: Text.WrapAnywhere; color: window.syncSuccess ? "#9eafb7" : "#f38ba8" }
             RowLayout {
                 SettingsButton {
+                    objectName: "githubForkButton"
+                    text: "Fork Hyprshell"
+                    visible: window.syncForkUrl !== ""
+                    enabled: !githubSync.running
+                    onClicked: Qt.openUrlExternally(window.syncForkUrl)
+                }
+                SettingsButton {
+                    objectName: "githubCreateButton"
+                    text: "Create repository"
+                    visible: window.syncCreateUrl !== ""
+                    enabled: !githubSync.running
+                    onClicked: Qt.openUrlExternally(window.syncCreateUrl)
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                SettingsButton {
+                    objectName: "githubCheckButton"
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    implicitWidth: 0
+                    leftPadding: 8; rightPadding: 8
+                    text: "Check again"
+                    enabled: !githubSync.running
+                    onClicked: githubSync.request("--status", [])
+                }
+                SettingsButton {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    implicitWidth: 0
+                    leftPadding: 8; rightPadding: 8
                     text: "Authenticate"
                     enabled: !githubSync.running
                     onClicked: githubSync.request("--authenticate", [])
                 }
                 SettingsButton {
                     objectName: "githubConfirmSync"
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    implicitWidth: 0
+                    leftPadding: 8; rightPadding: 8
                     text: githubSync.running ? "Working…" : "Sync"
                     highlighted: true
-                    enabled: !githubSync.running && commitName.text.trim() !== "" && commitEmail.text.trim() !== "" && !window.dirty && !window.saving && window.success
-                    onClicked: githubSync.request("", ["--name", commitName.text, "--email", commitEmail.text])
+                    enabled: !githubSync.running && window.syncReady && !window.dirty && !window.saving && window.success
+                    onClicked: githubSync.request("", [])
                 }
-                SettingsButton { text: "Close"; enabled: !githubSync.running; onClicked: githubDialog.close() }
+                SettingsButton {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    implicitWidth: 0
+                    leftPadding: 8; rightPadding: 8
+                    text: "Close"
+                    enabled: !githubSync.running
+                    onClicked: githubDialog.close()
+                }
             }
         }
     }
@@ -311,7 +340,7 @@ FloatingWindow {
                     text: githubSync.running ? "Syncing…" : "  Sync to GitHub"
                     enabled: !githubSync.running && !window.dirty && !window.saving && window.success && window.store.loaded && !cleanupPage.busy
                     ToolTip.visible: hovered
-                    ToolTip.text: "Commit and push live Hyprland, Quickshell, and saved settings to orapagier/hyprshell"
+                    ToolTip.text: "Commit and push your desktop setup to your GitHub hyprshell repository"
                     onClicked: {
                         githubDialog.open();
                         githubSync.request("--status", []);

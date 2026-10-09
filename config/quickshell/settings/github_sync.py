@@ -6,12 +6,13 @@ import fcntl
 import fnmatch
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 
-REPOSITORY = 'https://github.com/orapagier/hyprshell.git'
+FORK_URL = 'https://github.com/orapagier/hyprshell/fork'
 
 
 def git(repo, *args):
@@ -53,13 +54,10 @@ def mirror(source, destination):
         shutil.copy2(source, destination)
 
 
-def sync(repo, config):
+def sync(repo, config, target, slug):
     repo = repo.resolve()
     if Path(git(repo, 'rev-parse', '--show-toplevel')).resolve() != repo:
         raise RuntimeError('Choose the root of the Hyprshell Git checkout.')
-    remote = git(repo, 'remote', 'get-url', '--push', 'origin')
-    if remote.rstrip('/') not in (REPOSITORY, REPOSITORY[:-4], 'git@github.com:orapagier/hyprshell.git', 'git@github.com:orapagier/hyprshell'):
-        raise RuntimeError('The origin push URL must point to orapagier/hyprshell on GitHub.')
     git(repo, 'var', 'GIT_AUTHOR_IDENT')
     git(repo, 'var', 'GIT_COMMITTER_IDENT')
     branch = git(repo, 'symbolic-ref', '--quiet', '--short', 'HEAD')
@@ -83,15 +81,15 @@ def sync(repo, config):
         if settings.exists():
             from backend import validate
             data = validate(json.loads(settings.read_text()))
-            target = repo / 'config/hyprshell/settings.json'
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(json.dumps(data, indent=2) + '\n')
+            settings_target = repo / 'config/hyprshell/settings.json'
+            settings_target.parent.mkdir(parents=True, exist_ok=True)
+            settings_target.write_text(json.dumps(data, indent=2) + '\n')
             paths.append('config/hyprshell/settings.json')
         git(repo, 'add', '-A', '--', *paths)
         if git(repo, 'diff', '--cached', '--name-only'):
             git(repo, 'commit', '-m', 'Sync Hyprshell desktop ' + datetime.now().isoformat(timespec='seconds'))
-        git(repo, 'push', 'origin', f'HEAD:refs/heads/{branch}')
-    return f'Synced to orapagier/hyprshell ({branch}).'
+        git(repo, 'push', target, f'HEAD:refs/heads/{branch}')
+    return f'Synced to {slug} ({branch}).'
 
 
 def identity(repo, name, email):
@@ -102,6 +100,40 @@ def identity(repo, name, email):
         raise ValueError('Enter a valid commit email (your GitHub noreply email also works).')
     git(repo, 'config', '--local', 'user.name', name)
     git(repo, 'config', '--local', 'user.email', email)
+
+
+def api(endpoint, missing_ok=False):
+    result = subprocess.run(['gh', 'api', '--hostname', 'github.com', endpoint],
+                            capture_output=True, text=True, timeout=30)
+    if result.returncode:
+        if missing_ok and '(HTTP 404)' in result.stderr:
+            return None
+        raise RuntimeError(result.stderr.strip() or 'Could not contact GitHub. Authenticate and try again.')
+    return json.loads(result.stdout)
+
+
+def discover():
+    if not shutil.which('gh'):
+        return {'ok': True, 'ready': False, 'message': 'Click Authenticate to sign in to GitHub.'}
+    user = api('user')
+    login, user_id = user['login'], user['id']
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9-]*', login) or type(user_id) is not int:
+        raise ValueError('GitHub returned an invalid account.')
+    slug = login + '/hyprshell'
+    result = {'ok': True, 'ready': False, 'login': login, 'repository': slug,
+              'name': login, 'email': f'{user_id}+{login}@users.noreply.github.com'}
+    repository = api('repos/' + slug, missing_ok=True)
+    if repository is None:
+        result.update(forkUrl=FORK_URL, createUrl=f'https://github.com/new?name=hyprshell&owner={login}',
+                      message=f'{slug} was not found. Fork Hyprshell or create an empty repository named hyprshell in your account, then click Check again.')
+    elif repository.get('full_name', '').lower() != slug.lower():
+        result['message'] = f'{slug} was renamed. Fork or create a repository named hyprshell in your account, then check again.'
+    elif not repository.get('permissions', {}).get('push') or repository.get('archived'):
+        result['message'] = f'Your account cannot push to {slug}. Check repository permissions and authentication.'
+    else:
+        result.update(ready=True, target=f'https://github.com/{slug}.git',
+                      message=f'Signed in as {login}. Ready to sync to {slug}.')
+    return result
 
 
 def login_terminal():
@@ -130,8 +162,6 @@ def main():
     parser.add_argument('--status', action='store_true')
     parser.add_argument('--authenticate', action='store_true')
     parser.add_argument('--login-terminal', action='store_true')
-    parser.add_argument('--name')
-    parser.add_argument('--email')
     args = parser.parse_args()
     if args.login_terminal:
         return login_terminal()
@@ -142,16 +172,7 @@ def main():
         pointer = state / 'repository'
         repo = Path(pointer.read_text().strip()) if pointer.exists() else home / 'repos/hyprshell'
         if args.status:
-            def value(key):
-                try:
-                    return git(repo, 'config', '--get', key)
-                except RuntimeError:
-                    return ''
-            authenticated = shutil.which('gh') and subprocess.run(
-                ['gh', 'auth', 'status', '--hostname', 'github.com'],
-                capture_output=True, timeout=20).returncode == 0
-            result = {'ok': True, 'name': value('user.name'), 'email': value('user.email'),
-                      'message': 'GitHub CLI authenticated.' if authenticated else 'Use Authenticate for browser sign-in, or keep using your existing Git credentials.'}
+            result = discover()
         elif args.authenticate:
             terminal = subprocess.run(['kitty', '--wait', '--title', 'Hyprshell GitHub authentication',
                             sys.executable, str(Path(__file__).resolve()), '--login-terminal'],
@@ -164,13 +185,16 @@ def main():
                                     capture_output=True, text=True, timeout=20)
             if status.returncode:
                 raise RuntimeError('GitHub sign-in was not completed. Click Authenticate to retry.')
-            result = {'ok': True, 'message': 'Authenticated with GitHub. Click Sync to push your setup.'}
+            result = discover()
         else:
-            if args.name is not None or args.email is not None:
-                identity(repo, args.name or '', args.email or '')
-            result = {'ok': True, 'message': sync(repo, config)}
+            result = discover()
+            if result['ready']:
+                identity(repo, result['name'], result['email'])
+                result['message'] = sync(repo, config, result['target'], result['repository'])
+            else:
+                result['ok'] = False
         print(json.dumps(result))
-        return 0
+        return 0 if result['ok'] else 1
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         print(json.dumps({'ok': False, 'message': str(error)}))
         return 1
