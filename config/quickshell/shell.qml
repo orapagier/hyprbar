@@ -49,7 +49,7 @@ ShellRoot {
         PanelWindow {
             id: panel
             required property var modelData
-            MenuController { id: menuState }
+            MenuController { id: menuState; dismissPinnedOnLeave: !panel.visible }
             screen: modelData
             visible: preferences.config.bar.visible !== false
             exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore

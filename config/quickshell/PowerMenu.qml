@@ -24,9 +24,27 @@ ColumnLayout {
     Repeater {
         model: page.actions
         delegate: MenuButton {
+            id: powerButton
             required property var modelData
             Layout.fillWidth: true
-            text: modelData.title + "    " + modelData.shortcut; font.family: "GoMono Nerd Font"
+            text: modelData.title
+            font.family: "GoMono Nerd Font"
+            contentItem: RowLayout {
+                spacing: 12
+                Text {
+                    text: powerButton.text
+                    font: powerButton.font
+                    color: powerButton.enabled ? powerButton.accent : "#585b70"
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                }
+                Text {
+                    text: powerButton.modelData.shortcut
+                    font: powerButton.font
+                    color: powerButton.enabled ? powerButton.accent : "#585b70"
+                    horizontalAlignment: Text.AlignRight
+                }
+            }
             enabled: !action.running
             onClicked: { page.error = ""; action.exec(modelData.command); }
         }

@@ -8,6 +8,7 @@ Item {
     onSectionChanged: if (section.length) displayedSection = section
     property string hoveredMenu: ""
     property bool pinned: false
+    property bool dismissPinnedOnLeave: false
     property bool pointerInMenu: false
 
     function hover(name) {
@@ -23,7 +24,7 @@ Item {
     }
     function retain(inside) {
         pointerInMenu = inside;
-        if (inside || hoveredMenu.length || pinned) closeDelay.stop();
+        if (inside || hoveredMenu.length || (pinned && !dismissPinnedOnLeave)) closeDelay.stop();
         else if (section.length) closeDelay.restart();
     }
     function activate(name) {
@@ -51,7 +52,7 @@ Item {
         id: closeDelay
         interval: 320
         onTriggered: {
-            if (!controller.pointerInMenu && !controller.hoveredMenu.length && !controller.pinned)
+            if (!controller.pointerInMenu && !controller.hoveredMenu.length && (!controller.pinned || controller.dismissPinnedOnLeave))
                 controller.close();
         }
     }

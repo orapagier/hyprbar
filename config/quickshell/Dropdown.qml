@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 
 PanelWindow {
     id: dropdown
@@ -68,7 +69,30 @@ PanelWindow {
             onHoverChanged: inside => dropdown.hoverChanged(inside)
         }
     }
-    onOpenedChanged: if (opened) focusScope.forceActiveFocus()
+    // Delay the warp until the compositor has received the input region.
+    Timer {
+        id: headerPointer
+        interval: 100
+        onTriggered: {
+            if (!dropdown.opened || dropdown.connected) return;
+            let monitor = Hyprland.monitorFor(dropdown.screen);
+            if (!monitor) return;
+            let x = Math.round(monitor.x + popover.bodyX + popover.bodyWidth / 2);
+            let y = Math.round(monitor.y + popover.bodyY + 33);
+            Hyprland.dispatch("hl.dsp.cursor.move({ x = " + x + ", y = " + y + " })");
+        }
+    }
+    onSectionChanged: {
+        headerPointer.stop();
+        if (section.length && !connected) headerPointer.restart();
+    }
+    onOpenedChanged: {
+        headerPointer.stop();
+        if (opened) {
+            focusScope.forceActiveFocus();
+            if (!connected) headerPointer.restart();
+        }
+    }
     Shortcut { sequence: "Escape"; enabled: dropdown.opened; onActivated: dropdown.closeRequested() }
     Component { id: launcherPage; LauncherMenu { onLaunched: dropdown.closeRequested() } }
     Component { id: settingsPage; SettingsMenu { onOpenRequested: { dropdown.closeRequested(); dropdown.settingsRequested(); } } }

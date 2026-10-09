@@ -1,7 +1,7 @@
 {
   "version": 1,
   "bar": {
-    "visible": false,
+    "visible": true,
     "adaptiveColors": true,
     "randomVibrantColors": true,
     "height": 32,

@@ -47,6 +47,7 @@ Item {
     function containsPointer(point) {
         if (point.y >= bodyY && point.y <= bodyBottom && point.x >= bodyX && point.x <= bodyRight)
             return true;
+        if (!connected) return false;
         // A forgiving bridge lets the pointer travel diagonally into the menu.
         return point.y >= neckY - 4 && point.y < bodyY + (connected ? 0 : 14)
             && point.x >= Math.min(triggerRect.x - 12, bodyX)
