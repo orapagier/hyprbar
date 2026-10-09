@@ -46,7 +46,8 @@ system or configure disk partitions, a bootloader, or GPU drivers.
 | Battery | Charge and health information when available from the hardware. |
 | System tray | Application-provided tray icons. |
 | Power menu | Lock, sleep, logout, reboot, and shutdown actions. |
-| Settings | A live bar preview, drag-to-reorder modules, appearance controls, and selected Hyprland settings. |
+| Settings | A live bar preview, drag-to-reorder modules, appearance controls, selected Hyprland settings, and a shortcut editor. |
+| Shortcut overlay | Search active Hyprland shortcuts with `Super+K`. |
 | Optional management tools | Screen locking, scheduled file cleanup, and GitHub configuration sync. |
 
 The interface and service bindings use QML and JavaScript. A small C helper
@@ -278,7 +279,7 @@ Put JPG, JPEG, PNG, or WebP images in `~/Pictures/Wallpapers`. Use `Super+W` for
 the next wallpaper and `Super+Shift+W` for the previous one. The cycling script
 uses a sorted list of files in that directory.
 
-The supplied startup script selects `cloudsnight.jpg` on login. Edit
+The supplied startup script selects `default.jpg` on login. Edit
 `wallpaper-start.sh` to choose a different startup image. Wallpaper rendering
 uses `awww`; bar colors adapt to the wallpaper on each output.
 
@@ -292,6 +293,12 @@ keybindings changes the behavior described here.
 | `Super+T` | Open Kitty. |
 | Press and release `Super` | Toggle the application launcher. |
 | `Super+E` | Open a Nautilus window. |
+| `Super+K` | Toggle the searchable shortcut overlay. |
+| `Alt+T` | Show or hide the topbar. |
+| `Alt+S` | Open Hyprshell Settings. |
+| `Alt+C` / `Alt+N` | Toggle calendar / notifications. |
+| `Alt+A` / `Alt+W` | Toggle audio / Wi-Fi. |
+| `Alt+V` / `Alt+B` / `Alt+P` | Toggle Bluetooth / battery / power options. |
 | `Super+B` | Launch Brave if separately installed; customize this binding for your browser. |
 | `Super+Q` | Close the focused window. |
 | `Super+M` | Toggle maximized mode. |
@@ -314,6 +321,10 @@ keybindings changes the behavior described here.
 | `F6` / `F7` | Lower / raise brightness. |
 | Supported media and brightness keys | Control volume, playback, microphone mute, or brightness. |
 | `Super+Shift+M` | End the Hyprland session. |
+
+The saved shortcut customizations in this checkout also bind `Alt+Q` to reload
+Hyprshell. Use `Super+K` to inspect active shortcuts after customizations. The
+Alt menu shortcuts work while the topbar is hidden.
 
 Playback keybindings use `playerctl`, available through `--extra` or a separate
 package installation. Brightness bindings depend on the system's backlight
@@ -345,6 +356,7 @@ group. You can reorder items, show or hide built-in modules, and adjust:
 - Text, icon, background, and outline colors using `#RRGGBB`.
 - Item opacity, background opacity, pill visibility, and corner radius.
 - Wallpaper-adaptive colors globally or per item.
+- Random vibrant item colors that reshuffle when the wallpaper changes.
 
 Individual overrides take priority over general settings. Choose inheritance
 or use the relevant reset control to return to the general value. Manual colors
@@ -361,7 +373,7 @@ service.
 Most bar, appearance, and locking preferences save automatically after a short
 pause. Closing Settings flushes pending changes. Invalid values show an error
 and leave the last saved configuration active; correct the value to resume
-saving. System cleanup has its own explicit save action.
+saving. System cleanup and keybinding edits have their own explicit save actions.
 
 Preferences live in:
 
@@ -378,11 +390,25 @@ Lua configuration. The settings backend also supports traditional `.conf`
 main configurations. Changes are validated and backed up; a failed Hyprland
 reload rolls back affected files.
 
-The Settings window does not manage monitor layouts, keyboard shortcuts,
-arbitrary third-party Quickshell components, or every Hyprland option. Edit
+The Settings window does not manage monitor layouts, arbitrary third-party
+Quickshell components, or every Hyprland option. Edit
 the appropriate configuration files for those changes. See
 [the settings reference](docs/settings.md) for detailed behavior and extension
 points.
+
+### Editing shortcuts
+
+Open **Settings → Keybindings** to search active shortcuts, select one to edit,
+or choose **+ New**. Record a key combination or enter it manually, add an
+action description, and keep the existing action or supply a command. Click
+**Save shortcut** to apply it. **Restore** resets an edited built-in shortcut;
+**Remove** deletes an added shortcut.
+
+The editor checks conflicts, validates the Hyprland configuration, and reloads
+it. Failed validation or application restores the previous files. Saved edits
+live in `~/.config/hyprshell/keybindings.json`; `keybindings.lua` is generated
+from them and applied after the base Lua configuration. The `Super+K` overlay
+shows active bindings, including these edits.
 
 ## Screen locking
 
@@ -441,7 +467,11 @@ to a repository named `hyprshell` in your authenticated GitHub account.
 5. Start the sync and check its result.
 
 The tool snapshots live `hypr/` and `quickshell/` configurations and saved
-`hyprshell/settings.json`. It also commits project files: configuration,
+`hyprshell/settings.json`, cleanup preferences, and shortcut customizations.
+It also captures installed copies of files already managed by the checkout:
+portal preferences, autostart overrides, utilities, application shortcuts, and
+bundled wallpaper filenames. Additional personal files in those locations are
+not imported automatically. It also commits project files: configuration,
 utilities, assets, tools, tests, documentation, workflows, package manifests,
 the installer, and README. This keeps the installation guide and installer in
 sync with the desktop. Tracked deletions in these paths are included.
@@ -489,8 +519,8 @@ services or install newly required packages.
 
 Installation replaces the managed `hypr`, `quickshell`, and
 `xdg-desktop-portal` directories and installs the checkout's saved Hyprshell
-settings file when present. It also installs utilities from `bin/`, application
-shortcuts, and bundled wallpapers. **Reinstallation can replace edits made
+settings, cleanup, and keybinding files when present. It also installs utilities
+from `bin/`, application shortcuts, and bundled wallpapers. **Reinstallation can replace edits made
 only in your live configuration, including saved settings.** Keep changes in
 your checkout or preserve them separately before updating.
 
@@ -539,6 +569,9 @@ files; consult that manifest when restoring settings changes.
 | `~/.config/hypr/` | Hyprland configuration, wallpaper scripts, and Hyprlock configuration. |
 | `~/.config/quickshell/` | Installed shell components and helpers. |
 | `~/.config/hyprshell/settings.json` | Saved Hyprshell preferences. |
+| `~/.config/hyprshell/cleanup.json` | Saved cleanup rules and schedule. |
+| `~/.config/hyprshell/keybindings.json` / `keybindings.lua` | Saved shortcut edits and generated Lua bindings. |
+| `~/.config/autostart/nm-applet.desktop` | Managed override hiding the duplicate network tray icon. |
 | `~/.config/hyprshell/overrides.lua` | Generated Hyprland appearance overrides for Lua configs. |
 | `~/.config/hyprshell/hypridle.conf` | Generated idle configuration when managed by Hyprshell. |
 | `~/.config/xdg-desktop-portal/` | Desktop portal preferences. |
@@ -578,8 +611,9 @@ failure is reported instead of launching another desktop shell.
 
 ### Settings or the application launcher will not open
 
-Both communicate with the running Hyprshell instance. Start the bar first.
-If utilities or the desktop entry are missing, reinstall with
+Both communicate with the running Hyprshell instance. The application launcher
+tries to start the bar if it is unavailable; Settings requires the bar to be
+running. If utilities or the desktop entry are missing, reinstall with
 `./setup.sh --config-only`. Applications missing from the launcher may lack
 an installed desktop entry.
 
@@ -642,6 +676,7 @@ and Hyprshell is running. Review errors on the Screen locking page.
 | `config/quickshell/` | QML/JavaScript shell, service bindings, and settings helpers. |
 | `config/hypr/` | Bundled Hyprland configuration and wallpaper scripts. |
 | `config/hyprshell/` | Saved preferences installed with the desktop. |
+| `config/autostart/` | Managed application autostart overrides. |
 | `config/xdg-desktop-portal/` | Portal configuration. |
 | `bin/` | Shell launcher, application launcher, and settings shortcut. |
 | `assets/` | Wallpapers and application desktop entries. |
@@ -678,5 +713,7 @@ ownership or licensing rights over them.
 ## Agent machine context
 
 [Hyprskill](docs/hyprskill.md) gives Codex, Claude Code, and OpenCode reusable
-context about this desktop from any working directory. Install its global links
-with `python3 tools/install_hyprskill.py`; desktop installation stays separate.
+context about this desktop from any working directory. Open **Settings →
+Hyprskill → Install Hyprskill**, or install its global links with
+`python3 tools/install_hyprskill.py`. Restart your agents afterward; desktop
+installation stays separate.

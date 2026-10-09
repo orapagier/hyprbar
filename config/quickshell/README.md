@@ -2,7 +2,8 @@
 
 The panel, launcher, calendar, audio, Wi-Fi, Bluetooth, notification inbox,
 power menu, media display, and status bindings are QML/JavaScript components.
-There are no Python backends or GTK dropdowns in this configuration.
+The desktop service bindings and menus are native QML. Python helpers handle
+settings, shortcut edits, cleanup, and GitHub sync.
 
 The QML files live directly in `~/.config/quickshell/`, with `shell.qml` as
 the default entry point. The explicit ShellId in `shell.qml` preserves the
@@ -43,9 +44,9 @@ resize modes, crop gravities, and animated wallpaper frames are not tracked.
 - Output animation: twelve logarithmic FFT bands from the current speaker's
   output monitor, updated every 16 ms. Rounded bars expand about their centers,
   with fast attacks and a smooth release. A small C helper uses libpulse-simple
-  and FFTW, builds into `~/.cache/quickshell` on demand (requires `cc`,
-  `pkg-config`, and the two development libraries), and stops when playback
-  becomes inactive. Output-device changes reconnect the monitor. No microphone
+  and FFTW. Setup compiles it into `helpers/audio-spectrum` in the installed
+  Quickshell directory (requires `cc` and the two development libraries).
+  It stops when playback becomes inactive. Output-device changes reconnect the monitor. No microphone
   is monitored; `PwNodePeakMonitor` still detects non-MPRIS playback.
 - Network status, scanning, connections and passwords: `Quickshell.Networking`.
 - Bluetooth status, scanning and connections: `Quickshell.Bluetooth`.
