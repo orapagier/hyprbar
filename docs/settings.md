@@ -410,3 +410,9 @@ The shortcuts call `hyprshell-shortcut`, installed with the other launch helpers
 Topbar toggles use the existing settings writer when Settings is loaded;
 otherwise `backend.py --toggle-bar` updates only visibility under the settings
 lock, preserving concurrent changes and all other preferences.
+
+With the power menu open, press L to lock, X to shut down, R to reboot, S to
+sleep, or O to log out. Alt+P opens the menu first; Alt may remain held while
+pressing the action key or be released. The menu consumes these action keys
+only while it is open, and ignores auto-repeat. These sequences are listed in
+Super+K and beside the corresponding power buttons. Escape cancels the menu.

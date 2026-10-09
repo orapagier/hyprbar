@@ -7,13 +7,26 @@ import Quickshell.Io
 ColumnLayout {
     id: page
     property string error: ""
+    property var actions: [
+        {key: Qt.Key_L, shortcut: "Alt + P + L", title: "󰌾  Lock", description: "Lock screen", command: ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--lock"]},
+        {key: Qt.Key_X, shortcut: "Alt + P + X", title: "󰐥  Shutdown", description: "Shutdown", command: ["systemctl", "poweroff"]},
+        {key: Qt.Key_R, shortcut: "Alt + P + R", title: "󰜉  Reboot", description: "Reboot", command: ["systemctl", "reboot"]},
+        {key: Qt.Key_S, shortcut: "Alt + P + S", title: "󰒲  Sleep", description: "Sleep", command: ["systemctl", "suspend"]},
+        {key: Qt.Key_O, shortcut: "Alt + P + O", title: "󰗽  Logout", description: "Logout", command: ["uwsm", "stop"]}
+    ]
+    function runShortcut(key) {
+        let entry = actions.find(item => item.key === key);
+        if (!entry) return false;
+        if (!action.running) { page.error = ""; action.exec(entry.command); }
+        return true;
+    }
     spacing: 8
     Repeater {
-        model: [{title: "󰌾  Lock", command: ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--lock"]}, {title: "󰐥  Shutdown", command: ["systemctl","poweroff"]}, {title: "󰜉  Reboot", command: ["systemctl","reboot"]}, {title: "󰒲  Sleep", command: ["systemctl","suspend"]}, {title: "󰗽  Logout", command: ["uwsm","stop"]}]
+        model: page.actions
         delegate: MenuButton {
             required property var modelData
             Layout.fillWidth: true
-            text: modelData.title; font.family: "GoMono Nerd Font"
+            text: modelData.title + "    " + modelData.shortcut; font.family: "GoMono Nerd Font"
             enabled: !action.running
             onClicked: { page.error = ""; action.exec(modelData.command); }
         }

@@ -20,6 +20,7 @@ Item {
     property string title: ""
     property string symbol: ""
     property Component page: null
+    readonly property alias pageItem: pageLoader.item
     property bool opened: false
     property bool cardClickable: false
     property bool connected: true
@@ -162,7 +163,7 @@ Item {
                 Rectangle { width: 5; height: 5; radius: 3; color: popover.accent; opacity: 0.7 }
             }
             Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Qt.rgba(popover.accent.r, popover.accent.g, popover.accent.b, 0.15) }
-            Loader { Layout.fillWidth: true; active: popover.rendering; sourceComponent: popover.page }
+            Loader { id: pageLoader; Layout.fillWidth: true; active: popover.rendering; sourceComponent: popover.page }
         }
     }
 }

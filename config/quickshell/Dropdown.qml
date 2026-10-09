@@ -41,7 +41,14 @@ PanelWindow {
         anchors.fill: parent
         focus: true
         Keys.onEscapePressed: dropdown.closeRequested()
+        Keys.onPressed: event => {
+            if (dropdown.displayedSection === "power" && dropdown.opened && !event.isAutoRepeat
+                    && !(event.modifiers & (Qt.ControlModifier | Qt.MetaModifier | Qt.ShiftModifier))
+                    && popover.pageItem && popover.pageItem.runShortcut(event.key))
+                event.accepted = true;
+        }
         MenuPopover {
+            id: popover
             anchors.fill: parent
             wallpaperSource: dropdown.wallpaperSource
             translucency: dropdown.translucency

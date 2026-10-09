@@ -15,9 +15,16 @@ ColumnLayout {
         readonly property color highlightedText: "#161824"
         readonly property color base: "#161824"
     }
+    readonly property var powerShortcuts: [
+        {shortcut: "Alt + P + L", action: "Lock screen"},
+        {shortcut: "Alt + P + X", action: "Shutdown"},
+        {shortcut: "Alt + P + R", action: "Reboot"},
+        {shortcut: "Alt + P + S", action: "Sleep"},
+        {shortcut: "Alt + P + O", action: "Logout"}
+    ]
     property var bindings: []
     property string error: ""
-    readonly property var entries: bindings.filter(b => {
+    readonly property var entries: bindings.concat(powerShortcuts).filter(b => {
         let haystack = (b.shortcut + " " + b.action).toLowerCase();
         return search.text.toLowerCase().trim().split(/\s+/).every(word => haystack.includes(word));
     })
