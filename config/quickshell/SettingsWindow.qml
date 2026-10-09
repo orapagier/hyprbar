@@ -216,7 +216,7 @@ FloatingWindow {
             window.syncForkUrl = "";
             window.syncCreateUrl = "";
             window.syncSuccess = true;
-            window.syncMessage = action === "--status" ? "Checking GitHub setup…" : action === "--authenticate" ? "Complete sign-in in the authentication window…" : "Syncing your desktop to GitHub…";
+            window.syncMessage = action === "--status" ? "Checking GitHub setup…" : action === "--authenticate" ? "Complete sign-in in the authentication window…" : "Saving live desktop to the local repo, then syncing to GitHub…";
             command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/github_sync.py").toString().replace(/^file:\/\//, ""))].concat(action ? [action] : []).concat(extra || []);
             running = true;
         }

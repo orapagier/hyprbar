@@ -86,8 +86,9 @@ def install(repo):
         if wallpaper.is_file():
             put(wallpaper, home / 'Pictures/Wallpapers' / wallpaper.name,
                 Path('Pictures/Wallpapers') / wallpaper.name)
-    if (repo / 'config/hyprshell/settings.json').exists():
-        put(repo / 'config/hyprshell/settings.json', config / 'hyprshell/settings.json', Path('config/hyprshell/settings.json'))
+    for name in ('settings.json', 'cleanup.json'):
+        if (repo / 'config/hyprshell' / name).exists():
+            put(repo / 'config/hyprshell' / name, config / 'hyprshell' / name, Path('config/hyprshell') / name)
     state.joinpath('hyprshell').mkdir(parents=True, exist_ok=True)
     state.joinpath('hyprshell/repository').write_text(str(repo.resolve()) + '\n')
     if backup.exists():

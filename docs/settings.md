@@ -272,7 +272,12 @@ account switch. The checkout's origin remote is preserved; the push explicitly
 targets the authenticated user's repository.
 
 Sync snapshots live `hypr/` and `quickshell/` config directories and saved
-`hyprshell/settings.json`, commits the snapshot, and pushes the current branch.
+`hyprshell/settings.json` into the local checkout first, then commits the snapshot
+and pushes the current branch. It also captures saved cleanup preferences and
+the live versions of installer-managed portal files, autostart entries, launcher
+scripts, application entries, and bundled wallpapers. Only names already managed
+by the checkout are copied from these shared directories; missing optional files
+keep their installer payload. Unrelated application files are never imported.
 Deleted config files are reflected in the snapshot. Backups, Python caches,
 logs, and the compiled audio helper are excluded. Project configurations, utilities, assets, tools, tests, documentation,
 workflows, package manifests, README, and installer changes are included. Files

@@ -42,6 +42,13 @@ class SyncTests(unittest.TestCase):
             (config / 'hyprshell').mkdir()
             defaults = json.loads((ROOT / 'config/quickshell/settings/defaults.json').read_text())
             (config / 'hyprshell/settings.json').write_text(json.dumps(defaults))
+            with patch.object(sys, 'path', [str(ROOT / 'config/quickshell/settings')] + sys.path), \
+                 patch.object(syncer, 'discover', side_effect=RuntimeError('offline')):
+                with self.assertRaisesRegex(RuntimeError, 'Live desktop saved.*offline'):
+                    syncer.sync(repo, config)
+            self.assertEqual((repo / 'config/hypr/current').read_text(), 'live')
+            self.assertTrue((repo / 'config/hyprshell/settings.json').exists())
+            self.assertEqual(run('diff', '--cached', '--name-only'), '')
             with patch.object(sys, 'path', [str(ROOT / 'config/quickshell/settings')] + sys.path):
                 message = syncer.sync(repo, config, str(remote), 'example/hyprshell')
                 self.assertEqual(message, 'Synced to example/hyprshell (main).')
@@ -67,6 +74,31 @@ class SyncTests(unittest.TestCase):
             self.assertEqual(message, 'Synced to example/hyprshell (main).')
             self.assertEqual(run('rev-parse', 'HEAD'), subprocess.check_output(
                 ['git', '--git-dir', str(remote), 'rev-parse', 'main'], text=True).strip())
+
+    def test_managed_payload_uses_live_files_without_importing_private_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo, config, home = root / 'repo', root / 'live', root / 'home'
+            for payload, installed in [
+                ('config/xdg-desktop-portal', 'live/xdg-desktop-portal'),
+                ('config/autostart', 'live/autostart'),
+                ('bin', 'home/.local/bin'),
+                ('assets/applications', 'home/.local/share/applications'),
+                ('assets/wallpapers', 'home/Pictures/Wallpapers'),
+            ]:
+                destination, source = repo / payload, root / installed
+                destination.mkdir(parents=True)
+                source.mkdir(parents=True)
+                (destination / 'managed').write_text('repo')
+                (destination / 'missing').write_text('installer fallback')
+                (source / 'managed').write_text('live')
+                (source / 'private').write_text('private')
+            syncer.snapshot_managed_files(repo, config, home)
+            for payload in ('config/xdg-desktop-portal', 'config/autostart', 'bin',
+                            'assets/applications', 'assets/wallpapers'):
+                self.assertEqual((repo / payload / 'managed').read_text(), 'live')
+                self.assertFalse((repo / payload / 'private').exists())
+                self.assertEqual((repo / payload / 'missing').read_text(), 'installer fallback')
 
     def test_identity_is_local_and_validated(self):
         with tempfile.TemporaryDirectory() as directory:

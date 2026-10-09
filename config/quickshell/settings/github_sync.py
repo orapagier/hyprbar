@@ -54,12 +54,42 @@ def mirror(source, destination):
         shutil.copy2(source, destination)
 
 
-def sync(repo, config, target, slug):
+
+def snapshot_managed_files(repo, config, home):
+    """Capture installer-owned files without importing unrelated user files."""
+    portal = config / 'xdg-desktop-portal'
+    if portal.is_dir():
+        # Other applications may own portal files; copy only our managed names.
+        groups = [(repo / 'config/xdg-desktop-portal', portal)]
+    else:
+        groups = []
+    groups.extend([
+        (repo / 'config/autostart', config / 'autostart'),
+        (repo / 'bin', home / '.local/bin'),
+        (repo / 'assets/applications', home / '.local/share/applications'),
+        (repo / 'assets/wallpapers', home / 'Pictures/Wallpapers'),
+    ])
+    for destination, source in groups:
+        if not destination.is_dir():
+            continue
+        for managed in sorted(destination.iterdir()):
+            if managed.is_file() and not excluded(managed.name):
+                live = source / managed.name
+                if live.exists() or live.is_symlink():
+                    mirror(live, managed)
+    cleanup = config / 'hyprshell/cleanup.json'
+    if cleanup.exists():
+        from cleanup import validate as validate_cleanup
+        data = validate_cleanup(json.loads(cleanup.read_text()))
+        destination = repo / 'config/hyprshell/cleanup.json'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(data, indent=2) + '\n')
+
+
+def sync(repo, config, target=None, slug=None):
     repo = repo.resolve()
     if Path(git(repo, 'rev-parse', '--show-toplevel')).resolve() != repo:
         raise RuntimeError('Choose the root of the Hyprshell Git checkout.')
-    git(repo, 'var', 'GIT_AUTHOR_IDENT')
-    git(repo, 'var', 'GIT_COMMITTER_IDENT')
     branch = git(repo, 'symbolic-ref', '--quiet', '--short', 'HEAD')
     gitdir = Path(git(repo, 'rev-parse', '--absolute-git-dir'))
     with (gitdir / 'hyprshell-sync.lock').open('w') as lock:
@@ -85,6 +115,18 @@ def sync(repo, config, target, slug):
             settings_target.parent.mkdir(parents=True, exist_ok=True)
             settings_target.write_text(json.dumps(data, indent=2) + '\n')
             paths.append('config/hyprshell/settings.json')
+        snapshot_managed_files(repo, config, Path.home())
+        if target is None:
+            try:
+                account = discover()
+                if not account['ready']:
+                    raise RuntimeError(account['message'])
+                identity(repo, account['name'], account['email'])
+                target, slug = account['target'], account['repository']
+            except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+                raise RuntimeError(f'Live desktop saved to {repo}. GitHub sync failed: {error}') from error
+        git(repo, 'var', 'GIT_AUTHOR_IDENT')
+        git(repo, 'var', 'GIT_COMMITTER_IDENT')
         # Publish the project that installs the snapshot as well as live configs.
         # Keep this explicit so unrelated files in the checkout stay private.
         project_paths = ('config', 'bin', 'assets', 'tools', 'tests', 'docs',
@@ -198,12 +240,7 @@ def main():
                 raise RuntimeError('GitHub sign-in was not completed. Click Authenticate to retry.')
             result = discover()
         else:
-            result = discover()
-            if result['ready']:
-                identity(repo, result['name'], result['email'])
-                result['message'] = sync(repo, config, result['target'], result['repository'])
-            else:
-                result['ok'] = False
+            result = {'ok': True, 'message': sync(repo, config)}
         print(json.dumps(result))
         return 0 if result['ok'] else 1
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
