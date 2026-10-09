@@ -8,6 +8,14 @@
       "description": "Reload Hypershell",
       "mode": "command",
       "command": "quickshell ipc --path ~/.config/quickshell call bar reload"
+    },
+    {
+      "command": "uwsm app -- chromium",
+      "description": "Open browser",
+      "id": "e36985f80a4c4fa9a08518d5aa357fbf",
+      "mode": "command",
+      "original": "SUPER + B",
+      "shortcut": "SUPER + B"
     }
   ]
 }
