@@ -364,6 +364,40 @@ hl.window_rule({
     center = true,
 })
 
+-- Cross-app fallback for dialogs that omit the modal/transient hints.
+-- Match complete titles so document titles containing these words still tile.
+local dialogTitles = {
+    "Open", "Open File", "Open Files", "Open Folder", "Open Directory",
+    "Save", "Save As", "Save File", "Save a File",
+    "Select File", "Select Files", "Select Folder", "Select Directory",
+    "Choose File", "Choose Files", "Choose Folder", "Choose Directory",
+    "Preferences", "Settings", "Properties", "About",
+    "Print", "Print Preview", "Page Setup",
+    "Export", "Export File", "Import", "Import File",
+    "Confirm", "Confirmation", "Authentication Required", "Authenticate",
+    "Password Required", "Enter Password", "Picture-in-Picture",
+}
+local dialogTitleLookup = {}
+for _, title in ipairs(dialogTitles) do
+    dialogTitleLookup[title:lower()] = true
+end
+hl.window_rule({
+    name = "float-app-dialogs",
+    match = { title = "(?i)^(" .. table.concat(dialogTitles, "|") .. ")$" },
+    float = true,
+    center = true,
+})
+
+-- Static float rules only see the title at map time. Handle delayed titles too.
+local function floatDialog(window)
+    if not window or not window.mapped or window.floating then return end
+    if not dialogTitleLookup[(window.title or ""):lower()] then return end
+    hl.dispatch(hl.dsp.window.float({ window = window, action = "set" }))
+    hl.dispatch(hl.dsp.window.center({ window = window }))
+end
+hl.on("window.open", floatDialog)
+hl.on("window.title", floatDialog)
+
 -- Some Thunar dialogs do not advertise themselves as modal.
 hl.window_rule({
     name  = "float-thunar-dialogs",
