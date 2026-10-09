@@ -500,6 +500,14 @@ FloatingWindow {
                             onClicked: window.section = -2
                         }
                         SettingsNavButton {
+                            text: "Displays"
+                            symbol: "󰍹"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -7
+                            onClicked: window.section = -7
+                        }
+                        SettingsNavButton {
                             symbol: "󰌌"
                             text: "Keybindings"
                             Layout.fillWidth: true
@@ -573,19 +581,19 @@ FloatingWindow {
                         width: editorScroll.availableWidth
                         spacing: 20
                         Label {
-                            text: window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
+                            text: window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
                             color: "#8796b5"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
+                            text: window.section === -7 ? "Set resolution, refresh rate, scale, rotation, and monitor positions. Confirm changes before they are saved." : window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
                             color: "#939bb3"
                         }
@@ -614,6 +622,10 @@ FloatingWindow {
                             runtimeError: window.lockingError
                             onLockRequested: window.lockRequested()
                             onEdited: (key, value) => window.updateLocking(key, value)
+                        }
+                        SettingsDisplays {
+                            visible: window.section === -7
+                            Layout.fillWidth: true
                         }
                         SettingsKeybindings {
                             id: keybindingsPage

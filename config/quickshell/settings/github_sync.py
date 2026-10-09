@@ -88,6 +88,14 @@ def snapshot_managed_files(repo, config, home):
         destination.mkdir(parents=True, exist_ok=True)
         (destination / 'keybindings.json').write_text(json.dumps({'version': 1, 'entries': entries}, indent=2) + '\n')
         (destination / 'keybindings.lua').write_text(render_keybindings(entries))
+    displays = config / 'hyprshell/displays.json'
+    if displays.exists():
+        from displays import validate as validate_displays, render as render_displays
+        data = validate_displays(json.loads(displays.read_text()))
+        destination = repo / 'config/hyprshell'
+        destination.mkdir(parents=True, exist_ok=True)
+        (destination / 'displays.json').write_text(json.dumps(data, indent=2) + '\n')
+        (destination / 'displays.lua').write_text(render_displays(data))
     cleanup = config / 'hyprshell/cleanup.json'
     if cleanup.exists():
         from cleanup import validate as validate_cleanup

@@ -1,0 +1,71 @@
+# Daily-driver Settings roadmap
+
+Recorded 2026-10-09. Resume here tomorrow (2026-10-10).
+
+Goal: make Hyprshell usable every day by beginners and intermediate users,
+with common tasks available through Settings rather than editing Lua.
+
+Existing foundations: Wi-Fi, Bluetooth pairing, audio output selection,
+screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync.
+
+## Priorities
+
+1. **Displays** — resolution, refresh rate, scaling, monitor arrangement,
+   rotation, and timed rollback for unconfirmed changes. Implemented 2026-10-09;
+   physical monitor testing remains because the agent session cannot access desktop IPC.
+2. **Mouse, touchpad and keyboard** — pointer speed, natural scrolling,
+   tap-to-click, keyboard layouts, repeat speed, and layout switching.
+3. **Power and battery** — dim/off timers, automatic suspend, lid behavior,
+   brightness, and supported power profiles. Locking is a separate setting.
+4. **Notifications** — optional popups, Do Not Disturb, per-app preferences,
+   and critical alerts. Currently notifications go straight to the inbox.
+5. **Sound improvements** — microphone device selection, input meter,
+   test sound, and per-app volume. Output selection and microphone volume/mute exist.
+6. **Default apps and startup** — browser, file associations, startup toggles,
+   and GTK/Qt theme, font, and cursor controls.
+7. **Updates and recovery** — guided full system upgrades, useful failure
+   messages, configuration restore, and personal-file backup status.
+   GitHub config sync does not back up documents.
+8. **Advanced networking** — saved-network management, hidden Wi-Fi,
+   enterprise connections, VPN, and access to advanced connection settings.
+9. **Accessibility and regional settings** — larger text, high contrast,
+   reduced motion, language, timezone, and date/number formats.
+10. **Help and diagnostics** — Settings search, first-run guide, useful service
+    errors, and privacy-conscious diagnostic reports. Super+K already provides
+    a shortcut guide.
+
+Intermediate-user follow-ups: window rules and behavior, workspace preferences,
+clipboard history controls, and printing/scanning access.
+
+Suggested order: Displays → Input → Power → Notifications → Recovery.
+Current personal automatic-lock timeout is 60 minutes; consider shorter presets.
+
+## Displays acceptance criteria
+
+- Discover connected monitors and advertised modes; show actionable errors.
+- Edit resolution/refresh, scale, rotation and logical X/Y positions.
+- Explicit Apply; keep changes only after confirmation within 15 seconds.
+- Restore previous live layout on timeout, cancellation or UI shutdown.
+- Save confirmed preferences, back up replaced files and detect concurrent edits.
+- Preserve installer and GitHub sync behavior; retain automatic fallback for new hardware.
+- Test transactions in isolated environments; test native QML and verify Lua.
+- Physical monitor behavior must be checked in an accessible desktop session.
+
+## Handoff for tomorrow
+
+Displays now has advertised resolution/refresh controls, scale, rotation, automatic
+arrangement, relative placement buttons, and precise X/Y fields. Apply previews the
+layout; Keep commits it, with a 15-second backend timeout and rollback. Installer
+and sync preserve confirmed settings. See `docs/settings.md` for implementation
+limits and usage.
+
+First check the Displays page on the real laptop (and an external screen if
+available): confirm a change, allow a timeout, then check restart persistence.
+The automated suite uses isolated settings and simulated compositor responses.
+Next planned feature: priority 2, Mouse, touchpad and keyboard.
+
+Validation: 11 display checks passed (including native QML and real Lua parsing),
+140 existing Qt tests passed, and native Settings lifecycle/autosave checks passed.
+The broader Python run passed 81 of 82 checks; the unrelated shortcut-recording
+check references a missing `config/quickshell/tests/ShortcutRecording.qml` fixture.
+Native runtime dependency checks passed. Live monitor IPC was inaccessible.

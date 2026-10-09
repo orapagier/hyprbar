@@ -416,3 +416,39 @@ sleep, or O to log out. Alt+P opens the menu first; Alt may remain held while
 pressing the action key or be released. The menu consumes these action keys
 only while it is open, and ignores auto-repeat. These sequences are listed in
 Super+K and beside the corresponding power buttons. Escape cancels the menu.
+
+## Displays
+
+Open **Displays** in Settings. Each active monitor shows its advertised resolutions
+and refresh rates, scale, rotation (including flipped orientations), and position.
+**Recommended (automatic)** selects the preferred mode. **Arrange automatically**
+lets Hyprland position that output. For multiple screens, choose another output and
+use **Left / Right / Above / Below**; the placement accounts for scale and rotation
+and fixes both positions. Logical X/Y fields allow precise adjustment.
+
+Click **Apply changes…**, inspect the screen, then click **Keep changes** within
+15 seconds. **Revert**, timeout, leaving the page, stdin closure, or termination
+of the preview helper restores the previous layout. The helper owns the countdown,
+so UI event-loop stalls do not extend it. A hard kill of the helper or compositor
+failure cannot guarantee rollback; saved preferences remain unchanged until kept.
+An unavailable session socket is reported as an error rather than an empty screen list.
+
+Confirmed preferences live in `hyprshell/displays.json`; the backend generates
+`hyprshell/displays.lua`, loaded at the end of the main Lua config. Preview changes
+use `hyprctl eval` and never write tentative preferences. Confirmed saves are atomic
+per file, backed up under `hyprshell/backups/displays-*`, and restored on a write
+failure. A nonblocking transaction lock prevents simultaneous previews; stale
+preferences and hotplug require refreshing. Disconnected outputs retain saved
+preferences. Outputs without a saved rule retain the base automatic fallback;
+connector names identify screens, so review preferences when replacing hardware.
+
+Setup restores both files when present. GitHub sync snapshots confirmed JSON and
+regenerates its Lua payload. No additional packages or permanent service are needed.
+The initial page manages active screens; disabling outputs, mirroring, HDR, ICC
+profiles, and VRR remain in the base configuration. Rollback reloads that base
+configuration before restoring the prior live geometry.
+
+Display fields follow the official [Hyprland monitor API](https://wiki.hypr.land/configuring/core/monitors/).
+Regression tests cover preview/confirm/revert, hotplug, stale writers, rejected modes,
+file-write rollback, sync, and real Quickshell controls with a simulated backend.
+Physical modes and authentication-free desktop IPC require an accessible live session.

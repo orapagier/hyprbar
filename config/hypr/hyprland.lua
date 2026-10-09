@@ -503,3 +503,11 @@ end
 
 -- Apply shortcuts edited in Hyprshell Settings after the base configuration.
 hyprshellKeybindings.apply()
+
+-- Apply confirmed display preferences; unknown hardware keeps the automatic fallback.
+local hyprshellDisplays = (os.getenv("XDG_CONFIG_HOME") or os.getenv("HOME") .. "/.config") .. "/hyprshell/displays.lua"
+local hyprshellDisplaysFile = io.open(hyprshellDisplays, "r")
+if hyprshellDisplaysFile then
+    hyprshellDisplaysFile:close()
+    dofile(hyprshellDisplays)
+end
