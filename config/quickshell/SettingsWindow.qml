@@ -9,6 +9,8 @@ import "SettingsModel.js" as Model
 FloatingWindow {
     id: window
     required property var store
+    property string lockingError: ""
+    signal lockRequested()
     signal focusRequested()
     // A compositor close hides the native window without clearing the
     // FloatingWindow visibility request. Reset it so the next open remaps.
@@ -18,7 +20,7 @@ FloatingWindow {
     property var submitted: Model.copy(store.defaults)
     property bool editingSession: false
     readonly property bool saving: writer.running
-    readonly property bool idle: !writer.running && !autoSave.running
+    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !githubSync.running
     onDraftChanged: if (editingSession) autoSave.restart()
     onVisibleChanged: if (!visible && editingSession && dirty) apply()
     property int section: -1
@@ -103,6 +105,11 @@ FloatingWindow {
             next.hyprland[key] = value;
         draft = next;
     }
+    function updateLocking(key, value) {
+        let next = Model.copy(draft);
+        next.locking[key] = value;
+        draft = next;
+    }
     function moveItem(direction) {
         let next = Model.copy(draft);
         let current = next.items[section];
@@ -166,6 +173,95 @@ FloatingWindow {
             }
         }
     }
+    property string syncMessage: ""
+    property bool syncSuccess: true
+    Process {
+        id: githubSync
+        property string action: ""
+        function request(action, extra) {
+            githubSync.action = action;
+            window.syncSuccess = true;
+            window.syncMessage = action === "--status" ? "Checking GitHub setup…" : action === "--authenticate" ? "Complete sign-in in the authentication window…" : "Syncing your desktop to GitHub…";
+            command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/github_sync.py").toString().replace(/^file:\/\//, ""))].concat(action ? [action] : []).concat(extra || []);
+            running = true;
+        }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let result = JSON.parse(text);
+                    window.syncSuccess = result.ok;
+                    window.syncMessage = result.message;
+                    if (githubSync.action === "--status" && result.ok) {
+                        commitName.text = result.name || "";
+                        commitEmail.text = result.email || "";
+                    }
+                } catch (e) {
+                    window.syncSuccess = false;
+                    window.syncMessage = "Could not read GitHub sync results.";
+                }
+            }
+        }
+        stderr: StdioCollector { onStreamFinished: if (text) { window.syncSuccess = false; window.syncMessage = text; } }
+        onExited: (code, status) => {
+            if (code !== 0 && window.syncSuccess) {
+                window.syncSuccess = false;
+                window.syncMessage = "GitHub sync failed. Check Git and GitHub authentication.";
+            }
+        }
+    }
+    Popup {
+        id: githubDialog
+        objectName: "githubSyncDialog"
+        anchors.centerIn: parent
+        width: Math.min(480, window.width - 40)
+        padding: 24
+        modal: true
+        closePolicy: githubSync.running ? Popup.NoAutoClose : Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        background: Rectangle { color: "#1c2130"; radius: 14; border.color: "#545d79" }
+        contentItem: ColumnLayout {
+            spacing: 14
+            Label { text: "  Sync to GitHub"; color: "#ecebff"; font.pixelSize: 20; font.bold: true }
+            Label { text: "orapagier/hyprshell"; color: "#b4a2ff" }
+            Label { Layout.fillWidth: true; text: "Your commit identity is saved for this repository. Sign in separately to allow GitHub pushes."; wrapMode: Text.WordWrap; color: "#939bb3" }
+            Label { text: "Commit name / username"; color: "#ecebff" }
+            TextField {
+                id: commitName
+                objectName: "githubCommitName"
+                Layout.fillWidth: true
+                enabled: !githubSync.running
+                placeholderText: "Your name or GitHub username"
+                color: "#ecebff"; placeholderTextColor: "#939bb3"
+                background: Rectangle { color: "#10131c"; radius: 6; border.color: "#545d79" }
+            }
+            Label { text: "Commit email"; color: "#ecebff" }
+            TextField {
+                id: commitEmail
+                objectName: "githubCommitEmail"
+                Layout.fillWidth: true
+                enabled: !githubSync.running
+                placeholderText: "Email or GitHub noreply email"
+                color: "#ecebff"; placeholderTextColor: "#939bb3"
+                background: Rectangle { color: "#10131c"; radius: 6; border.color: "#545d79" }
+            }
+            Label { Layout.fillWidth: true; text: "Authenticate opens a terminal and browser. If GitHub CLI is missing, the terminal offers to install it."; wrapMode: Text.WordWrap; color: "#939bb3"; font.pixelSize: 11 }
+            Label { Layout.fillWidth: true; text: window.syncMessage; wrapMode: Text.WrapAnywhere; color: window.syncSuccess ? "#9eafb7" : "#f38ba8" }
+            RowLayout {
+                SettingsButton {
+                    text: "Authenticate"
+                    enabled: !githubSync.running
+                    onClicked: githubSync.request("--authenticate", [])
+                }
+                SettingsButton {
+                    objectName: "githubConfirmSync"
+                    text: githubSync.running ? "Working…" : "Sync"
+                    highlighted: true
+                    enabled: !githubSync.running && commitName.text.trim() !== "" && commitEmail.text.trim() !== "" && !window.dirty && !window.saving && window.success
+                    onClicked: githubSync.request("", ["--name", commitName.text, "--email", commitEmail.text])
+                }
+                SettingsButton { text: "Close"; enabled: !githubSync.running; onClicked: githubDialog.close() }
+            }
+        }
+    }
     Pane {
         anchors.fill: parent
         padding: 20
@@ -211,6 +307,17 @@ FloatingWindow {
                     color: !window.success ? "#f38ba8" : window.dirty ? "#e7ca98" : "#9eafb7"
                 }
                 SettingsButton {
+                    objectName: "githubSyncButton"
+                    text: githubSync.running ? "Syncing…" : "  Sync to GitHub"
+                    enabled: !githubSync.running && !window.dirty && !window.saving && window.success && window.store.loaded && !cleanupPage.busy
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Commit and push live Hyprland, Quickshell, and saved settings to orapagier/hyprshell"
+                    onClicked: {
+                        githubDialog.open();
+                        githubSync.request("--status", []);
+                    }
+                }
+                SettingsButton {
                     text: "Reset unsaved changes"
                     visible: !window.success && window.dirty
                     enabled: !writer.running
@@ -222,9 +329,17 @@ FloatingWindow {
                     }
                 }
             }
+            Label {
+                Layout.fillWidth: true
+                visible: window.syncMessage !== ""
+                text: window.syncMessage
+                wrapMode: Text.WrapAnywhere
+                color: window.syncSuccess ? "#9eafb7" : "#f38ba8"
+                font.pixelSize: 11
+            }
             Rectangle {
                 Layout.fillWidth: true
-                visible: window.section !== -2
+                visible: window.section >= -1
                 Layout.preferredHeight: previewBar.y + previewBar.height * previewBar.scale + 16
                 radius: 12
                 color: "#1a202b"
@@ -294,6 +409,7 @@ FloatingWindow {
                 }
             }
             RowLayout {
+                enabled: !githubSync.running
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 spacing: 16
@@ -338,6 +454,22 @@ FloatingWindow {
                             highlighted: window.section === -2
                             onClicked: window.section = -2
                         }
+                        SettingsNavButton {
+                            symbol: "󰌾"
+                            text: "Screen locking"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -3
+                            onClicked: window.section = -3
+                        }
+                        SettingsNavButton {
+                            symbol: "󰃢"
+                            text: "System cleanup"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -4
+                            onClicked: window.section = -4
+                        }
                         Label {
                             text: "TOPBAR ITEMS"
                             color: "#727d9a"
@@ -380,19 +512,19 @@ FloatingWindow {
                         width: editorScroll.availableWidth
                         spacing: 20
                         Label {
-                            text: window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
+                            text: window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
                             color: "#8796b5"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
+                            text: window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
                             color: "#939bb3"
                         }
@@ -412,6 +544,20 @@ FloatingWindow {
                             onMoveRequested: direction => window.moveItem(direction)
                             onResetRequested: window.resetItem()
                         }
+                        SettingsLocking {
+                            visible: window.section === -3
+                            Layout.fillWidth: true
+                            settings: window.draft.locking
+                            saved: !window.dirty && !window.saving && window.success
+                            runtimeError: window.lockingError
+                            onLockRequested: window.lockRequested()
+                            onEdited: (key, value) => window.updateLocking(key, value)
+                        }
+                        SettingsCleanup {
+                            id: cleanupPage
+                            visible: window.section === -4
+                            Layout.fillWidth: true
+                        }
                         SettingsAppearance {
                             visible: window.section === -2
                             Layout.fillWidth: true
@@ -423,7 +569,7 @@ FloatingWindow {
             }
             Label {
                 Layout.fillWidth: true
-                text: !window.success ? (window.message || window.store.error) : "Changes save and apply automatically"
+                text: window.section === -4 ? "Cleanup choices apply when you click Save cleanup settings" : !window.success ? (window.message || window.store.error) : "Changes save and apply automatically"
                 wrapMode: Text.WordWrap
                 font.pixelSize: 11
                 color: window.success ? "#939bb3" : "#f38ba8"

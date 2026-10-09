@@ -1,0 +1,130 @@
+import QtQuick
+import QtQuick.Controls.Basic
+import QtQuick.Layouts
+import Quickshell.Io
+
+ColumnLayout {
+    id: page
+    property var settings: ({schedule: "off", days: 30, keep: 5, thumbnails: true, temporary: true, backups: true})
+    property string message: ""
+    property string paccache: "Checking…"
+    property string timerStatus: "Checking…"
+    property var preview: null
+    property string action: ""
+    property bool loaded: false
+    readonly property bool busy: worker.running
+    spacing: 20
+    onVisibleChanged: if (visible) request("status", "")
+    Component.onCompleted: if (visible) request("status", "")
+    function request(operation, value) {
+        if (busy) return;
+        action = operation;
+        if (operation !== "clean") preview = null;
+        worker.command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/cleanup.py").toString().replace(/^file:\/\//, "")), "--" + operation];
+        if (value !== "") worker.command = worker.command.concat([value]);
+        worker.running = true;
+    }
+    function edit(key, value) {
+        let next = Object.assign({}, settings);
+        next[key] = value;
+        settings = next;
+        preview = null;
+        message = "Save cleanup settings to apply these choices.";
+    }
+    Process {
+        id: worker
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let result = JSON.parse(text);
+                    page.message = result.message || "";
+                    if (result.ok && result.settings) {
+                        page.settings = result.settings;
+                        page.paccache = result.paccache;
+                        page.timerStatus = result.timer;
+                        page.loaded = true;
+                    }
+                    if (page.action === "preview" && result.ok) page.preview = result;
+                    if (page.action === "clean") page.preview = null;
+                } catch (e) { page.message = "Could not read cleanup results."; }
+            }
+        }
+        stderr: StdioCollector { onStreamFinished: if (text) page.message = text }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Automatic cleanup"
+        subtitle: "Clean old user files on a systemd user timer. Missed runs are picked up at your next login. Save these settings separately below."
+        enabled: page.loaded && !page.busy
+        Label { text: "Schedule"; color: "#939bb3" }
+        SettingsComboBox {
+            model: ["Off", "Daily", "Weekly", "Monthly"]
+            currentIndex: ["off", "daily", "weekly", "monthly"].indexOf(page.settings.schedule)
+            onActivated: page.edit("schedule", ["off", "daily", "weekly", "monthly"][currentIndex])
+        }
+        SettingField {
+            Layout.fillWidth: true
+            label: "Only files untouched for this many days"
+            value: String(page.settings.days)
+            description: "1–365 days. Recently accessed, modified, or changed files are kept."
+            onEdited: value => page.edit("days", /^\d+$/.test(value) ? Number(value) : value)
+        }
+        SettingField {
+            Layout.fillWidth: true
+            label: "Keep newest Hyprshell backup sets"
+            value: String(page.settings.keep)
+            description: "1–100 sets are always retained, even when older than the age limit."
+            onEdited: value => page.edit("keep", /^\d+$/.test(value) ? Number(value) : value)
+        }
+        SettingsCheckBox { text: "Thumbnail cache (~/.cache/thumbnails or XDG cache directory)"; checked: page.settings.thumbnails; onToggled: page.edit("thumbnails", checked) }
+        SettingsCheckBox { text: "Your old temporary files in /tmp and /var/tmp"; checked: page.settings.temporary; onToggled: page.edit("temporary", checked) }
+        SettingsCheckBox { text: "Old Hyprshell config backups"; checked: page.settings.backups; onToggled: page.edit("backups", checked) }
+        SettingsButton { text: "Save cleanup settings"; onClicked: page.request("save", JSON.stringify(page.settings)) }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Clean System Now"
+        subtitle: "Preview eligible files using your saved cleanup settings. Active configs, general application caches, and other users' files are excluded. Empty directories are kept."
+        SettingsButton {
+            text: page.busy ? "Working…" : "Clean System Now…"
+            enabled: page.loaded && !page.busy
+            onClicked: page.request("preview", "")
+        }
+        Label {
+            Layout.fillWidth: true
+            visible: page.preview !== null
+            text: page.preview ? page.preview.entries.length + " files · " + (page.preview.bytes / 1048576).toFixed(2) + " MiB eligible" : ""
+            color: "#ecebff"
+        }
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 220
+            visible: page.preview !== null
+            clip: true
+            TextArea {
+                readOnly: true
+                selectByMouse: true
+                wrapMode: TextEdit.WrapAnywhere
+                color: "#d7dcef"
+                text: page.preview ? page.preview.entries.map(e => e.category + " · " + e.size + " bytes\n" + e.path).join("\n\n") || "No eligible files." : ""
+            }
+        }
+        RowLayout {
+            visible: page.preview !== null
+            SettingsButton {
+                text: "Delete previewed files"
+                enabled: !page.busy && page.preview !== null && page.preview.entries.length > 0
+                onClicked: page.request("clean", page.preview.token)
+            }
+            SettingsButton { text: "Cancel"; enabled: !page.busy; onClicked: page.preview = null }
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Package cache"
+        subtitle: "Your existing system paccache.timer manages pacman's package cache independently. It is not included in the file deletion preview above."
+        Label { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: "paccache.timer: " + page.paccache; color: "#d7dcef" }
+        Label { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: "Hyprshell cleanup timer: " + page.timerStatus; color: "#939bb3" }
+    }
+    Label { Layout.fillWidth: true; text: page.message; wrapMode: Text.WrapAnywhere; color: "#e7ca98" }
+}

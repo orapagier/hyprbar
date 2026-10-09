@@ -6,10 +6,12 @@ import "SettingsModel.js" as Model
 Item {
     id: controller
     required property var store
+    property string lockingError: ""
     readonly property var window: editor.item
     readonly property bool loaded: editor.active
     // Only failed, unsaved edits survive unloading; the controls do not.
     property var retainedSession: null
+    signal lockRequested()
     signal focusRequested(var settingsWindow)
 
     function open() {
@@ -49,7 +51,9 @@ Item {
         SettingsWindow {
             id: settingsWindow
             store: controller.store
+            lockingError: controller.lockingError
             onFocusRequested: controller.focusRequested(settingsWindow)
+            onLockRequested: controller.lockRequested()
         }
     }
     Connections {

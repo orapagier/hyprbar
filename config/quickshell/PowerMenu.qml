@@ -9,7 +9,7 @@ ColumnLayout {
     property string error: ""
     spacing: 8
     Repeater {
-        model: [{title: "󰐥  Shutdown", command: ["systemctl","poweroff"]}, {title: "󰜉  Reboot", command: ["systemctl","reboot"]}, {title: "󰒲  Sleep", command: ["systemctl","suspend"]}, {title: "󰗽  Logout", command: ["uwsm","stop"]}]
+        model: [{title: "󰌾  Lock", command: ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--lock"]}, {title: "󰐥  Shutdown", command: ["systemctl","poweroff"]}, {title: "󰜉  Reboot", command: ["systemctl","reboot"]}, {title: "󰒲  Sleep", command: ["systemctl","suspend"]}, {title: "󰗽  Logout", command: ["uwsm","stop"]}]
         delegate: MenuButton {
             required property var modelData
             Layout.fillWidth: true

@@ -20,6 +20,8 @@ ShellRoot {
     SettingsController {
         id: settingsController
         store: preferences
+        lockingError: locking.error
+        onLockRequested: locking.lockNow()
         // Reopening an existing window must activate it, even on another
         // workspace. Do not remap it or reset a user's tiled/floating choice.
         onFocusRequested: settingsWindow => {
@@ -32,6 +34,7 @@ ShellRoot {
         let now = new Date();
         clockText = Qt.formatDateTime(now, preferences.config.bar.clockFormat);
     }
+    LockingController { id: locking; store: preferences }
     DesktopServices { id: desktopServices }
     NotificationInbox { id: notificationInbox }
     Tray { id: tray }

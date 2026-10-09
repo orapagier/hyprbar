@@ -290,9 +290,9 @@
   ],
   "hyprland": {},
   "locking": {
-    "enabled": false,
+    "enabled": true,
     "command": "hyprlock",
-    "idleMinutes": 5,
+    "idleMinutes": 60,
     "beforeSleep": true
   }
 }

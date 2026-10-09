@@ -29,8 +29,8 @@ hl.monitor({
 
 -- Set programs that you use
 local terminal    = "kitty"
-local fileManager = "uwsm app -- thunar"
-local menu        = 'uwsm app -- "$HOME/.local/bin/app-launcher"'
+local fileManager = "uwsm app -- nautilus --new-window"
+local menu = [[uwsm app -- "$HOME/.local/bin/app-launcher"]]
 
 
 -------------------
