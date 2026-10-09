@@ -1,6 +1,0 @@
-# Receive notifications for the Waybar bell without displaying toasts.
-max-visible=0
-
-# Also hide the placeholder for notifications above the visible limit.
-[hidden]
-invisible=1

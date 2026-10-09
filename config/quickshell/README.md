@@ -9,10 +9,10 @@ the default entry point. The explicit ShellId in `shell.qml` preserves the
 existing notification history across the directory move. The activation
 script also stops an existing instance launched from the previous location.
 
-The styling follows the existing Waybar with more vertical room: 32px panel
+The styling follows the native desktop with more vertical room: 32px panel
 height, 28px pills, and 5px top / 10px side
 margins, transparent background, wallpaper-tinted glass pills, DejaVu Sans / GoMono
-Nerd Font, and the original module order. The `waybar` layer namespace keeps
+Nerd Font, and the original module order. The `hyprshell` layer namespace keeps
 the existing compositor blur and animation rules.
 
 Each pill samples the wallpaper directly underneath its current position.
@@ -98,14 +98,9 @@ Run once in a Hyprland desktop terminal:
 ~/.config/quickshell/install-and-activate.sh
 ```
 
-This restarts the shell, stops Mako so Quickshell can own the notifications
-D-Bus name, verifies both visible panels and ownership of the notifications
-service, then disables the old Python notification-monitor service. It backs
-up the Hyprland configuration and removes Mako's autostart line.
-The existing Mako configuration hides all toasts, so this shell also uses an
-inbox without toasts. Old notification history is imported once using the
-read-only `sqlite3` CLI, then stored natively with Quickshell's `FileView` at
-`Quickshell.statePath("notifications.json")`.
+This restarts Hyprshell and verifies the panels and notification service.
+Notifications are stored natively with Quickshell FileView. Existing notification
+history can be imported once from the old read-only database.
 
 Click a notification to expand its full title and body; click its text again
 to collapse it. Expanded text wraps without a character limit, and the list
@@ -116,17 +111,8 @@ its text before sending it (for example, the saved Kitty titles that already
 end with an ellipsis at 200 characters), changing the inbox cannot recover
 the omitted text; the sender must supply the complete message.
 
-The application-launcher wrapper now opens the QML launcher for both the Arch
-button and the existing Super key binding. If Quickshell cannot start at
-login, the session helper restores Waybar and Mako as a fallback if their
-optional packages are installed (`./setup.sh --with-fallback`).
-The launcher itself uses Quickshell exclusively and retries shell startup if
-needed; Fuzzel and Rofi are no longer needed. The Super binding calls the wrapper
-directly, and the obsolete Rofi layer rule and outside-click hooks are removed.
-`~/.local/bin/cleanup-old-launchers` previews the reviewed package removal list;
-run it with `--apply` in a desktop terminal to execute it. Go and yay debugging
-symbols are opt-in via `--remove-go` and `--remove-debug`. It preserves resvg for
-Yazi's SVG previews and avoids recursively removing optional dependencies.
+The application launcher opens the native QML launcher and retries shell
+startup if needed.
 
 The running Quickshell instance watches these files and reloads configuration
 changes automatically. Desktop activation requires access to the live Wayland,
@@ -168,11 +154,5 @@ awww output parsing and path escaping, and contrast over varied backgrounds
 for normal, hover, and selected states.
 
 Startup output: `~/.local/state/quickshell/bar.log`.
-
-Restore the original bar and notification handler:
-
-```sh
-~/.config/quickshell/restore-waybar.sh
-```
 
 Installer backups live under `~/.local/state/hyprshell/backups/`.

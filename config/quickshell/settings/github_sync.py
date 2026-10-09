@@ -85,6 +85,12 @@ def sync(repo, config, target, slug):
             settings_target.parent.mkdir(parents=True, exist_ok=True)
             settings_target.write_text(json.dumps(data, indent=2) + '\n')
             paths.append('config/hyprshell/settings.json')
+        retired = ['config/waybar', 'config/fuzzel', 'config/rofi', 'config/mako',
+                   'config/systemd/user/waybar-notification-monitor.service',
+                   'bin/cleanup-old-launchers', 'packages-fallback.txt',
+                   'docs/original-packages.txt']
+        deleted = git(repo, 'ls-files', '--deleted', '-z', '--', *retired).split('\0')
+        paths.extend(path for path in deleted if path)
         git(repo, 'add', '-A', '--', *paths)
         if git(repo, 'diff', '--cached', '--name-only'):
             git(repo, 'commit', '-m', 'Sync Hyprshell desktop ' + datetime.now().isoformat(timespec='seconds'))

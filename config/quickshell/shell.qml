@@ -53,7 +53,7 @@ ShellRoot {
             margins { top: preferences.config.bar.marginTop; left: preferences.config.bar.marginSide; right: preferences.config.bar.marginSide }
             implicitHeight: bar.implicitHeight
             color: "transparent"
-            WlrLayershell.namespace: "waybar"
+            WlrLayershell.namespace: "hyprshell"
             Bar {
                 id: bar
                 settings: preferences.config

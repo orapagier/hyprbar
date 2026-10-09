@@ -83,7 +83,7 @@ Item {
         actionsSupported: true
         persistenceSupported: true
         bodySupported: true
-        // The existing Mako configuration hides all toasts; retain that behavior.
+        // Notifications appear in the inbox without toast popups.
         onNotification: notification => { notification.tracked = true; inbox.record(notification); }
     }
     Instantiator {

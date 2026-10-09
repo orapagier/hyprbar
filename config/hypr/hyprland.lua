@@ -45,7 +45,7 @@ local menu = [[uwsm app -- "$HOME/.local/bin/app-launcher"]]
 -- hl.on("hyprland.start", function ()
 --   hl.exec_cmd(terminal)
 --   hl.exec_cmd("nm-applet")
---   hl.exec_cmd("waybar & hyprpaper & firefox")
+--   hl.exec_cmd("quickshell")
 -- end)
 
 
@@ -410,35 +410,13 @@ hl.window_rule({
 -- })
 -- overlayLayerRule:set_enabled(false)
 
--- Waybar: frosted glass items + slide animation
+-- Native Hyprshell bar: frosted glass and slide animation.
 hl.layer_rule({
-    name  = "waybar-glass",
-    match = { namespace = "waybar" },
-
-    blur         = true,
+    name = "hyprshell-glass",
+    match = { namespace = "hyprshell" },
+    blur = true,
     ignore_alpha = 0.05,
-    animation    = "slide",
-})
-
--- Waybar popdowns use transparent full-output surfaces for outside clicks.
--- Blur only the painted panel, leaving the clear surrounding pixels untouched.
-hl.layer_rule({
-    name  = "waybar-popdown-glass",
-    match = { namespace = "^(calendar-menu|wifi-menu|audio-menu|bluetooth-menu|notifications-menu|power-menu)$" },
-
-    blur         = true,
-    blur_popups  = true,
-    ignore_alpha = 0.05,
-    animation    = "fade",
-})
-
--- Mako notifications: matching frosted glass
-hl.layer_rule({
-    name  = "mako-blur",
-    match = { namespace = "notifications" },
-
-    blur         = true,
-    ignore_alpha = 0.2,
+    animation = "slide",
 })
 
 -- Hyprland-run windowrule
@@ -449,22 +427,6 @@ hl.window_rule({
     move  = "20 monitor_h-120",
     float = true,
 })
-
--- Philippine holiday calendar: little dropdown panel under waybar
--- (toggled by clicking the waybar clock)
-hl.window_rule({
-    name  = "ph-calendar-dropdown",
-    match = { title = "Philippine Calendar" },
-
-    float = true,
-    size  = "250 290",
-    move  = "monitor_w/2-125 32",
-    no_shadow = true,
-    no_blur = true,
-})
-
-
-
 
 hl.on("hyprland.start", function()
     hl.exec_cmd('uwsm app -- "$HOME/.local/bin/start-quickshell-bar"')
