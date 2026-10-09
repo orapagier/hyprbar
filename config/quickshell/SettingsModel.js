@@ -36,6 +36,7 @@ function merge(defaults, saved) {
     let result = copy(defaults);
     result.bar = Object.assign(result.bar, saved.bar || {});
     result.hyprland = saved.hyprland || {};
+    result.power = Object.assign(result.power || {}, saved.power || {});
     result.locking = Object.assign(result.locking || {}, saved.locking || {});
     result.items = result.items.map(i => Object.assign(i, item(saved, i.id)));
     // Retire experimental motion preferences from older saved files.

@@ -7,21 +7,27 @@ Item {
     property string error: ""
     property string fingerprint: ""
     property bool restarting: false
+    property bool stopping: false
     readonly property string backend: decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, ""))
     function lockNow() {
         if (locker.running) return;
         error = "";
         locker.running = true;
     }
+    function idleEnabled() {
+        let power = store.config.power || {};
+        return store.config.locking.enabled || power.dimMinutes > 0 || power.offMinutes > 0 || power.suspendMinutes > 0;
+    }
     function sync() {
         if (!store.loaded) return;
-        let next = JSON.stringify(store.config.locking);
+        let power = store.config.power || {};
+        let next = JSON.stringify([store.config.locking, power.dimMinutes || 0, power.offMinutes || 0, power.suspendMinutes || 0, power.dimPercent || 20]);
         if (next === fingerprint) return;
         fingerprint = next;
         error = "";
         restarting = true;
-        if (daemon.running) daemon.running = false;
-        else restart.restart();
+        if (daemon.running && !stopping) { stopping = true; daemon.running = false; }
+        else if (!stopping) restart.restart();
     }
     Component.onCompleted: sync()
     Connections {
@@ -34,7 +40,7 @@ Item {
         interval: 100
         onTriggered: {
             controller.restarting = false;
-            if (controller.store.config.locking.enabled) daemon.running = true;
+            if (controller.idleEnabled()) daemon.running = true;
         }
     }
     Process {
@@ -50,9 +56,10 @@ Item {
         command: ["python3", controller.backend, "--idle"]
         stderr: StdioCollector { onStreamFinished: if (text && !controller.restarting) controller.error = text.trim() }
         onExited: (code, status) => {
+            controller.stopping = false;
             if (controller.restarting) restart.restart();
-            else if (controller.store.config.locking.enabled && !controller.error)
-                controller.error = "Automatic locking stopped. Turn it off and on to retry.";
+            else if (controller.idleEnabled() && !controller.error)
+                controller.error = "Idle controls stopped. Check locking and power settings, then change a timer to retry.";
         }
     }
 }

@@ -48,6 +48,8 @@ libpulse
 fftw
 # Brightness and screenshots
 brightnessctl
+hypridle
+power-profiles-daemon
 grim
 slurp
 swappy

@@ -10,6 +10,7 @@ def check_native():
     required = ('Hyprland', 'hyprctl', 'awww', 'awww-daemon', 'nmcli',
                 'bluetoothctl', 'pactl', 'wpctl', 'kitty', 'nautilus', 'uwsm',
                 'sqlite3', 'cc', 'busctl', 'systemctl', 'brightnessctl',
+                'hypridle', 'powerprofilesctl', 'systemd-inhibit',
                 'grim', 'slurp', 'swappy', 'fc-cache', 'xdg-user-dirs-update')
     missing = [name for name in required if not shutil.which(name)]
     if not (shutil.which('quickshell') or shutil.which('qs')):

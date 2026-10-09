@@ -110,7 +110,7 @@ class InstallerTests(unittest.TestCase):
                         'mpv', 'imv', 'evince', 'mousepad'):
             self.assertIn(package, targets)
         self.assertEqual(len(targets), len(set(targets)))
-        self.assertIn('Missing desktop packages: chromium hypridle wl-clipboard', result.stdout)
+        self.assertIn('Missing desktop packages: hypridle chromium wl-clipboard', result.stdout)
         self.assertFalse(self.home.exists())
 
     def test_skip_browser_excludes_chromium_in_either_option_order(self):
@@ -164,7 +164,7 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.config / 'quickshell/helpers/audio-spectrum').is_file())
         self.assertIn('float-modal-dialogs', (self.config / 'hyprshell/hyprland/windows.lua').read_text())
 
-    def test_fresh_install_restores_saved_input_overrides(self):
+    def test_fresh_install_restores_saved_input_and_power_preferences(self):
         # A portable saved snapshot, installed into a completely isolated home.
         repo = self.root / 'saved repo'
         (repo / 'config/hyprshell').mkdir(parents=True)
@@ -177,11 +177,14 @@ class InstallerTests(unittest.TestCase):
         saved = json.loads((ROOT / 'config/hyprshell/settings.json').read_text())
         saved['hyprland'].update(pointerSpeed=0.25, tapToClick=False,
                                  keyboardLayouts='us,gb', layoutSwitch='grp:alt_shift_toggle')
+        saved['power'] = {'dimMinutes': 3, 'dimPercent': 20, 'offMinutes': 5, 'suspendMinutes': 10, 'lidAction': 'system', 'profile': 'system'}
         (repo / 'config/hyprshell/settings.json').write_text(json.dumps(saved))
         for name in ('bin', 'assets'):
             (repo / name).symlink_to(ROOT / name)
         subprocess.run(['python3', str(ROOT / 'tools/install_configs.py'), str(repo)],
                        env=self.env, capture_output=True, text=True, check=True)
+        restored = json.loads((self.config / 'hyprshell/settings.json').read_text())
+        self.assertEqual(restored['power'], saved['power'])
         generated = (self.config / 'hyprshell/overrides.lua').read_text()
         self.assertIn('sensitivity = 0.25', generated)
         self.assertIn('tap_to_click = false', generated)

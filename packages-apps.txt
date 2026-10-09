@@ -6,7 +6,6 @@ distrobox
 podman
 # Screen locking; enable automatic locking separately in Hyprshell Settings
 hyprlock
-hypridle
 # Documentation, shell completion, package maintenance, and terminal fun
 man-db
 man-pages

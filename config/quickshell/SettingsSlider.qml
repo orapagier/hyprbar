@@ -13,6 +13,7 @@ ColumnLayout {
     property real stepSize: 1
     property string suffix: ""
     property bool inverted: false
+    property bool allowReset: true
     property string inheritedText: "Use config"
     property string resetDescription: "Use your existing configuration"
     readonly property bool inherited: settingValue === undefined
@@ -44,6 +45,7 @@ ColumnLayout {
         }
         ToolButton {
             objectName: "sliderReset"
+            visible: root.allowReset
             text: "↺"
             enabled: !root.inherited
             implicitWidth: 28

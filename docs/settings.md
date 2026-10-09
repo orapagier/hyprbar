@@ -77,7 +77,7 @@ their default pill backgrounds are hidden. Offset glass silhouettes add depth,
 with a bright front rim and a smooth reflective face. The cog uses a standard
 settings silhouette with an open hub.
 
-The top-level keys are `version`, `bar`, `items`, and `hyprland`. Item entries
+The top-level keys are `version`, `bar`, `items`, `hyprland`, `locking`, and `power`. Item entries
 are keyed by `id`; missing entries/properties inherit bundled defaults.
 `side` accepts `left`, `center`, or `right`; `order` sorts within that side.
 The three groups are positioned independently, so unusually wide custom text
@@ -558,3 +558,70 @@ and fresh-install restoration. Physical devices still require checking in an
 accessible desktop session: adjust/reset pointer speed and scroll direction,
 toggle tapping, switch between two layouts, test held-key repeat, and check
 restart persistence.
+
+## Power and battery
+
+Open **Power & battery** for the battery summary, live laptop brightness,
+inactivity timers, session lid behavior, and supported power profiles. The
+brightness slider changes hardware immediately and does not save a startup
+brightness preference. It discovers a backlight on the current machine rather
+than saving a device identifier. External monitors without a backlight interface
+need their own controls. Hardware/service errors appear alongside the relevant
+control; Refresh checks again without changing preferences.
+
+Power preferences use the existing validated autosave, backups, and concurrent
+edit protection. All timers default to disabled, and lid/profile defaults leave
+system behavior in control. Timer values are 0–240 whole minutes; enabled timers
+must increase in order: dim, screen off, then suspend. Dimmed brightness is
+1–100%, defaulting to 20%. Dimming never increases an already darker screen.
+Separate AC/battery policies are not implemented in this first version.
+
+`LockingController.qml` owns one shared Hypridle supervisor for locking and
+power timers. Power timers can work with locking disabled; enabling them does
+not turn locking on. Existing locking preferences remain separate. Hypridle
+uses its normal inhibitor handling. Generated screen-off/wake commands use
+Hyprland's Lua DPMS dispatcher. The supervisor stops its Hypridle child and
+restores managed screen state on settings changes or normal shell shutdown.
+
+`settings/power.py` keeps a private, locked brightness snapshot under
+`$XDG_STATE_HOME/hyprshell`. Activity restores the previous raw brightness only
+if the backlight still matches the dimmed value. Manual slider adjustments clear
+the snapshot, and brightness-key changes are preserved when their value differs
+from the dimmed value. Returning activity wakes managed screen-off state.
+PowerController also attempts recovery of stale managed state when the shell
+starts. These temporary records are not part of GitHub sync.
+
+**Use system behavior** leaves laptop lid handling to logind. **Suspend when
+closed** and **Keep running when closed** use a session `handle-lid-switch`
+inhibitor and read available kernel ACPI lid sensors once per second. The
+inhibitor is acquired before the watcher starts and is released when it exits;
+no administrator configuration is rewritten. Unsupported sensors or denied
+inhibitor access are reported as runtime errors and leave system handling in
+control. Custom behavior applies even with external displays attached. A shell
+starting with its lid already closed does not trigger an immediate suspend;
+suspend occurs on the next open-to-closed transition. Closing Settings leaves
+session controls running. Custom lid behavior ends with Hyprshell.
+
+Power profiles come from `powerprofilesctl`/`power-profiles-daemon`. The dropdown
+contains only advertised profiles, and saves a preference applied when the shell
+starts or the saved choice changes. Unsupported saved preferences on another
+machine report an error; choose another supported profile or **Use system
+setting**. That choice leaves the currently active profile in place. Profile
+application errors do not undo the saved preference, and the page distinguishes
+the preference from the active service profile. External profile changes are
+left alone until the preference changes or Hyprshell restarts.
+
+The core installer now includes Hypridle and power-profiles-daemon; Hypridle
+moves out of the optional app list. Saved power preferences already travel in
+the settings JSON through setup and GitHub sync. `check_runtime.py` checks the
+new command dependencies. No timers, custom lid behavior, profile preference,
+or existing locking preference are enabled by this upgrade.
+
+Automated checks cover validation and timer ordering, backwards compatibility,
+brightness restoration and manual adjustments, Lua DPMS commands, profile and
+lid failures, actual supervisor termination, native Hypridle configuration
+parsing without a compositor, native UI/controller interactions, and setup/sync.
+Physical brightness, display wake, suspend/resume, inhibitors, and lid behavior
+must still be checked from an accessible desktop session. The implementation
+uses the documented [Hypridle listener/sleep hooks](https://wiki.hypr.land/Hypr-Ecosystem/hypridle/)
+and [systemd lid-switch inhibition](https://www.freedesktop.org/software/systemd/man/latest/systemd-inhibit.html).

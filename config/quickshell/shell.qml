@@ -23,6 +23,8 @@ ShellRoot {
         store: preferences
         wallpaperSources: wallpapers.sources
         lockingError: locking.error
+        powerError: [locking.error, power.error].filter(Boolean).join("\n")
+        batteryInfo: desktopServices.batteryInfo
         onLockRequested: locking.lockNow()
         // Reopening an existing window must activate it, even on another
         // workspace. Do not remap it or reset a user's tiled/floating choice.
@@ -37,6 +39,7 @@ ShellRoot {
         clockText = Qt.formatDateTime(now, preferences.config.bar.clockFormat);
     }
     LockingController { id: locking; store: preferences }
+    PowerController { id: power; store: preferences }
     DesktopServices { id: desktopServices }
     NotificationInbox { id: notificationInbox }
     Tray { id: tray }

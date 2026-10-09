@@ -346,5 +346,13 @@
     "command": "hyprlock",
     "idleMinutes": 5,
     "beforeSleep": true
+  },
+  "power": {
+    "dimMinutes": 0,
+    "dimPercent": 20,
+    "offMinutes": 0,
+    "suspendMinutes": 0,
+    "lidAction": "system",
+    "profile": "system"
   }
 }

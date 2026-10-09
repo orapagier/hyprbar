@@ -17,7 +17,8 @@ screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync
    tap-to-click, keyboard layouts, repeat speed, and layout switching. Implemented
    2026-10-10; physical device testing remains.
 3. **Power and battery** — dim/off timers, automatic suspend, lid behavior,
-   brightness, and supported power profiles. Locking is a separate setting.
+   brightness, and supported power profiles. Implemented 2026-10-10; locking
+   remains separate. Physical suspend/lid/wake testing remains.
 4. **Notifications** — optional popups, Do Not Disturb, per-app preferences,
    and critical alerts. Currently notifications go straight to the inbox.
 5. **Sound improvements** — microphone device selection, input meter,
@@ -119,6 +120,33 @@ GUI overrides from saved settings, including input and appearance preferences,
 so the existing GitHub snapshot is restorable. Physical input testing remains
 because desktop IPC is inaccessible from the agent session.
 
-Next: check input controls on the laptop, then priority 3, Power and battery.
+Next: check input controls on the laptop. Priority 3 is now implemented below.
 Validation: 21 settings backend checks, 15 installer checks, 147 Qt checks,
 3 native Settings lifecycle/autosave checks, and native runtime dependencies.
+
+## Power handoff — 2026-10-10
+
+Settings → Power & battery now has battery status, live backlight adjustment,
+dim/off/suspend timers, dimmed brightness, session lid behavior, and supported
+power-profile preferences. Timers default off; lid and profile default to system
+control. Existing personal locking settings are preserved. Power and locking
+share one Hypridle process; closing Settings leaves them running. AC/battery
+specific timer policies are a follow-up.
+
+Managed dimming restores previous brightness on activity, settings changes, or
+normal shell shutdown, while preserving manual adjustments. Screen-off uses
+Lua DPMS and wakes on activity. Custom lid behavior uses a session logind
+inhibitor with hardware-adaptive kernel lid discovery, without administrator
+configuration changes. Saved timers/lid/profile choices travel through setup
+and GitHub sync; immediate brightness changes and temporary snapshots do not.
+
+Validation: 17 power helper/supervisor checks, 1 native power UI/controller
+check, 21 settings checks, 6 locking checks, 1 native locking-controller check,
+3 native Settings checks, 15 installer checks, 10 GitHub-sync checks, and 147 Qt
+checks passed. Native Hypridle parsing and runtime dependency checks passed.
+Live backlight and lid-sensor discovery succeeded. Power-profile D-Bus and
+Hyprland IPC remain inaccessible in the agent session.
+
+Next: test brightness restoration, display wake, suspend/resume and lid choices
+on the real laptop, then priority 4, Notifications. Check profile selection in
+the desktop session. No live dimming, screen-off or suspend test was performed.
