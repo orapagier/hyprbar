@@ -162,7 +162,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('will start at the next login', result.stdout)
         self.assertIn('Setup complete', result.stdout)
         self.assertTrue((self.config / 'quickshell/helpers/audio-spectrum').is_file())
-        self.assertIn('float-modal-dialogs', (self.config / 'hyprshell/hyprland/window-rules.lua').read_text())
+        self.assertIn('float-modal-dialogs', (self.config / 'hyprshell/hyprland/windows.lua').read_text())
 
     def test_installs_current_payload_without_legacy_configs(self):
         self.install()

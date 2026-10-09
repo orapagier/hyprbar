@@ -18,7 +18,7 @@ load("input")
 local hyprshellKeybindings = dofile(directory .. "/keybindings.lua")
 hyprshellKeybindings.capture()
 load("shortcuts")(programs)
-load("window-rules")
+load("windows")
 load("startup")
 
 -- Generated GUI settings apply after the editable defaults.

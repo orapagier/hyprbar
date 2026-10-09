@@ -12,7 +12,7 @@ these sections on every config reload; it is only the entry point.
 | `layouts.lua` | Tiling layout options and miscellaneous behavior |
 | `input.lua` | Keyboard, touchpad, mouse, and gestures |
 | `shortcuts.lua` | Default keyboard and mouse shortcuts, including minimize/restore |
-| `window-rules.lua` | App/dialog placement and shell layer effects |
+| `windows.lua` | App/dialog placement and shell layer effects |
 | `startup.lua` | Programs launched when the session starts |
 
 Generated HyprMod settings in `hypr/hyprland-gui.lua` load after these defaults.
