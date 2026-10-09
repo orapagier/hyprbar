@@ -225,3 +225,12 @@ The existing opt-in, page-close, and device-change lifecycle is retained. Four
 microphone regression checks cover PCM conversion, active capture arguments,
 failures, the actual Loader source path, and process cleanup; Sound Qt and tone
 checks pass. Physical microphone behavior still needs a laptop retest.
+
+
+Microphone full-meter follow-up — 2026-10-10: the user reported a full, stationary
+bar even after the capture change. Rendering tests show the bar follows changing
+values. The meter now displays RMS average level instead of maximum sample level,
+with a separate clipping warning and live percentage. A two-second no-new-data
+watchdog clears stale readings and stops capture. Five microphone tests and eight
+Sound Qt checks cover sparse spikes, changing rendered fill, clipping, and stalled
+capture cleanup. The physical cause and laptop result are still unconfirmed.

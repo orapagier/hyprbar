@@ -17,14 +17,23 @@ class BufferAttr(ctypes.Structure):
     _fields_ = [(key, ctypes.c_uint32) for key in ('maxlength', 'tlength', 'prebuf', 'minreq', 'fragsize')]
 
 
-def level(data):
+def measure(data):
     samples = array.array('f')
     samples.frombytes(data)
     if sys.byteorder != 'little':
         samples.byteswap()
-    peak = max((abs(sample) for sample in samples if math.isfinite(sample)), default=0)
-    # Match the perceptual scale used by Quickshell's other audio meters.
-    return min(1, peak ** (1 / 3))
+    amplitudes = [abs(sample) if math.isfinite(sample) else 0 for sample in samples]
+    if not amplitudes:
+        return {'peak': 0, 'clipping': False}
+    rms = math.sqrt(sum(min(1, sample) ** 2 for sample in amplitudes) / len(amplitudes))
+    # A -60 to 0 dBFS average-level meter avoids pegging the bar on isolated spikes.
+    db = 20 * math.log10(rms) if rms > 0 else -60
+    return {'peak': max(0, min(1, (db + 60) / 60)),
+            'clipping': sum(sample >= 0.99 for sample in amplitudes) / len(amplitudes) >= 0.01}
+
+
+def level(data):
+    return measure(data)['peak']
 
 
 def capture(device, emit):
@@ -51,7 +60,7 @@ def capture(device, emit):
         while True:
             if library.pa_simple_read(stream, data, len(data), ctypes.byref(error)) < 0:
                 raise RuntimeError('Microphone capture stopped. Check that the input device is still connected.')
-            emit({'ok': True, 'peak': level(data.raw)})
+            emit(dict(ok=True, **measure(data.raw)))
     finally:
         library.pa_simple_free(stream)
 

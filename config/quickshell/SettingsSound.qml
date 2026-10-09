@@ -16,6 +16,7 @@ ColumnLayout {
     property bool meterEnabled: false
     readonly property bool metering: meter.active
     readonly property string meterError: meter.status === Loader.Error ? "Could not load the microphone test." : meter.item ? meter.item.error || "" : ""
+    readonly property bool inputClipping: !!(meter.item && meter.item.clipping)
     readonly property bool meterReady: !!(meter.item && meter.item.ready)
     readonly property real inputPeak: meter.item ? meter.item.peak : 0
     property Component meterComponent: null
@@ -100,12 +101,13 @@ ColumnLayout {
             background: Rectangle { implicitHeight: 10; color: "#363e58"; radius: 5 }
             contentItem: Item {
                 implicitHeight: 10
-                Rectangle { width: parent.width * Math.min(1, page.inputPeak); height: parent.height; radius: 5; color: page.inputPeak > 0.9 ? "#f38ba8" : "#a6e3a1"; visible: !!(page.microphone && page.microphone.audio && !page.microphone.audio.muted) }
+                Rectangle { width: parent.width * Math.min(1, page.inputPeak); height: parent.height; radius: 5; color: page.inputClipping ? "#f38ba8" : "#a6e3a1"; visible: !!(page.microphone && page.microphone.audio && !page.microphone.audio.muted) }
             }
         }
         Label {
             Layout.fillWidth: true
-            text: page.meterEnabled ? page.meterError ? page.meterError : !page.meterReady ? "Starting microphone test…" : page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : "Speak to check the input level. The test stops when you leave this page." : "Start the test to view the live input level. Audio is not saved or played back."
+            objectName: "soundInputStatus"
+            text: page.meterEnabled ? page.meterError ? page.meterError : !page.meterReady ? "Starting microphone test…" : page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : page.inputClipping ? "Input is clipping. Lower microphone volume and try speaking again." : "Input level: " + Math.round(page.inputPeak * 100) + "% · Speak to check the meter." : "Start the test to view the live input level. Audio is not saved or played back."
             wrapMode: Text.Wrap; color: page.meterError ? "#f38ba8" : "#98a5bf"
         }
     }

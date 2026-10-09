@@ -700,7 +700,7 @@ installed WirePlumber policy.
 
 **Test microphone** opens an active recording stream through the existing
 PipeWire PulseAudio service only while the Sound page is visible and the test is
-enabled. The microphone helper computes input peaks from in-memory PCM samples;
+enabled. The microphone helper computes an RMS average level from in-memory PCM samples;
 it does not save or play them back. Stop, page navigation, window close, or input
 device change destroys the capture process and closes its stream. Muting shows
 zero input. Startup and capture failures appear on the page; a five-second startup
@@ -730,3 +730,15 @@ calculation and the selected source/record-stream arguments, and confirm capture
 processes are gone after close or device changes. Real microphone capture remains
 a desktop-session verification item; the agent cannot confirm the physical cause
 or result while PipeWire access is restricted.
+
+
+Microphone meter follow-up: the moving bar now uses average signal level on a
+-60 to 0 dBFS scale, rather than the maximum sample in each block. Sparse loud
+spikes no longer peg it at full. A separate warning identifies inputs with at
+least 1% full-scale samples, and the page shows a live level percentage. A capture
+that stops sending samples for two seconds is stopped with a visible error and
+an empty bar, rather than leaving its last reading frozen. Tests verify rendered
+fill width across changing levels, clipping warnings, sparse-spike calculation,
+and stalled-process cleanup. These simulated checks do not establish the physical
+cause of the user's full meter; retest the laptop and use the level/status message
+to distinguish a loud/clipping input from a capture failure.

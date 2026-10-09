@@ -2,6 +2,7 @@
 import ctypes
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -20,7 +21,7 @@ spec.loader.exec_module(mic)
 class MicrophoneTests(unittest.TestCase):
     def test_level_scales_pcm_and_rejects_nonfinite_samples(self):
         self.assertEqual(mic.level(struct.pack('<ffff', 0, 0, float('nan'), float('inf'))), 0)
-        self.assertAlmostEqual(mic.level(struct.pack('<ff', 0.125, -0.01)), 0.5)
+        self.assertAlmostEqual(mic.level(struct.pack('<ff', 0.125, -0.125)), (20 * math.log10(0.125) + 60) / 60)
         self.assertEqual(mic.level(struct.pack('<f', 4)), 1)
 
     def test_capture_opens_selected_source_as_record_stream_and_frees_on_stop(self):
@@ -40,8 +41,19 @@ class MicrophoneTests(unittest.TestCase):
         self.assertEqual(args[2], 2)  # Active PA_STREAM_RECORD, rather than Monitor.
         self.assertEqual(args[3], b'input with spaces;literal')
         self.assertEqual((args[5]._obj.format, args[5]._obj.rate, args[5]._obj.channels), (5, 16000, 1))
-        self.assertEqual(rows, [{'ok': True, 'peak': 0.5}])
+        self.assertEqual(len(rows), 1)
+        self.assertAlmostEqual(rows[0]['peak'], mic.level(struct.pack('<f', 0.125)))
+        self.assertFalse(rows[0]['clipping'])
         library.pa_simple_free.assert_called_once_with(42)
+
+    def test_average_meter_does_not_stick_full_on_isolated_spikes(self):
+        spike = mic.measure(struct.pack('<' + 'f' * 1024, 1, *([0] * 1023)))
+        self.assertLess(spike['peak'], 0.6)
+        self.assertFalse(spike['clipping'])
+        full = mic.measure(struct.pack('<ffff', 1, -1, 1, -1))
+        self.assertEqual(full, {'peak': 1, 'clipping': True})
+        self.assertLess(mic.level(struct.pack('<f', 0.02)), mic.level(struct.pack('<f', 0.2)))
+        self.assertEqual(mic.level(struct.pack('<ffff', 0, 0, 0, 0)), 0)
 
     def test_connection_and_read_failures(self):
         library = Mock()
@@ -85,7 +97,7 @@ class MicrophoneTests(unittest.TestCase):
                 self.assertNotIn(error, output, output)
             calls = [json.loads(line) for line in calls.read_text().splitlines()]
             commands = [call['args'] for call in calls]
-            self.assertEqual(commands, [['--device', 'input with spaces;literal'], ['--device', 'input with spaces;literal'], ['--device', 'fail']])
+            self.assertEqual(commands, [['--device', 'input with spaces;literal'], ['--device', 'input with spaces;literal'], ['--device', 'fail'], ['--device', 'stall']])
             for call in calls:
                 self.assertFalse(Path('/proc', str(call['pid'])).exists(), 'Capture process outlived the test')
 

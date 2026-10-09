@@ -4,6 +4,8 @@ import ".."
 
 Item {
     id: root
+    property real testPeak: 0.65
+    property bool testClipping: false
     width: 820; height: 1600
     QtObject { id: outputAudio; property real volume: 0.5; property bool muted: false }
     QtObject { id: inputAudio; property real volume: 0.5; property bool muted: false }
@@ -35,7 +37,7 @@ Item {
         id: page
         width: parent.width
         services: services
-        meterComponent: Component { Item { readonly property real peak: 0.65; readonly property bool ready: true; readonly property string error: "" } }
+        meterComponent: Component { Item { readonly property real peak: root.testPeak; readonly property bool clipping: root.testClipping; readonly property bool ready: true; readonly property string error: "" } }
     }
     TestCase {
         name: "SettingsSound"
@@ -97,6 +99,21 @@ Item {
             page.visible = false;
             compare(page.meterEnabled, false); compare(page.metering, false);
             page.visible = true; compare(page.metering, false);
+        }
+        function test_meterFillTracksChangingInput() {
+            page.meterEnabled = true;
+            let bar = findChild(page, "soundInputMeter");
+            let fill = bar.contentItem.children[0];
+            for (let value of [0, 0.2, 0.8, 1, 0.1, 0]) {
+                root.testPeak = value;
+                waitForRendering(page);
+                compare(bar.value, value);
+                fuzzyCompare(fill.width, bar.contentItem.width * value, 0.5);
+            }
+            root.testPeak = 0.65;
+            root.testClipping = true;
+            verify(findChild(page, "soundInputStatus").text.indexOf("clipping") >= 0);
+            root.testClipping = false;
         }
         function test_appStreamRemoval() {
             verify(findChild(page, "soundAppVolume-10") !== null);

@@ -9,6 +9,7 @@ ShellRoot {
     QtObject { id: audio; property real volume: 0.5; property bool muted: false }
     QtObject { id: mic; property var audio: audio; property string name: "input with spaces;literal"; property string description: "Test input" }
     QtObject { id: other; property var audio: audio; property string name: "fail"; property string description: "Disconnected input" }
+    QtObject { id: stalled; property var audio: audio; property string name: "stall"; property string description: "Stalled input" }
     QtObject { id: services; property var sink: null; property var microphone: mic; property var outputs: []; property var inputs: [mic, other]; property var applicationStreams: [] }
     Window { visible: true; width: 800; height: 1600; SettingsSound { id: page; width: 800; services: services } }
     function check(value, message) { if (!value) { console.error("MICROPHONE_FAILED", phase, message); Qt.quit(); throw new Error(message); } }
@@ -36,6 +37,14 @@ ShellRoot {
                 test.check(page.meterError === "Input disconnected" && !page.meterReady && page.inputPeak === 0, "error shown");
                 page.meterEnabled = false;
                 test.check(!page.meterError, "stop clears error");
+                services.microphone = stalled;
+                page.meterEnabled = true;
+                test.phase = 5;
+            } else if (test.phase === 5 && page.meterReady) {
+                test.check(page.inputPeak === 0.5, "initial stalled level");
+                test.phase = 6;
+            } else if (test.phase === 6 && page.meterError) {
+                test.check(page.meterError.indexOf("stopped updating") >= 0 && !page.meterReady && page.inputPeak === 0, "stale data clears meter");
                 console.log("MICROPHONE_OK"); Qt.quit();
             }
         }
