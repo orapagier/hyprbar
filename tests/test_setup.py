@@ -166,6 +166,8 @@ class InstallerTests(unittest.TestCase):
 
     def test_installs_current_payload_without_legacy_configs(self):
         self.install()
+        self.assertIn('--ozone-platform=x11',
+                      (self.config / 'chromium-flags.conf').read_text())
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
         self.assertTrue((self.config / 'quickshell/shell.qml').is_file())
         self.assertEqual((self.config / 'autostart/nm-applet.desktop').read_bytes(),

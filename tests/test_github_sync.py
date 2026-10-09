@@ -108,7 +108,11 @@ class SyncTests(unittest.TestCase):
                 (destination / 'missing').write_text('installer fallback')
                 (source / 'managed').write_text('live')
                 (source / 'private').write_text('private')
+            (repo / 'config/chromium-flags.conf').write_text('repo flags')
+            (config / 'chromium-flags.conf').write_text('--ozone-platform=x11\n')
             syncer.snapshot_managed_files(repo, config, home)
+            self.assertEqual((repo / 'config/chromium-flags.conf').read_text(),
+                             '--ozone-platform=x11\n')
             for payload in ('config/xdg-desktop-portal', 'config/autostart', 'bin',
                             'assets/applications', 'assets/wallpapers'):
                 self.assertEqual((repo / payload / 'managed').read_text(), 'live')

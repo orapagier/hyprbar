@@ -5,6 +5,7 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 | Concern | Live config / source in checkout |
 | --- | --- |
 | Monitors, keybinds, window rules, startup | `hypr/hyprland.lua` / `config/hypr/hyprland.lua` |
+| Chromium popup placement | `chromium-flags.conf` / `config/chromium-flags.conf`; XWayland exposes popup roles so Hyprland floats website popups at map time; fully exit and reopen Chromium after changing the backend |
 | GUI display/appearance overrides | `hypr/hyprland-gui.lua`, required at end of main Lua file |
 | Saved appearance, bar items, locking | `hyprshell/settings.json` / `config/hyprshell/settings.json` |
 | Shell composition and bar | `quickshell/shell.qml`, `Bar.qml`, `DesktopServices.qml` |
