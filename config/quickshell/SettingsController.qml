@@ -9,6 +9,7 @@ Item {
     property var wallpaperSources: ({})
     property string lockingError: ""
     property string powerError: ""
+    property var audioServices: null
     property var notificationApps: []
     property var batteryInfo: ({})
     readonly property var window: editor.item
@@ -58,6 +59,7 @@ Item {
             wallpaperSources: controller.wallpaperSources
             lockingError: controller.lockingError
             powerError: controller.powerError
+            audioServices: controller.audioServices
             notificationApps: controller.notificationApps
             batteryInfo: controller.batteryInfo
             onFocusRequested: controller.focusRequested(settingsWindow)

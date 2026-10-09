@@ -23,7 +23,8 @@ screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync
    and critical alerts. Implemented 2026-10-10; popups default off.
    Physical delivery and popup placement testing remains.
 5. **Sound improvements** — microphone device selection, input meter,
-   test sound, and per-app volume. Output selection and microphone volume/mute exist.
+   test sound, and per-app volume. Implemented 2026-10-10; physical audio
+   and device persistence testing remains.
 6. **Default apps and startup** — browser, file associations, startup toggles,
    and GTK/Qt theme, font, and cursor controls.
 7. **Updates and recovery** — guided full system upgrades, useful failure
@@ -186,3 +187,31 @@ update. No popup preference was enabled during installation.
 Next: enable popups on the laptop, send normal and critical alerts with Do Not
 Disturb on/off, test per-app preferences, actions, and restart persistence. Then
 continue with priority 5, Sound improvements, or Recovery from the suggested order.
+
+
+## Sound handoff — 2026-10-10
+
+Settings → Sound now includes default output/input selection, master/microphone
+volume and mute, a microphone input meter, test sound, and per-application playback
+and recording stream volumes. Microphone selection is also in the topbar Audio
+menu. A microphone test runs only after starting it and stops on navigation, window
+close, or device change. Test sound plays a short quiet tone on the selected output
+only when clicked; output changes, page/window close, Stop, and a five-second
+watchdog cancel it. No sound or microphone test starts during installation.
+
+Device defaults and volumes use PipeWire/WirePlumber state instead of exporting
+hardware names to Hyprshell settings. Setup and GitHub sync preserve the controls
+and the packaged waveform; sound system state is not part of config sync. Existing
+applications may keep their previous route after changing the default device.
+
+Validation: 160 Qt checks, 2 native tone/waveform checks, 3 native Settings checks,
+15 installer checks, 10 GitHub-sync checks, and native runtime dependency checks.
+The sandbox cannot access PipeWire; real levels, audible playback, call routing,
+and remembered devices/volumes remain untested.
+
+Repository and live payloads are updated together. The running shell logged
+Configuration Loaded after activation.
+
+Next: check Sound on the laptop, try a USB/Bluetooth device if available, adjust
+an app volume during playback, and check defaults after reconnect/restart. Then
+priority 6, Default apps and startup; Recovery remains next in the suggested order.

@@ -677,3 +677,42 @@ placement require a desktop-session check; the agent sandbox cannot access those
 sockets. To check manually, enable popups, send a normal notification, enable Do
 Not Disturb and send another, then send a critical alert. Check the inbox in all
 three cases, test an app's Inbox only/Off modes, and reopen Settings after restart.
+
+
+## Sound
+
+Settings → **Sound** offers default output/input selection, master and microphone
+volume/mute, an input-level test, a short output test tone, and volume/mute controls
+for running application streams. The topbar Audio menu also selects microphones.
+Device and stream discovery use Quickshell's PipeWire service. Every audio node is
+tracked before controls read/write volume. Application controls include playback
+and recording streams across all outputs; one application may have multiple rows.
+Inactive applications appear when they create an audio stream, and disconnected
+streams/devices disappear automatically.
+
+Device selection sets PipeWire's preferred default through WirePlumber. Already
+running applications may retain their current route. Volumes and defaults belong
+to the sound system's policy/state; they are not written into Hyprshell settings.json
+or exported by GitHub config sync. This avoids restoring another laptop's device
+names. The installer restores the Sound controls and packaged test tone, with each
+machine discovering its own hardware. Remembered volumes/defaults depend on the
+installed WirePlumber policy.
+
+**Test microphone** creates a native peak monitor only while the Sound page is
+visible and the test is enabled. Stop, page navigation, window close, or input-device
+change destroys it. Muting shows zero input. Audio is not saved or played back.
+**Play test sound** uses paplay from the existing libpulse dependency, with a
+0.7-second stereo 440 Hz tone, fade in/out, and reduced stream volume. It targets
+the current output by name, preserves the device volume/mute settings, and gives
+an actionable message for unavailable, muted, zero-volume, failed or timed-out
+playback. Repeated clicks stop the test instead of starting overlapping players.
+Closing Settings or changing outputs stops the player. Playback starts only through
+an explicit click; applying this update plays no sound and starts no microphone test.
+
+Validation uses simulated device/stream objects for selection, hotplug, keyboard
+and mouse volume control, mute, meter lifecycle, and narrow layouts. Native tests
+load the PipeWire meter with monitoring disabled and stub paplay to check argument
+boundaries, output choice, failure, timeout, and cancellation without touching audio
+hardware. Real microphone levels, audible playback, call routing, and WirePlumber
+persistence must be checked in the desktop session; the agent sandbox cannot access
+the PipeWire socket.

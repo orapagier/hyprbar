@@ -12,6 +12,7 @@ FloatingWindow {
     property var wallpaperSources: ({})
     property string lockingError: ""
     property string powerError: ""
+    property var audioServices: null
     property var notificationApps: []
     property var batteryInfo: ({})
     signal lockRequested()
@@ -24,7 +25,7 @@ FloatingWindow {
     property var submitted: Model.copy(store.defaults)
     property bool editingSession: false
     readonly property bool saving: writer.running
-    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !hyprskillPage.busy && !githubSync.running && !keybindingsPage.busy && !themePage.busy && !powerPage.busy
+    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !hyprskillPage.busy && !githubSync.running && !keybindingsPage.busy && !themePage.busy && !powerPage.busy && !soundPage.busy
     onDraftChanged: if (editingSession) autoSave.restart()
     onVisibleChanged: if (!visible && editingSession && dirty) apply()
     property int section: -1
@@ -565,6 +566,14 @@ FloatingWindow {
                             onClicked: window.section = -11
                         }
                         SettingsNavButton {
+                            symbol: "󰕾"
+                            text: "Sound"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -12
+                            onClicked: window.section = -12
+                        }
+                        SettingsNavButton {
                             symbol: "󰌾"
                             text: "Screen locking"
                             Layout.fillWidth: true
@@ -630,19 +639,19 @@ FloatingWindow {
                         width: editorScroll.availableWidth
                         spacing: 20
                         Label {
-                            text: window.section === -11 ? "Notification delivery" : window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
+                            text: window.section === -12 ? "SYSTEM / SOUND" : window.section === -11 ? "DESKTOP / NOTIFICATIONS" : window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
                             color: "#8796b5"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -11 ? "Choose popups, quiet hours, and preferences for each application." : window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -12 ? "Sound" : window.section === -11 ? "Notification delivery" : window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: window.section === -10 ? "Adjust brightness, inactivity timers, laptop lid behavior, and supported power profiles." : window.section === -9 ? "Adjust pointing, scrolling, typing, and keyboard layouts. Changes save and apply automatically." : window.section === -8 ? "Choose light or dark application windows." : window.section === -7 ? "Set resolution, refresh rate, scale, rotation, and monitor positions. Confirm changes before they are saved." : window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
+                            text: window.section === -12 ? "Choose sound devices, check your microphone, and adjust application volumes." : window.section === -11 ? "Choose popups, Do Not Disturb, and preferences for each application." : window.section === -10 ? "Adjust brightness, inactivity timers, laptop lid behavior, and supported power profiles." : window.section === -9 ? "Adjust pointing, scrolling, typing, and keyboard layouts. Changes save and apply automatically." : window.section === -8 ? "Choose light or dark application windows." : window.section === -7 ? "Set resolution, refresh rate, scale, rotation, and monitor positions. Confirm changes before they are saved." : window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
                             color: "#939bb3"
                         }
@@ -713,6 +722,18 @@ FloatingWindow {
                             settings: window.draft.notifications
                             applications: window.notificationApps
                             onEdited: (key, value) => window.updateNotifications(key, value)
+                        }
+                        SoundTest {
+                            id: soundTester
+                            sink: window.audioServices ? window.audioServices.sink : null
+                            visible: window.visible && window.section === -12
+                        }
+                        SettingsSound {
+                            id: soundPage
+                            visible: window.visible && window.section === -12
+                            Layout.fillWidth: true
+                            services: window.audioServices
+                            testSound: soundTester
                         }
                         SettingsInput {
                             visible: window.section === -9

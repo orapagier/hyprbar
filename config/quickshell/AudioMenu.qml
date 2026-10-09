@@ -56,4 +56,16 @@ ColumnLayout {
             onClicked: page.services.setOutput(modelData)
         }
     }
+    MenuLabel { text: "Input device"; font.bold: true }
+    Repeater {
+        model: page.services.inputs || []
+        delegate: MenuButton {
+            required property var modelData
+            Layout.fillWidth: true
+            text: (page.services.microphone === modelData ? "✓  " : "    ") + modelData.description
+            accent: page.services.microphone === modelData ? "#89b4fa" : "#cdd6f4"
+            onClicked: page.services.setInput(modelData)
+        }
+    }
+
 }

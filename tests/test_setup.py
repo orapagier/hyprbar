@@ -207,6 +207,9 @@ class InstallerTests(unittest.TestCase):
                          installed.render_hypr(saved['hyprland'], True))
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
         self.assertTrue((self.config / 'quickshell/shell.qml').is_file())
+        for sound_file in ('SettingsSound.qml', 'SoundVolume.qml', 'SoundTest.qml', 'AudioInputMeter.qml', 'sounds/test.wav'):
+            self.assertEqual((self.config / 'quickshell' / sound_file).read_bytes(),
+                             (ROOT / 'config/quickshell' / sound_file).read_bytes())
         self.assertEqual((self.config / 'autostart/nm-applet.desktop').read_bytes(),
                          (ROOT / 'config/autostart/nm-applet.desktop').read_bytes())
         self.assertIn('uwsm app -- nautilus --new-window',

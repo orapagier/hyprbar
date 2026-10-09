@@ -24,6 +24,7 @@ ShellRoot {
         wallpaperSources: wallpapers.sources
         lockingError: locking.error
         powerError: [locking.error, power.error].filter(Boolean).join("\n")
+        audioServices: desktopServices
         notificationApps: notificationInbox.applications
         batteryInfo: desktopServices.batteryInfo
         onLockRequested: locking.lockNow()

@@ -1,0 +1,131 @@
+pragma ComponentBehavior: Bound
+import QtQuick
+import QtQuick.Controls.Basic
+import QtQuick.Layouts
+
+ColumnLayout {
+    id: page
+    property var services: null
+    readonly property var sink: services ? services.sink : null
+    readonly property var microphone: services ? services.microphone : null
+    readonly property var outputs: services ? services.outputs || [] : []
+    readonly property var inputs: services ? services.inputs || [] : []
+    readonly property var streams: services ? services.applicationStreams || [] : []
+    property var testSound: null
+    readonly property bool busy: !!(testSound && (testSound.busy || testSound.requested))
+    property bool meterEnabled: false
+    readonly property bool metering: meter.active
+    readonly property real inputPeak: meter.item ? meter.item.peak : 0
+    property Component meterComponent: null
+    onVisibleChanged: if (!visible) { meterEnabled = false; if (testSound) testSound.stop(); }
+    onMicrophoneChanged: meterEnabled = false
+    spacing: 20
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Output"
+        subtitle: "Choose the default output for sound. Existing applications may keep their current device."
+        SettingsComboBox {
+            id: outputChoice
+            objectName: "soundOutputControl"
+            Layout.fillWidth: true
+            model: page.outputs.length ? page.outputs.map(n => n.description || n.name) : ["No output device available"]
+            currentIndex: page.outputs.length ? page.outputs.indexOf(page.sink) : 0
+            enabled: page.outputs.length > 0
+            onActivated: index => { if (page.outputs[index]) page.services.setOutput(page.outputs[index]); }
+        }
+        Label {
+            Layout.fillWidth: true
+            text: page.sink ? "Current output: " + (page.sink.description || page.sink.name) : "Audio output is unavailable. Check the device connection and PipeWire."
+            color: page.sink ? "#98a5bf" : "#f38ba8"
+            textFormat: Text.PlainText; wrapMode: Text.Wrap
+        }
+        SoundVolume { objectName: "soundOutputVolume"; Layout.fillWidth: true; node: page.sink; label: "Output volume" }
+        SettingsButton {
+            objectName: "soundTestControl"
+            text: page.busy ? "Stop test sound" : "Play test sound"
+            enabled: !!(page.sink && page.sink.audio)
+            onClicked: if (page.testSound) { if (page.busy) page.testSound.stop(); else page.testSound.play(); }
+        }
+        Label {
+            Layout.fillWidth: true
+            text: (page.testSound ? page.testSound.message : "") || "Plays a short, quiet tone on the selected output. Your output volume and mute setting remain in effect."
+            color: !page.testSound || page.testSound.success ? "#98a5bf" : "#f38ba8"
+            wrapMode: Text.Wrap
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Microphone"
+        subtitle: "Choose the default input for calls and recording. Existing applications may keep their current device."
+        SettingsComboBox {
+            objectName: "soundInputControl"
+            Layout.fillWidth: true
+            model: page.inputs.length ? page.inputs.map(n => n.description || n.name) : ["No microphone available"]
+            currentIndex: page.inputs.length ? page.inputs.indexOf(page.microphone) : 0
+            enabled: page.inputs.length > 0
+            onActivated: index => { if (page.inputs[index]) page.services.setInput(page.inputs[index]); }
+        }
+        Label {
+            Layout.fillWidth: true
+            text: page.microphone ? "Current input: " + (page.microphone.description || page.microphone.name) : "Microphone is unavailable. Check the device connection and PipeWire."
+            color: page.microphone ? "#98a5bf" : "#f38ba8"
+            textFormat: Text.PlainText; wrapMode: Text.Wrap
+        }
+        SoundVolume { objectName: "soundInputVolume"; Layout.fillWidth: true; node: page.microphone; label: "Microphone volume" }
+        SettingsButton {
+            objectName: "soundMeterControl"
+            text: page.meterEnabled ? "Stop microphone test" : "Test microphone"
+            enabled: !!(page.microphone && page.microphone.audio)
+            onClicked: page.meterEnabled = !page.meterEnabled
+        }
+        Loader {
+            id: meter
+            active: page.visible && page.meterEnabled && !!page.microphone
+            sourceComponent: page.meterComponent
+            source: page.meterComponent ? "" : Qt.resolvedUrl("AudioInputMeter.qml")
+            onLoaded: if (!page.meterComponent) {
+                item.node = Qt.binding(() => page.microphone);
+                item.enabled = Qt.binding(() => page.visible && page.meterEnabled);
+            }
+        }
+        ProgressBar {
+            objectName: "soundInputMeter"
+            Layout.fillWidth: true
+            from: 0; to: 1
+            value: page.microphone && page.microphone.audio && !page.microphone.audio.muted ? page.inputPeak : 0
+            visible: page.meterEnabled
+            Accessible.name: "Microphone input level"
+            background: Rectangle { implicitHeight: 10; color: "#363e58"; radius: 5 }
+            contentItem: Item {
+                implicitHeight: 10
+                Rectangle { width: parent.width * Math.min(1, page.inputPeak); height: parent.height; radius: 5; color: page.inputPeak > 0.9 ? "#f38ba8" : "#a6e3a1"; visible: !!(page.microphone && page.microphone.audio && !page.microphone.audio.muted) }
+            }
+        }
+        Label {
+            Layout.fillWidth: true
+            text: page.meterEnabled ? page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : "Speak to check the input level. The test stops when you leave this page." : "Start the test to view the live input level. Audio is not saved or played back."
+            wrapMode: Text.Wrap; color: "#98a5bf"
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Application volume"
+        subtitle: "Control each running playback or recording stream. An application may have more than one stream."
+        Label {
+            Layout.fillWidth: true
+            visible: page.streams.length === 0
+            text: "No applications are using audio. Start playback or a call to show its controls."
+            wrapMode: Text.Wrap; color: "#98a5bf"
+        }
+        Repeater {
+            model: page.streams
+            delegate: SoundVolume {
+                required property var modelData
+                objectName: "soundAppVolume-" + modelData.id
+                Layout.fillWidth: true
+                node: modelData
+                label: (modelData.properties["application.name"] || modelData.description || modelData.name) + (modelData.isSink ? " · Recording" : " · Playback")
+            }
+        }
+    }
+}

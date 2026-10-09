@@ -8,7 +8,7 @@ import shutil
 
 def check_native():
     required = ('Hyprland', 'hyprctl', 'awww', 'awww-daemon', 'nmcli',
-                'bluetoothctl', 'pactl', 'wpctl', 'kitty', 'nautilus', 'uwsm',
+                'bluetoothctl', 'pactl', 'paplay', 'wpctl', 'kitty', 'nautilus', 'uwsm',
                 'sqlite3', 'cc', 'busctl', 'systemctl', 'brightnessctl',
                 'hypridle', 'powerprofilesctl', 'systemd-inhibit',
                 'grim', 'slurp', 'swappy', 'fc-cache', 'xdg-user-dirs-update')

@@ -14,6 +14,7 @@ Item {
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var microphone: Pipewire.defaultAudioSource
     readonly property var outputs: Pipewire.nodes.values.filter(n => n.audio && n.isSink && !n.isStream)
+    readonly property var applicationStreams: Pipewire.nodes.values.filter(n => n.audio && n.isStream && n.ready)
     readonly property var inputs: Pipewire.nodes.values.filter(n => n.audio && !n.isSink && !n.isStream)
     readonly property var spaces: Hyprland.workspaces.values.filter(w => w.id > 0).sort((a, b) => a.id - b.id)
     readonly property var workspaceData: spaces.map(w => ({id: w.id, name: w.name, active: w.active, monitor: w.monitor ? w.monitor.name : ""}))
@@ -74,6 +75,7 @@ Item {
     function toggleWifi() { Networking.wifiEnabled = !Networking.wifiEnabled; }
     function scanWifi(enabled) { for (let device of wifiDevices) device.scannerEnabled = enabled; }
     function setOutput(node) { Pipewire.preferredDefaultAudioSink = node; }
+    function setInput(node) { Pipewire.preferredDefaultAudioSource = node; }
     PwObjectTracker { objects: Pipewire.nodes.values.filter(n => !!n.audio) }
     // This monitors speaker output; it never records the microphone.
     PwNodePeakMonitor { id: meter; node: services.sink; enabled: !!services.sink }
