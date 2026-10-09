@@ -254,7 +254,15 @@ Item {
             model: (bar.statusData.workspaces || []).filter(w => !bar.outputName || w.monitor === bar.outputName)
             delegate: Pill {
                 objectName: "workspace" + modelData.id
-                settings: Object.assign({}, bar.appearance("workspaces"), {paddingLeft:0, paddingRight:0})
+                settings: {
+                    let appearance = Object.assign({}, bar.appearance("workspaces"), {paddingLeft:0, paddingRight:0});
+                    if (active && appearance.vibrantColor) {
+                        let base = Qt.color(appearance.vibrantColor);
+                        // Use the opposite hue while preserving the existing pill styling.
+                        appearance.vibrantColor = Qt.hsla((base.hslHue + 0.5) % 1, base.hslSaturation, base.hslLightness, 1).toString();
+                    }
+                    return appearance;
+                }
                 colorSampler: Settings.adaptive(bar.settings, "workspaces") ? bar.wallpaperColors : null
                 colorRoot: bar
                 required property var modelData
