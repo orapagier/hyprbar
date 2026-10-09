@@ -257,7 +257,7 @@ FloatingWindow {
             spacing: 14
             Label { text: "  Sync to GitHub"; color: "#ecebff"; font.pixelSize: 20; font.bold: true }
             Label { objectName: "githubRepositoryLabel"; text: window.syncRepository || "Sign in to find your repository"; color: "#b4a2ff" }
-            Label { Layout.fillWidth: true; text: window.syncMessage; wrapMode: Text.WrapAnywhere; color: window.syncSuccess ? "#9eafb7" : "#f38ba8" }
+            Label { Layout.fillWidth: true; text: window.syncMessage; wrapMode: Text.WordWrap; color: window.syncSuccess ? "#9eafb7" : "#f38ba8" }
             RowLayout {
                 SettingsButton {
                     objectName: "githubForkButton"

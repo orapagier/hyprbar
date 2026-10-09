@@ -168,6 +168,21 @@ class SyncTests(unittest.TestCase):
         with patch.object(syncer.shutil, 'which', return_value='/usr/bin/gh'), patch.object(syncer, 'api', side_effect=[{'login': 'ramlej', 'id': 123}, {'full_name': 'ramlej/hyprshell', 'permissions': {'push': False}}]):
             self.assertFalse(syncer.discover()['ready'])
 
+    def test_friendly_errors_hide_commands_and_offer_next_steps(self):
+        cases = [
+            (subprocess.TimeoutExpired(['gh', 'api', '--hostname', 'github.com', 'user'], 30), 'took too long'),
+            (RuntimeError("fatal: unable to access 'https://github.com/example/repo': Could not resolve host: github.com"), 'Could not reach GitHub'),
+            (RuntimeError('gh: Bad credentials (HTTP 401)'), 'Click Authenticate'),
+            (RuntimeError('gh: Forbidden (HTTP 403)'), 'denied access'),
+            (subprocess.CalledProcessError(1, ['git', 'push']), 'local changes are still saved'),
+        ]
+        for error, expected in cases:
+            with self.subTest(error=type(error).__name__):
+                message = syncer.friendly_error(error)
+                self.assertIn(expected, message)
+                for raw in ('--hostname', 'gh:', 'fatal:', "['git'", "['gh'"):
+                    self.assertNotIn(raw, message)
+
     def test_api_distinguishes_missing_repository_from_connection_error(self):
         for error, missing in [('gh: Not Found (HTTP 404)', True), ('network unavailable', False), ('gh: Forbidden (HTTP 403)', False)]:
             with self.subTest(error=error), patch.object(syncer.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', error)):

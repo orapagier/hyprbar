@@ -166,6 +166,27 @@ def identity(repo, name, email):
     git(repo, 'config', '--local', 'user.email', email)
 
 
+def friendly_error(error):
+    """Keep subprocess commands and diagnostics out of the settings UI."""
+    detail = str(error)
+    diagnostic = (getattr(error, 'stderr', None) or detail).lower()
+    if isinstance(error, subprocess.TimeoutExpired) or 'timed out' in diagnostic:
+        return 'GitHub took too long to respond. Check your internet connection and try again.'
+    if any(term in diagnostic for term in ('could not resolve', 'no such host', 'network unavailable', 'network is unreachable', 'connection refused', 'connection reset', 'dial tcp', 'failed to connect')):
+        return 'Could not reach GitHub. Check your internet connection and try again.'
+    if any(term in diagnostic for term in ('http 401', 'authentication failed', 'not logged', 'bad credentials')):
+        return 'GitHub sign-in needs to be renewed. Click Authenticate to sign in again.'
+    if any(term in diagnostic for term in ('http 403', 'permission denied', 'access denied')):
+        return 'GitHub denied access. Check your sign-in and repository permissions, then try again.'
+    if any(term in diagnostic for term in ('non-fast-forward', 'fetch first', 'rejected')):
+        return 'The GitHub repository has newer changes. Update your local repository before syncing again.'
+    if isinstance(error, FileNotFoundError):
+        return 'A required GitHub sync tool is missing. Check your Hyprshell installation and try again.'
+    if isinstance(error, (OSError, subprocess.SubprocessError)) or any(term in diagnostic for term in ('command ', 'fatal:', 'error:', 'gh:', 'git ', 'github sync failed:')):
+        return 'GitHub sync could not finish. Your local changes are still saved. Check your connection and sign-in, then try again.'
+    return detail
+
+
 def api(endpoint, missing_ok=False):
     result = subprocess.run(['gh', 'api', '--hostname', 'github.com', endpoint],
                             capture_output=True, text=True, timeout=30)
@@ -255,7 +276,7 @@ def main():
         print(json.dumps(result))
         return 0 if result['ok'] else 1
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
-        print(json.dumps({'ok': False, 'message': str(error)}))
+        print(json.dumps({'ok': False, 'message': friendly_error(error)}))
         return 1
 
 
