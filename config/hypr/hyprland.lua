@@ -398,6 +398,43 @@ end
 hl.on("window.open", floatDialog)
 hl.on("window.title", floatDialog)
 
+-- Website authentication windows are often regular browser toplevels rather
+-- than modal dialogs. Their login title can arrive after the blank window maps.
+local browserClasses = {
+    "brave-browser", "brave-browser-beta", "brave-browser-nightly", "brave",
+    "chromium", "chromium-browser", "google-chrome", "google-chrome-beta",
+    "google-chrome-unstable", "firefox", "firefox-esr", "org.mozilla.firefox",
+}
+local browserClassLookup = {}
+for _, class in ipairs(browserClasses) do
+    browserClassLookup[class] = true
+end
+hl.window_rule({
+    name = "float-browser-google-login",
+    match = {
+        class = "(?i)^(brave-browser(-beta|-nightly)?|brave|chromium(-browser)?|google-chrome(-beta|-unstable)?|firefox(-esr)?|org\\.mozilla\\.firefox)$",
+        title = "(?i)^(.*Google Accounts.*|Sign in with Google( [–—-] .*)?)$",
+    },
+    float = true,
+    center = true,
+})
+local function floatBrowserLogin(window)
+    if not window or not window.mapped or window.floating then return end
+    if not browserClassLookup[(window.class or ""):lower()] then return end
+    local title = (window.title or ""):lower()
+    local googleSignIn = title == "sign in with google"
+    for _, separator in ipairs({ " - ", " – ", " — " }) do
+        local prefix = "sign in with google" .. separator
+        if title:sub(1, #prefix) == prefix then googleSignIn = true end
+    end
+    if not title:find("google accounts", 1, true) and not googleSignIn then return end
+    hl.dispatch(hl.dsp.window.float({ window = window, action = "set" }))
+    hl.dispatch(hl.dsp.window.center({ window = window }))
+end
+hl.on("window.open", floatBrowserLogin)
+hl.on("window.title", floatBrowserLogin)
+hl.on("window.class", floatBrowserLogin)
+
 -- Some Thunar dialogs do not advertise themselves as modal.
 hl.window_rule({
     name  = "float-thunar-dialogs",
