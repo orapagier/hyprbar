@@ -153,7 +153,13 @@ Item {
         return Qt.rect(item.x, item.y, item.width, item.height);
     }
     function menuAccent(name) {
-        return menuTargets[name] ? menuTargets[name].foreground : "#b4befe";
+        let item = menuTargets[name];
+        if (!item)
+            return "#b4befe";
+        // Follow the visible glyph, including custom and adaptive colors.
+        if (name === "launcher" || name === "settings")
+            return item.settings.iconColor || item.settings.textColor || item.effectiveForeground;
+        return item.shownIcon.length ? item.iconColor : item.textColor;
     }
     signal action(string name, var argument)
     signal trayAction(var item, var source, int button)

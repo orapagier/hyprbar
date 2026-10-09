@@ -40,6 +40,30 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual((backup / entry['file']).read_text(), original)
         self.assertFalse(json.loads(self.path.read_text())['items'][0]['enabled'])
 
+    def test_bar_visibility_defaults_validation_and_round_trip(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['visible']
+        self.assertTrue(backend.validate(legacy)['bar']['visible'])
+        for visible in (False, True):
+            self.data['bar']['visible'] = visible
+            self.assertTrue(backend.save(self.data)['ok'])
+            self.assertIs(json.loads(self.path.read_text())['bar']['visible'], visible)
+        for invalid in (0, 1, 'false', None):
+            self.data['bar']['visible'] = invalid
+            with self.assertRaises(ValueError):
+                backend.validate(self.data)
+
+    def test_shortcut_toggle_preserves_saved_settings(self):
+        self.data['bar']['spacing'] = 17
+        self.data['items'][0]['textColor'] = '#abcdef'
+        backend.save(self.data)
+        for visible in (False, True):
+            self.assertTrue(backend.save(backend.DEFAULTS, toggle_bar=True)['ok'])
+            saved = json.loads(self.path.read_text())
+            self.assertIs(saved['bar']['visible'], visible)
+            self.assertEqual(saved['bar']['spacing'], 17)
+            self.assertEqual(saved['items'][0]['textColor'], '#abcdef')
+
     def test_random_vibrant_colors_validation_and_round_trip(self):
         legacy = copy.deepcopy(self.data)
         del legacy['bar']['randomVibrantColors']
@@ -51,6 +75,24 @@ class SettingsTests(unittest.TestCase):
             self.data['bar']['randomVibrantColors'] = invalid
             with self.assertRaises(ValueError):
                 backend.validate(self.data)
+
+    def test_popdown_translucency_defaults_and_validation(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['popdownTranslucency']
+        for item in legacy['items']:
+            del item['popdownTranslucency']
+        result = backend.validate(legacy)
+        self.assertEqual(result['bar']['popdownTranslucency'], 0.06)
+        self.assertEqual(result['items'][0]['popdownTranslucency'], -1)
+        for section in (self.data['bar'], self.data['items'][0]):
+            for valid in (0, 0.2, 1):
+                section['popdownTranslucency'] = valid
+                backend.validate(self.data)
+            for invalid in (-0.1, 1.1, True, '0.5'):
+                section['popdownTranslucency'] = invalid
+                with self.assertRaises(ValueError):
+                    backend.validate(self.data)
+            section['popdownTranslucency'] = 0.06
 
     def test_invalid_and_unknown_values_write_nothing(self):
         variants = []

@@ -1,0 +1,24 @@
+import QtQuick
+import "AdaptiveColors.js" as Colors
+
+Item {
+    id: glass
+    property url wallpaperSource: ""
+    property real screenWidth: 1366
+    property real screenHeight: 768
+    property rect region: Qt.rect(0, 0, 300, 300)
+    property color accent: "#b4befe"
+    property real translucency: 0.06
+    readonly property color sample: sampler.sampleRect(region)
+    // A dark backing keeps menu labels readable on light and busy wallpapers.
+    readonly property color base: Colors.mix(Colors.mix(sample, accent, 0.45), Qt.color("#161824"), 0.70)
+    readonly property color topColor: Colors.alpha(Colors.mix(base, Qt.color("#ffffff"), 0.07), 1 - translucency)
+    readonly property color bottomColor: Colors.alpha(base, 1 - translucency)
+    readonly property color rimColor: Colors.alpha(Colors.mix(sample, accent, 0.65), 0.55)
+    WallpaperColors {
+        id: sampler
+        source: glass.wallpaperSource
+        screenWidth: glass.screenWidth; screenHeight: glass.screenHeight
+        offsetY: glass.region.y; bandHeight: Math.max(1, glass.region.height)
+    }
+}

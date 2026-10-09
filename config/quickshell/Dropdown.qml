@@ -7,11 +7,14 @@ import Quickshell.Wayland
 
 PanelWindow {
     id: dropdown
+    property url wallpaperSource: ""
+    property real translucency: 0.06
     property string section: ""
     property string displayedSection: section
     property rect triggerRect: Qt.rect(12, 4, 32, 20)
     property string alignment: "center"
     property color accent: "#b4befe"
+    property bool connected: true
     property bool pinned: false
     property real barBottom: 37
     readonly property bool opened: section.length > 0
@@ -30,7 +33,7 @@ PanelWindow {
     // neighboring icon can switch menus without closing the current one.
     mask: Region { x: 0; y: dropdown.barBottom; width: dropdown.width; height: dropdown.opened ? Math.max(0, dropdown.height - dropdown.barBottom) : 0 }
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "audio-menu"
+    WlrLayershell.namespace: "hyprshell"
     WlrLayershell.keyboardFocus: !opened ? WlrKeyboardFocus.None : pinned ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
     MouseArea { anchors.fill: parent; onClicked: dropdown.closeRequested() }
     FocusScope {
@@ -40,8 +43,11 @@ PanelWindow {
         Keys.onEscapePressed: dropdown.closeRequested()
         MenuPopover {
             anchors.fill: parent
+            wallpaperSource: dropdown.wallpaperSource
+            translucency: dropdown.translucency
             triggerRect: dropdown.triggerRect
             alignment: dropdown.alignment
+            connected: dropdown.connected
             accent: dropdown.accent
             opened: dropdown.opened
             cardClickable: dropdown.displayedSection === "settings"

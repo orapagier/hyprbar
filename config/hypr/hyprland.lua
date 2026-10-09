@@ -271,6 +271,17 @@ hl.bind(mainMod .. " + J", hl.dsp.layout("togglesplit"), { description = "Toggle
 
 hl.bind("SUPER + K", hl.dsp.exec_cmd('"$HOME/.local/bin/keybindings-launcher"'), { description = "Show searchable keybindings" })
 
+-- Hyprshell keyboard access, including when the topbar is hidden.
+hl.bind("ALT + T", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" topbar'), { description = "Toggle topbar" })
+hl.bind("ALT + C", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" calendar'), { description = "Toggle calendar" })
+hl.bind("ALT + S", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" settings'), { description = "Open Hyprshell Settings" })
+hl.bind("ALT + N", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" notifications'), { description = "Toggle notifications" })
+hl.bind("ALT + A", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" audio'), { description = "Toggle audio volume" })
+hl.bind("ALT + W", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" wifi'), { description = "Toggle Wi-Fi" })
+hl.bind("ALT + V", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" bluetooth'), { description = "Toggle Bluetooth" })
+hl.bind("ALT + B", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" battery'), { description = "Toggle battery" })
+hl.bind("ALT + P", hl.dsp.exec_cmd('"$HOME/.local/bin/hyprshell-shortcut" power'), { description = "Toggle power options" })
+
 -- Move focus with mainMod + arrow keys
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }), { description = "Focus left" })
 hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }), { description = "Focus right" })

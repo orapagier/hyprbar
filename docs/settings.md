@@ -373,3 +373,40 @@ as quoted Lua strings to `hl.dsp.exec_cmd` and run only on a shortcut press.
 Hyprland's [binding API](https://wiki.hypr.land/configuring/core/binds/) supplies
 the bind, unbind, and description behavior. GitHub sync captures the saved JSON
 and regenerates its Lua payload; setup restores both along with the Lua hook.
+
+## Topbar visibility
+
+**Bar & layout → Topbar visibility → Show topbar** hides or shows the bar on
+all monitors. `bar.visible` defaults to true for existing settings. Hiding
+unmaps the panel and releases its reserved space so tiled windows can expand;
+showing it restores the usual bar height and margins. Popdowns close when the
+bar is hidden. Desktop services, Super+K, and the application launcher shortcut
+remain available. Open **Hyprshell Settings** from the application launcher to
+show the bar again. The choice uses the normal validated autosave path.
+
+## Popdown glass
+
+**Bar & layout → Popdown glass → Popdown translucency** controls the background
+of all inheriting popdowns and Super+K. The default is 6% translucency (94%
+opacity), keeping text and controls fully visible. Each module has its own
+**Popdown glass** slider; reset follows the general setting. These controls are
+separate from bar item and pill opacity. `bar.popdownTranslucency` accepts 0–1;
+`items[].popdownTranslucency` accepts 0–1 or −1 for inheritance.
+
+Popdowns and Super+K share a dark, wallpaper-tinted gradient and reflective rim.
+They sample the wallpaper region behind the card and update when it changes.
+Compositor layer blur supplies the frosted background.
+
+### Bar and popdown shortcuts
+
+Alt+T toggles saved topbar visibility. Alt+C opens the calendar, Alt+S opens
+Settings, Alt+N notifications, Alt+A audio, Alt+W Wi-Fi, Alt+V Bluetooth,
+Alt+B battery, and Alt+P power options. Either Alt key works for these shortcuts. Menu shortcuts toggle their card
+on the focused monitor and close menus on other monitors. Escape or an outside
+click closes them. When the bar is hidden, cards appear detached at the top
+center; showing the bar restores their item anchors and connectors.
+
+The shortcuts call `hyprshell-shortcut`, installed with the other launch helpers.
+Topbar toggles use the existing settings writer when Settings is loaded;
+otherwise `backend.py --toggle-bar` updates only visibility under the settings
+lock, preserving concurrent changes and all other preferences.

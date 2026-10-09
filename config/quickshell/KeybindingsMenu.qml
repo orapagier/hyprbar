@@ -7,7 +7,14 @@ import QtQuick.Window
 
 ColumnLayout {
     id: page
-    SystemPalette { id: theme; colorGroup: SystemPalette.Active }
+    QtObject {
+        id: theme
+        readonly property color windowText: "#e2e6f3"
+        readonly property color text: windowText
+        readonly property color highlight: "#b4befe"
+        readonly property color highlightedText: "#161824"
+        readonly property color base: "#161824"
+    }
     property var bindings: []
     property string error: ""
     readonly property var entries: bindings.filter(b => {

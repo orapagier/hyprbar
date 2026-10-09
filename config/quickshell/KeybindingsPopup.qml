@@ -7,6 +7,15 @@ import Quickshell.Wayland
 
 PanelWindow {
     id: popup
+    property url wallpaperSource: ""
+    property real translucency: 0.06
+    GlassSurface {
+        id: glass
+        wallpaperSource: popup.wallpaperSource
+        screenWidth: popup.width; screenHeight: popup.height
+        region: Qt.rect(card.x, card.y, card.width, card.height)
+        translucency: popup.translucency
+    }
     property bool opened: false
     property bool pointerReady: false
     onOpenedChanged: { pointerReady = false; if (opened) pointerDelay.restart(); else pointerDelay.stop(); }
@@ -18,7 +27,14 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "hyprshell-keybindings"
     WlrLayershell.keyboardFocus: opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-    SystemPalette { id: theme; colorGroup: SystemPalette.Active }
+    QtObject {
+        id: theme
+        readonly property color windowText: "#e2e6f3"
+        readonly property color text: windowText
+        readonly property color highlight: "#b4befe"
+        readonly property color highlightedText: "#161824"
+        readonly property color base: "#161824"
+    }
     function containsPoint(x, y) {
         return x >= card.x && x <= card.x + card.width && y >= card.y && y <= card.y + card.height;
     }
@@ -43,10 +59,10 @@ PanelWindow {
         height: Math.min(600, popup.height - 40)
         radius: 22
         gradient: Gradient {
-            GradientStop { position: 0; color: Qt.rgba(theme.window.r, theme.window.g, theme.window.b, 0.96) }
-            GradientStop { position: 1; color: Qt.rgba(theme.window.r, theme.window.g, theme.window.b, 0.90) }
+            GradientStop { position: 0; color: glass.topColor }
+            GradientStop { position: 1; color: glass.bottomColor }
         }
-        border.color: Qt.rgba(theme.windowText.r, theme.windowText.g, theme.windowText.b, 0.16)
+        border.color: glass.rimColor
         border.width: 1
         // Consume card clicks so only clicks outside dismiss the popup.
         MouseArea { anchors.fill: parent }
@@ -54,23 +70,36 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: 24
             spacing: 18
-            RowLayout {
-                spacing: 14
+            Item {
+                Layout.fillWidth: true
+                implicitHeight: 44
                 Rectangle {
+                    id: headerIcon
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 44; height: 44
                     implicitWidth: 44; implicitHeight: 44; radius: 14
                     color: Qt.rgba(theme.highlight.r, theme.highlight.g, theme.highlight.b, 0.14)
                     border.color: Qt.rgba(theme.highlight.r, theme.highlight.g, theme.highlight.b, 0.24)
                     Text { anchors.centerIn: parent; text: "⌘"; color: theme.highlight; font.pixelSize: 25 }
                 }
                 ColumnLayout {
-                    spacing: 3; Layout.fillWidth: true
+                    anchors.left: headerIcon.right
+                    anchors.leftMargin: 14
+                    anchors.right: escapeBadge.left
+                    anchors.rightMargin: 14
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 3
                     Label { text: "Keyboard shortcuts"; color: theme.windowText; font.family: "Noto Sans"; font.pixelSize: 21; font.weight: Font.DemiBold }
                     Label { text: "Find your next move"; color: theme.windowText; opacity: 0.60; font.family: "Noto Sans"; font.pixelSize: 12 }
                 }
                 Rectangle {
-                    implicitWidth: 36; implicitHeight: 25; radius: 7
+                    id: escapeBadge
+                    anchors.right: parent.right
+                    anchors.top: headerIcon.top
+                    width: 36; height: 25; radius: 7
                     color: Qt.rgba(theme.windowText.r, theme.windowText.g, theme.windowText.b, 0.06)
-                    Text { anchors.centerIn: parent; text: "esc"; color: theme.windowText; opacity: 0.65; font.pixelSize: 11 }
+                    Text { anchors.centerIn: parent; text: "esc"; color: theme.windowText; opacity: 0.65; font.family: "Noto Sans"; font.pixelSize: 11 }
                 }
             }
             Loader {

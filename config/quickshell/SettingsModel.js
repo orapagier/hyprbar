@@ -23,6 +23,10 @@ var vibrantIds = ['launcher', 'settings', 'workspaces', 'media', 'calendar', 'tr
 
 function copy(value) { return JSON.parse(JSON.stringify(value)); }
 function item(config, id) { return (config.items || []).find(i => i.id === id) || {}; }
+function popdownTranslucency(config, id) {
+    let value = item(config, id).popdownTranslucency;
+    return value >= 0 ? value : ((config.bar && config.bar.popdownTranslucency) ?? 0.06);
+}
 function adaptive(config, id) {
     let mode = item(config, id).adaptiveColors;
     return mode === 'on' || (mode !== 'off' && (!config.bar || config.bar.randomVibrantColors || config.bar.adaptiveColors !== false));

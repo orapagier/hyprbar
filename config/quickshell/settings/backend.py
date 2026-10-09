@@ -59,6 +59,9 @@ def validate(data):
         raise ValueError('Unknown bar setting')
     result['bar'].update(bar)
     bar = result['bar']
+    if type(bar['visible']) is not bool:
+        raise ValueError('Bar visibility must be boolean')
+    number(bar['popdownTranslucency'], 0, 1)
     if type(bar['adaptiveColors']) is not bool:
         raise ValueError('adaptiveColors must be boolean')
     if type(bar['randomVibrantColors']) is not bool:
@@ -102,6 +105,8 @@ def validate(data):
             number(target[key], low, high, integer)
         if target['iconSize'] != 0 or type(target['iconSize']) is bool:
             number(target['iconSize'], 8, 48, True)
+        if target['popdownTranslucency'] != -1:
+            number(target['popdownTranslucency'], 0, 1)
         alpha = target['backgroundOpacity']
         if alpha != -1:
             number(alpha, 0, 1)
@@ -238,7 +243,7 @@ def lock(path):
         yield
 
 
-def save(data, expected=None):
+def save(data, expected=None, *, toggle_bar=False):
     data = validate(data)
     home = Path.home()
     config = Path(os.environ.get('XDG_CONFIG_HOME') or home / '.config')
@@ -246,6 +251,9 @@ def save(data, expected=None):
     target = config / 'hyprshell/settings.json'
     with lock(state / 'hyprshell/settings.lock'):
         current = validate(json.loads(target.read_text())) if target.exists() else validate(DEFAULTS)
+        if toggle_bar:
+            data = copy.deepcopy(current)
+            data['bar']['visible'] = not current['bar']['visible']
         if expected is not None and current != validate(expected):
             raise ValueError('Settings changed outside this window. Close and reopen settings before applying.')
         if data['locking']['enabled'] and data['locking'] != current['locking']:
@@ -312,6 +320,7 @@ def save(data, expected=None):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--save-json')
+    parser.add_argument('--toggle-bar', action='store_true')
     parser.add_argument('--lock', action='store_true')
     parser.add_argument('--idle', action='store_true')
     parser.add_argument('--expected-json')
@@ -321,6 +330,10 @@ def main():
             return run_locker()
         if args.idle:
             return run_idle()
+        if args.toggle_bar:
+            result = save(DEFAULTS, toggle_bar=True)
+            print(json.dumps(result))
+            return 0
         if not args.save_json:
             parser.error('Provide --save-json, --lock or --idle')
         result = save(json.loads(args.save_json), json.loads(args.expected_json) if args.expected_json else None)

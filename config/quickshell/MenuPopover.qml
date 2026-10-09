@@ -5,6 +5,15 @@ import QtQuick.Layouts
 
 Item {
     id: popover
+    property url wallpaperSource: ""
+    property real translucency: 0.06
+    GlassSurface {
+        id: glass
+        wallpaperSource: popover.wallpaperSource
+        screenWidth: popover.width; screenHeight: popover.height
+        region: Qt.rect(popover.bodyX, popover.bodyY, popover.bodyWidth, popover.bodyHeight)
+        accent: popover.accent; translucency: popover.translucency
+    }
     property rect triggerRect: Qt.rect(12, 4, 32, 20)
     property string alignment: "center"
     property color accent: "#b4befe"
@@ -72,12 +81,12 @@ Item {
             preferredRendererType: Shape.CurveRenderer
             ShapePath {
                 strokeWidth: 1
-                strokeColor: Qt.rgba(popover.accent.r, popover.accent.g, popover.accent.b, 0.48)
+                strokeColor: glass.rimColor
                 fillGradient: LinearGradient {
                     x1: 0; y1: popover.neckY; x2: 0; y2: popover.bodyBottom
-                    GradientStop { position: 0; color: Qt.rgba(popover.accent.r, popover.accent.g, popover.accent.b, 0.48) }
-                    GradientStop { position: 0.23; color: "#b52b2b42" }
-                    GradientStop { position: 1; color: "#d51e1e2e" }
+                    GradientStop { position: 0; color: glass.rimColor }
+                    GradientStop { position: 0.23; color: glass.topColor }
+                    GradientStop { position: 1; color: glass.bottomColor }
                 }
                 startX: popover.tipX - popover.attachmentHalfWidth; startY: popover.neckY
                 PathLine { x: popover.tipX + popover.attachmentHalfWidth; y: popover.neckY }
@@ -119,10 +128,10 @@ Item {
             width: popover.bodyWidth; height: popover.bodyHeight
             radius: 20
             border.width: 1
-            border.color: Qt.rgba(popover.accent.r, popover.accent.g, popover.accent.b, 0.48)
+            border.color: glass.rimColor
             gradient: Gradient {
-                GradientStop { position: 0; color: "#b52b2b42" }
-                GradientStop { position: 1; color: "#d51e1e2e" }
+                GradientStop { position: 0; color: glass.topColor }
+                GradientStop { position: 1; color: glass.bottomColor }
             }
             Rectangle {
                 x: 20; y: 1; width: parent.width - 40; height: 1

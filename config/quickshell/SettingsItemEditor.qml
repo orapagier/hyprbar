@@ -248,6 +248,22 @@ ColumnLayout {
             }
         }
     }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Popdown glass"
+        subtitle: "Keep a dense glass finish. Higher translucency reveals more of the background; text stays fully visible. Reset to follow the general setting."
+        SettingsSlider {
+            Layout.fillWidth: true
+            objectName: "popdownTranslucencyControl"
+            label: "Popdown translucency"
+            settingValue: root.settings.popdownTranslucency >= 0 ? root.settings.popdownTranslucency * 100 : undefined
+            inheritedText: "Use general setting"
+            defaultValue: (root.barSettings.popdownTranslucency ?? 0.06) * 100
+            suffix: "%"
+            resetDescription: "Use general setting"
+            onEdited: value => root.edited("popdownTranslucency", value === "" ? -1 : value / 100)
+        }
+    }
     SettingsButton {
         text: "Restore last saved item"
         enabled: !root.saving

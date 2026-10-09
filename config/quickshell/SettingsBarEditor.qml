@@ -10,6 +10,32 @@ ColumnLayout {
     spacing: 16
     SettingsCard {
         Layout.fillWidth: true
+        title: "Topbar visibility"
+        subtitle: "Hide the topbar to give windows its screen space. Open Hyprshell Settings from the application launcher to show it again."
+        SettingsSwitch {
+            objectName: "barVisibleControl"
+            Layout.fillWidth: true
+            text: "Show topbar"
+            checked: root.settings.visible !== false
+            onToggled: root.edited("visible", checked)
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Popdown glass"
+        subtitle: "Keep a dense glass finish. Higher translucency reveals more of the background; text stays fully visible. Also applies to Super+K."
+        SettingsSlider {
+            Layout.fillWidth: true
+            objectName: "popdownTranslucencyControl"
+            label: "Popdown translucency"
+            settingValue: (root.settings.popdownTranslucency ?? 0.06) * 100
+            suffix: "%"
+            resetDescription: "Restore subtle glass (6%)"
+            onEdited: value => root.edited("popdownTranslucency", value === "" ? 0.06 : value / 100)
+        }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
         title: "Layout & spacing"
         subtitle: "Set the global gap here. Select a module in the sidebar or preview to adjust its individual spacing."
         GridLayout {

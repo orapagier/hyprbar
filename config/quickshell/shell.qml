@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import "SettingsModel.js" as Settings
 
 ShellRoot {
     id: shell
@@ -50,6 +51,9 @@ ShellRoot {
             required property var modelData
             MenuController { id: menuState }
             screen: modelData
+            visible: preferences.config.bar.visible !== false
+            exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
+            onVisibleChanged: if (!visible) menuState.close()
             anchors { top: true; left: true; right: true }
             margins { top: preferences.config.bar.marginTop; left: preferences.config.bar.marginSide; right: preferences.config.bar.marginSide }
             implicitHeight: bar.implicitHeight
@@ -97,13 +101,17 @@ ShellRoot {
                 onTrayScroll: (item,event) => item.scroll(event.angleDelta.y || event.angleDelta.x,!event.angleDelta.y)
             }
             Dropdown {
+                wallpaperSource: bar.wallpaperSource
+                translucency: Settings.popdownTranslucency(preferences.config, menuState.displayedSection)
                 screen: panel.screen
-                barBottom: panel.margins.top + panel.height
+                barBottom: panel.visible ? panel.margins.top + panel.height : 0
+                connected: panel.visible
                 section: menuState.section
                 displayedSection: menuState.displayedSection
-                alignment: bar.side(menuState.displayedSection)
+                alignment: panel.visible ? bar.side(menuState.displayedSection) : "center"
                 pinned: menuState.pinned
                 triggerRect: {
+                    if (!panel.visible) return Qt.rect(panel.screen.width / 2, 0, 0, 0);
                     let rect = bar.menuRect(menuState.displayedSection);
                     return Qt.rect(rect.x + panel.margins.left, rect.y + panel.margins.top, rect.width, rect.height);
                 }
@@ -114,12 +122,13 @@ ShellRoot {
                 onSettingsRequested: settingsController.open()
                 onHoverChanged: inside => menuState.retain(inside)
             }
-            KeybindingsPopup { id: keybindings; screen: panel.screen }
+            KeybindingsPopup { id: keybindings; screen: panel.screen; wallpaperSource: bar.wallpaperSource; translucency: preferences.config.bar.popdownTranslucency ?? 0.06 }
             function closeMenu() { menuState.close(); keybindings.opened = false; }
             function refreshSettings() {
-                if (menuState.section && !bar.itemEnabled(menuState.section)) menuState.close();
+                if (!panel.visible || (menuState.section && !bar.itemEnabled(menuState.section))) menuState.close();
             }
-            function toggleLauncher() { keybindings.opened = false; menuState.activate("launcher"); }
+            function toggleMenu(name) { keybindings.opened = false; menuState.activate(name); }
+            function toggleLauncher() { toggleMenu("launcher"); }
             function toggleKeybindings() { menuState.close(); keybindings.opened = !keybindings.opened; }
         }
     }
@@ -130,15 +139,43 @@ ShellRoot {
             for (let panel of panels.instances) panel.refreshSettings();
         }
     }
+    Process {
+        id: barVisibilityWriter
+        command: ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--toggle-bar"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let result = JSON.parse(text);
+                    if (result.ok) preferences.reload();
+                    else console.warn("Topbar toggle: " + result.message);
+                } catch (error) { console.warn("Topbar toggle failed: " + error); }
+            }
+        }
+    }
     IpcHandler {
         target: "bar"
         function ready(): bool {
             if (panels.instances.length === 0) return false;
-            for (let panel of panels.instances) if (!panel.backingWindowVisible) return false;
+            for (let panel of panels.instances) if (panel.visible && !panel.backingWindowVisible) return false;
             return true;
         }
         function reload(): void { Quickshell.reload(true); }
-        function settings(): void { settingsController.open(); }
+        function settings(): void {
+            for (let panel of panels.instances) panel.closeMenu();
+            settingsController.open();
+        }
+        function toggleBar(): void {
+            let ui = settingsController.window;
+            if (ui) ui.updateBar("visible", ui.draft.bar.visible === false);
+            else if (!barVisibilityWriter.running) barVisibilityWriter.running = true;
+        }
+        function toggleMenu(name: string): void {
+            if (!["calendar", "notifications", "audio", "wifi", "bluetooth", "battery", "power", "launcher"].includes(name)) return;
+            let focused = Hyprland.focusedMonitor;
+            let panel = panels.instances.find(p => focused && p.screen.name === focused.name) || panels.instances[0];
+            for (let other of panels.instances) if (other !== panel) other.closeMenu();
+            if (panel) panel.toggleMenu(name);
+        }
         function toggleKeybindings(): void {
             let focused = Hyprland.focusedMonitor;
             let panel = panels.instances.find(p => focused && p.screen.name === focused.name) || panels.instances[0];
