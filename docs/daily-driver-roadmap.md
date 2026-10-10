@@ -30,7 +30,9 @@ screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync
    physical app-opening, next-login startup, and appearance testing remains.
 7. **Updates and recovery** — guided full system upgrades, useful failure
    messages, configuration restore, and personal-file backup status.
-   GitHub config sync does not back up documents.
+   Implemented 2026-10-10 for saved desktop Settings; full configuration recovery
+   and automatic personal backups remain follow-ups. GitHub config sync does
+   not back up documents. Physical upgrade/restore workflow testing remains.
 8. **Advanced networking** — saved-network management, hidden Wi-Fi,
    enterprise connections, VPN, and access to advanced connection settings.
 9. **Accessibility and regional settings** — larger text, high contrast,
@@ -280,3 +282,40 @@ in the agent sandbox.
 Next: check Default apps & startup and Application theme on the laptop, then
 priority 7, Updates and recovery. Personal-file backup remains distinct from
 GitHub configuration sync.
+
+## Updates and recovery handoff — 2026-10-10
+
+Settings → Updates & recovery now checks available repository updates using
+checkupdates with a separate temporary database, links Arch news, and opens a
+detached interactive terminal for the full `sudo pacman -Syu` upgrade. Authentication
+and package confirmation happen in that terminal, which survives closing Settings.
+Settings shows completion/cancellation/failure, with guidance for common failures.
+AUR/foreign packages need separate review. No upgrade starts during installation.
+
+Desktop settings recovery offers checkpoints and existing pre-change backups,
+previews changed sections, and restores through the validated Settings transaction
+with a fresh undo backup and rollback. It covers bar/items, compositor appearance,
+input, power, locking, and notification delivery. Displays, application theme/defaults/
+startup, keybindings, manual Lua edits, and shell files remain outside this restore.
+Previews expire and reject changed backups or concurrent edits. Checkpoints stay
+local and follow System cleanup retention.
+
+Personal backup status records a folder and the user's latest explicit backup
+check, with current folder availability. It does not copy documents or verify
+their contents. This record, update results, and recovery history stay outside
+GitHub config sync. pacman-contrib and sudo are explicit installer dependencies.
+Installer headless checks now clear the desktop Qt platform theme; installer tests
+distinguish legitimate application-preference backups from replaced config backups.
+
+Validation: 15 recovery checks (including the native confirmation/error workflow),
+22 settings checks, 3 native Settings lifecycle/autosave checks, 15 installer checks,
+10 GitHub-sync checks, and 147 Qt checks passed. Native dependencies and shell syntax
+checks passed. Live discovery found valid saved settings backups. Repository and
+matching live payloads are updated together, dependencies before consumers; the
+active Quickshell instance logged Configuration Loaded at 08:20:13. No live upgrade,
+settings restore, or personal backup confirmation was performed during validation.
+
+Next: check update preview and terminal cancellation on the laptop, make a checkpoint,
+change a bar preference, preview and restore it, and record a checked personal backup.
+Run a full system upgrade only when ready after reading Arch news. Then priority 8,
+Advanced networking. Wider config recovery and a real backup engine are follow-ups.

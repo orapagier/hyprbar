@@ -175,7 +175,7 @@ fi
 log 'Validating the installed configuration and refreshing fonts'
 python3 "$REPO_DIR/tools/check_runtime.py" --native
 # Arch's unqualified qmltestrunner may be Qt 5; this config requires Qt 6.
-QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software /usr/lib/qt6/bin/qmltestrunner -input "$CONFIG_DIR/quickshell/tests"
+QT_QPA_PLATFORMTHEME= QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software /usr/lib/qt6/bin/qmltestrunner -input "$CONFIG_DIR/quickshell/tests"
 Hyprland --verify-config --config "$CONFIG_DIR/hypr/hyprland.lua"
 fc-cache -f
 xdg-user-dirs-update

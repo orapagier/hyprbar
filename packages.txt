@@ -61,6 +61,8 @@ sqlite
 util-linux
 procps-ng
 libnotify
+pacman-contrib
+sudo
 
 # GitHub sync and browser authentication
 git

@@ -11,7 +11,8 @@ def check_native():
                 'bluetoothctl', 'pactl', 'paplay', 'wpctl', 'kitty', 'nautilus', 'uwsm',
                 'sqlite3', 'cc', 'busctl', 'systemctl', 'brightnessctl',
                 'hypridle', 'powerprofilesctl', 'systemd-inhibit',
-                'grim', 'slurp', 'swappy', 'fc-cache', 'xdg-user-dirs-update')
+                'grim', 'slurp', 'swappy', 'fc-cache', 'xdg-user-dirs-update',
+                'pacman', 'checkupdates', 'sudo')
     missing = [name for name in required if not shutil.which(name)]
     if not (shutil.which('quickshell') or shutil.which('qs')):
         missing.append('quickshell')

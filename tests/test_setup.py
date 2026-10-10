@@ -27,6 +27,12 @@ class InstallerTests(unittest.TestCase):
     def install(self):
         return self.run_setup('--config-only')
 
+    def installer_backups(self):
+        # Saved app choices may legitimately create a preference transaction
+        # backup on a fresh machine, independently of installer replacements.
+        root = self.state / 'hyprshell/backups'
+        return [path for path in root.iterdir() if not path.name.startswith('applications-')] if root.exists() else []
+
     def test_preview_has_no_side_effects_for_both_modes_and_option_orders(self):
         for args in (('--dry-run',), ('--config-only', '--dry-run'),
                      ('--dry-run', '--config-only')):
@@ -207,9 +213,9 @@ class InstallerTests(unittest.TestCase):
                          installed.render_hypr(saved['hyprland'], True))
         self.assertTrue(os.access(self.config / 'hypr/wallpaper-start.sh', os.X_OK))
         self.assertTrue((self.config / 'quickshell/shell.qml').is_file())
-        for sound_file in ('SettingsSound.qml', 'SoundVolume.qml', 'SoundTest.qml', 'AudioInputMeter.qml', 'AudioSpectrumBars.qml', 'helpers/audio-spectrum.c', 'sounds/test.wav'):
-            self.assertEqual((self.config / 'quickshell' / sound_file).read_bytes(),
-                             (ROOT / 'config/quickshell' / sound_file).read_bytes())
+        for payload_file in ('SettingsSound.qml', 'SoundVolume.qml', 'SoundTest.qml', 'AudioInputMeter.qml', 'AudioSpectrumBars.qml', 'helpers/audio-spectrum.c', 'sounds/test.wav', 'SettingsRecovery.qml', 'settings/recovery.py'):
+            self.assertEqual((self.config / 'quickshell' / payload_file).read_bytes(),
+                             (ROOT / 'config/quickshell' / payload_file).read_bytes())
         self.assertEqual((self.config / 'autostart/nm-applet.desktop').read_bytes(),
                          (ROOT / 'config/autostart/nm-applet.desktop').read_bytes())
         self.assertIn('uwsm app -- nautilus --new-window',
@@ -231,7 +237,7 @@ class InstallerTests(unittest.TestCase):
                          (ROOT / 'assets/wallpapers/default.jpg').read_bytes())
         self.assertIn('Wallpapers/default.jpg',
                       (self.config / 'hypr/wallpaper-start.sh').read_text())
-        self.assertFalse((self.state / "hyprshell/backups").exists())
+        self.assertEqual(self.installer_backups(), [])
         self.assertEqual((self.state / "hyprshell/repository").read_text().strip(), str(ROOT))
 
     def test_rerun_keeps_identical_configs_without_unnecessary_backups(self):
@@ -239,7 +245,7 @@ class InstallerTests(unittest.TestCase):
         result = self.install()
         self.assertIn('Unchanged:', result.stdout)
         self.assertNotIn('Installed:', result.stdout)
-        self.assertFalse((self.state / "hyprshell/backups").exists())
+        self.assertEqual(self.installer_backups(), [])
         self.assertEqual((self.state / "hyprshell/repository").read_text().strip(), str(ROOT))
 
     def test_changes_are_backed_up_and_unrelated_files_are_preserved(self):
@@ -256,7 +262,7 @@ class InstallerTests(unittest.TestCase):
         other_autostart = self.config / 'autostart/other-app.desktop'
         other_autostart.write_text('[Desktop Entry]\nExec=other-app\n')
         self.install()
-        backups = list((self.state / 'hyprshell/backups').iterdir())
+        backups = self.installer_backups()
         self.assertEqual(len(backups), 1)
         self.assertEqual((backups[0] / 'config/hypr/hyprland.lua').read_text(),
                          '/* previous theme */\n')
@@ -269,7 +275,7 @@ class InstallerTests(unittest.TestCase):
                          (ROOT / 'config/autostart/nm-applet.desktop').read_bytes())
         self.assertEqual(other_autostart.read_text(), '[Desktop Entry]\nExec=other-app\n')
         self.install()
-        self.assertEqual(list((self.state / 'hyprshell/backups').iterdir()), backups)
+        self.assertEqual(self.installer_backups(), backups)
 
     def test_symlink_config_is_backed_up_without_modifying_its_target(self):
         self.config.mkdir(parents=True)

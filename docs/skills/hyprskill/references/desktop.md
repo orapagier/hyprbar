@@ -20,6 +20,7 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 | Wallpaper | `hypr/wallpaper-start.sh`, `wallpaper-cycle.sh`; awww; `$HOME/Pictures/Wallpapers` |
 | Locking | `quickshell/LockingController.qml`, `hypr/hyprlock.conf`; generated `hyprshell/hypridle.conf` belongs to Hyprshell |
 | Cleanup | `hyprshell/cleanup.json`, `quickshell/settings/cleanup.py`; user `hyprshell-cleanup.timer` / `.service`; state `hyprshell/cleanup-last.json` |
+| Updates / recovery | `quickshell/SettingsRecovery.qml`, `quickshell/settings/recovery.py`; explicit checkupdates with a separate database, detached interactive full upgrade, validated settings checkpoints/restore; local state `hyprshell/{upgrade-last,personal-backup,recovery-preview}.json` |
 | Portals | `xdg-desktop-portal/hyprland-portals.conf` |
 | Launch helpers | `$HOME/.local/bin/{start-quickshell-bar,hyprshell-settings,app-launcher}` / checkout `bin/` |
 | Install / package lists | checkout `setup.sh`, `tools/install_configs.py`, `packages.txt`, optional `packages-apps.txt` |
@@ -38,13 +39,21 @@ share application-theme transactions; app-owned appearance preferences can win.
 
 ## Focused verification
 
+Settings recovery imports validated `settings.json` only; it does not restore
+manual Lua, display layouts, application choices/theme, or keybindings. Existing
+transactions provide undo backups and rollback. Personal-backup status is a user
+confirmation plus folder readability, not a backup engine or content verification.
+These records and recovery history stay outside GitHub sync. Use `tests/test_recovery.py`
+for isolated checks; never start a real upgrade or restore preferences just to
+validate the UI. Upgrades remain opt-in, interactive `sudo pacman -Syu` in Kitty.
+
 Run commands in the checkout (or use absolute paths), choosing checks for the change:
 
 ```bash
 python3 tools/check_runtime.py --native
 python3 -m unittest discover -s tests -v
 Hyprland --verify-config --config "$PWD/config/hypr/hyprland.lua"
-QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software /usr/lib/qt6/bin/qmltestrunner -input config/quickshell/tests
+QT_QPA_PLATFORMTHEME= QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software /usr/lib/qt6/bin/qmltestrunner -input config/quickshell/tests
 python3 config/quickshell/tests/test_spectrum.py
 ```
 

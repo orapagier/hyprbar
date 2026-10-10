@@ -806,3 +806,63 @@ pass with the shared helper. Rendered checks cover independent frequency bands,
 immediate flat bars on mute, saved
 microphone gain on unmute, and volume adjustments while muted. These simulations
 do not establish the physical cause of a persistently high input level.
+
+## Updates and recovery
+
+Settings → **Updates & recovery** provides explicit update checks, an interactive
+full-system upgrade, recovery of saved desktop settings, and a local record of
+personal backup checks. Opening the page does not contact package servers, run
+an upgrade, change desktop settings, or inspect personal-file contents.
+
+**Check for updates** runs `checkupdates --nocolor` from pacman-contrib against a
+new temporary database. It never refreshes the live package database. Exit code 2
+means no available repository updates; failures remain errors rather than showing
+zero updates. The displayed package list includes its check time and is only a
+preview: packages may change before the actual upgrade.
+[checkupdates documentation](https://man.archlinux.org/man/checkupdates.8.en)
+
+**Open full system upgrade** launches a detached Kitty window. It links Arch news,
+asks whether to begin, and runs `sudo pacman -Syu` with interactive administrator
+authentication and package confirmation. It does not use an unattended confirmation
+flag or select individual packages. AUR/foreign packages require separate review.
+Closing Settings leaves the terminal running; Settings polls its local completion
+record while the page is visible. A lock prevents duplicate workflows. Lock,
+signature, disk-space, mirror/network, and package-conflict failures receive useful
+next steps. The terminal preserves the original output until dismissed. Completion
+means pacman returned success; interruptions without a result are labelled unknown.
+Settings never removes package locks, forces conflicting packages, or restarts the
+machine. See [Arch system maintenance](https://wiki.archlinux.org/title/System_maintenance#Upgrading_the_system).
+
+**Desktop settings recovery** lists up to 100 recent validated settings backups,
+including automatic pre-change backups and explicit checkpoints. Restore imports
+only validated `settings.json` data: bar layout/items, compositor appearance,
+mouse/keyboard, power, locking, and notification delivery. It does not restore
+display layouts, application theme/defaults/startup, keybindings, manual Lua edits,
+shell source code, packages, or personal files. Those remain separate controls or
+configuration recovery follow-ups. It never executes backed-up Lua or QML.
+
+Preview names the sections that would change. Confirmation expires after five
+minutes and rejects changed backups, concurrent settings edits, and manual changes
+to the compositor entry point/generated overrides. The existing backend creates
+an undo backup, regenerates overrides, and rolls back failed writes or compositor
+reloads. Restoring is disabled while Settings has unsaved edits. Checkpoints and
+preview records live under the Hyprshell state directory; checkpoints use the
+existing `backups/` directory and follow the configured cleanup retention policy.
+The installer carries the page/helper; GitHub sync exports the current preferences,
+not recovery history.
+
+**Personal-file backup status** records the readable backup folder and the time
+the user clicks **I checked my backup today**. It reports whether that folder is
+currently readable and keeps the last confirmation when a drive is disconnected.
+This is a self-report, not a backup engine, content verification, or proof that
+a removable drive is mounted. Use a backup application and verify its results
+before recording the check. Folder/date, update outcomes, and checkpoints stay
+local under the state directory and are excluded from configuration sync. GitHub
+configuration sync does not back up Documents, Pictures, or other personal files.
+
+Isolated tests cover restore/undo, transaction rollback, stale previews and backup
+contents, traversal/symlink rejection, personal-backup reporting, separate update
+databases, detached launch arguments, full upgrade arguments, cancellation, and
+failure guidance. A native Quickshell check exercises preview, disabled restoration
+with unsaved changes, rejected tokens, and confirmation through the actual helper.
+No live system upgrade or laptop settings restore is run during validation.

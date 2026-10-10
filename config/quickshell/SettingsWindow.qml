@@ -25,7 +25,7 @@ FloatingWindow {
     property var submitted: Model.copy(store.defaults)
     property bool editingSession: false
     readonly property bool saving: writer.running
-    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !hyprskillPage.busy && !githubSync.running && !keybindingsPage.busy && !themePage.busy && !applicationsPage.busy && !powerPage.busy && !soundPage.busy
+    readonly property bool idle: !writer.running && !autoSave.running && !cleanupPage.busy && !hyprskillPage.busy && !githubSync.running && !keybindingsPage.busy && !themePage.busy && !applicationsPage.busy && !recoveryPage.busy && !powerPage.busy && !soundPage.busy
     onDraftChanged: if (editingSession) autoSave.restart()
     onVisibleChanged: if (!visible && editingSession && dirty) apply()
     property int section: -1
@@ -379,7 +379,7 @@ FloatingWindow {
                 SettingsButton {
                     objectName: "githubSyncButton"
                     text: githubSync.running ? "Syncing…" : "  Sync to GitHub"
-                    enabled: !githubSync.running && !window.dirty && !window.saving && window.success && window.store.loaded && !cleanupPage.busy
+                    enabled: !githubSync.running && !window.dirty && !window.saving && window.success && window.store.loaded && !cleanupPage.busy && !recoveryPage.busy
                     ToolTip.visible: hovered
                     ToolTip.text: "Commit and push your desktop setup to your GitHub hyprshell repository"
                     onClicked: {
@@ -472,7 +472,7 @@ FloatingWindow {
                 }
             }
             RowLayout {
-                enabled: !githubSync.running
+                enabled: !githubSync.running && !recoveryPage.busy
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 spacing: 16
@@ -598,6 +598,14 @@ FloatingWindow {
                             onClicked: window.section = -4
                         }
                         SettingsNavButton {
+                            symbol: "󰁯"
+                            text: "Updates & recovery"
+                            Layout.fillWidth: true
+                            flat: true
+                            highlighted: window.section === -14
+                            onClicked: window.section = -14
+                        }
+                        SettingsNavButton {
                             symbol: "󰒓"
                             text: "Hyprskill"
                             Layout.fillWidth: true
@@ -647,19 +655,19 @@ FloatingWindow {
                         width: editorScroll.availableWidth
                         spacing: 20
                         Label {
-                            text: window.section === -12 ? "SYSTEM / SOUND" : window.section === -11 ? "DESKTOP / NOTIFICATIONS" : window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
+                            text: window.section === -14 ? "SYSTEM / RECOVERY" : window.section === -13 ? "DESKTOP / APPLICATIONS" : window.section === -12 ? "SYSTEM / SOUND" : window.section === -11 ? "DESKTOP / NOTIFICATIONS" : window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
                             color: "#8796b5"
                             font.pixelSize: 9
                             font.letterSpacing: 1.6
                         }
                         Label {
-                            text: window.section === -13 ? "Default apps & startup" : window.section === -12 ? "Sound" : window.section === -11 ? "Notification delivery" : window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
+                            text: window.section === -14 ? "Updates & recovery" : window.section === -13 ? "Default apps & startup" : window.section === -12 ? "Sound" : window.section === -11 ? "Notification delivery" : window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
                             font.pixelSize: 23
                             font.bold: true
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: window.section === -13 ? "Choose which apps open files and which start when you log in." : window.section === -12 ? "Choose sound devices, check your microphone, and adjust application volumes." : window.section === -11 ? "Choose popups, Do Not Disturb, and preferences for each application." : window.section === -10 ? "Adjust brightness, inactivity timers, laptop lid behavior, and supported power profiles." : window.section === -9 ? "Adjust pointing, scrolling, typing, and keyboard layouts. Changes save and apply automatically." : window.section === -8 ? "Choose application colors, fonts, and cursors." : window.section === -7 ? "Set resolution, refresh rate, scale, rotation, and monitor positions. Confirm changes before they are saved." : window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
+                            text: window.section === -14 ? "Keep your system updated, recover saved desktop settings, and track your personal backup checks." : window.section === -13 ? "Choose which apps open files and which start when you log in." : window.section === -12 ? "Choose sound devices, check your microphone, and adjust application volumes." : window.section === -11 ? "Choose popups, Do Not Disturb, and preferences for each application." : window.section === -10 ? "Adjust brightness, inactivity timers, laptop lid behavior, and supported power profiles." : window.section === -9 ? "Adjust pointing, scrolling, typing, and keyboard layouts. Changes save and apply automatically." : window.section === -8 ? "Choose application colors, fonts, and cursors." : window.section === -7 ? "Set resolution, refresh rate, scale, rotation, and monitor positions. Confirm changes before they are saved." : window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
                             color: "#939bb3"
                         }
@@ -698,6 +706,20 @@ FloatingWindow {
                             id: applicationsPage
                             visible: window.section === -13
                             Layout.fillWidth: true
+                        }
+                        SettingsRecovery {
+                            id: recoveryPage
+                            visible: window.visible && window.section === -14
+                            Layout.fillWidth: true
+                            ready: !window.dirty && !window.saving && window.success && window.store.loaded
+                            onRestored: settings => {
+                                window.editingSession = false;
+                                window.initial = Model.copy(settings);
+                                window.draft = Model.copy(settings);
+                                window.store.config = Model.copy(settings);
+                                window.store.reload();
+                                window.editingSession = true;
+                            }
                         }
                         SettingsDisplays {
                             visible: window.section === -7
