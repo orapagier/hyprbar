@@ -1,0 +1,11 @@
+[SddmGreeterTheme]
+Name=Hyprshell Glass
+Description=A calm space. A fluid desktop. Animated glass login.
+Author=Hyprshell
+License=MIT
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+Theme-Id=hyprshell-glass
+Theme-API=2.0
+QtVersion=6

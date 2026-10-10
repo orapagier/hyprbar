@@ -48,6 +48,15 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('Boot splash: leave boot configuration unchanged', result.stdout)
         result = self.run_setup('--config-only', '--dry-run')
         self.assertNotIn('Boot splash:', result.stdout)
+
+    def test_login_theme_preview_and_opt_out(self):
+        self.mock_package_database()
+        result = self.run_setup('--dry-run')
+        self.assertIn('Login appearance: restore Hyprshell Glass when SDDM', result.stdout)
+        result = self.run_setup('--dry-run', '--skip-login-theme')
+        self.assertIn('Login appearance: leave the existing theme unchanged', result.stdout)
+        result = self.run_setup('--config-only', '--dry-run')
+        self.assertNotIn('Login appearance:', result.stdout)
         self.assertFalse(self.home.exists())
 
     def mock_package_database(self, missing=()):

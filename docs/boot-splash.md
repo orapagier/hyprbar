@@ -6,6 +6,12 @@ Full `./setup.sh` installs Plymouth and restores the preference in
 toward the login screen. Firmware and bootloader screens are separate; a brief
 message or transition can still appear. Press Esc to see Plymouth boot details.
 
+Active UKI presets also receive a static matching glass BMP instead of the Arch
+logo embedded by `--splash .../splash-arch.bmp`. The existing systemd-boot menu
+and bootloader stay unchanged. SDDM can use the same animated artwork; see
+[login and startup appearance](login-appearance.md) for combined installation
+and the limits of the handoff.
+
 ![Hyprshell Glass preview](assets/boot-splash-preview.png)
 
 The theme matches the shell's dark glass menus: a translucent rounded card,
@@ -55,6 +61,10 @@ PNG or script assets also trigger a rebuild. Sources under
 in the initramfs. To edit the artwork, change the SVG sources and run
 `python3 tools/render_boot_theme.py` (requires `rsvg-convert` and Noto Sans).
 Then rerun the boot helper to install the updated assets and rebuild the image.
+Run `python3 tools/render_login_theme.py` as well to refresh shared login assets
+and the static UKI BMP (requires `ffmpeg`). The BMP is installed under
+`/usr/share/hyprshell/uki-splash.bmp`; it is embedded by mkinitcpio rather than
+copied into the Plymouth theme.
 
 The helper requires administrator access. A sandbox that only allows home
 directory writes can prepare and preview this change, but cannot activate the

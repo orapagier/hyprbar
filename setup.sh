@@ -9,6 +9,7 @@ DRY_RUN=0
 INSTALL_APPS=0
 SKIP_BROWSER=0
 SKIP_BOOT_SPLASH=0
+SKIP_LOGIN_THEME=0
 TIMEZONE=
 
 usage() {
@@ -21,6 +22,7 @@ Run as your normal user, with sudo access, on an installed Arch Linux system.
   --extra            Also install daily-driver apps from packages-apps.txt
   --skip-browser     Exclude Chromium from --extra
   --skip-boot-splash  Leave system boot configuration unchanged
+  --skip-login-theme Leave the existing login screen appearance unchanged
   --timezone ZONE    Set the system timezone (default: preserve current timezone)
   --keep-timezone    Leave the system timezone unchanged
   -h, --help         Show this help
@@ -44,6 +46,7 @@ while (( $# )); do
     --extra) INSTALL_APPS=1 ;;
     --skip-browser) SKIP_BROWSER=1 ;;
     --skip-boot-splash) SKIP_BOOT_SPLASH=1 ;;
+    --skip-login-theme) SKIP_LOGIN_THEME=1 ;;
     --keep-timezone) TIMEZONE= ;;
     --timezone)
       (( $# >= 2 )) || die '--timezone requires a timezone name'
@@ -128,6 +131,11 @@ if (( DRY_RUN )); then
     else
       printf 'Login screen: install and enable SDDM (no login manager found)\n'
     fi
+    if (( SKIP_LOGIN_THEME )); then
+      printf 'Login appearance: leave the existing theme unchanged\n'
+    else
+      printf 'Login appearance: restore Hyprshell Glass when SDDM is the login manager\n'
+    fi
     printf 'Enable NetworkManager, Bluetooth, UPower, PipeWire, and WirePlumber; Quickshell owns the notification inbox\n'
     printf 'Timezone: %s\n' "${TIMEZONE:-unchanged}"
     if (( SKIP_BOOT_SPLASH )); then
@@ -209,6 +217,18 @@ if ! has_login_manager; then
   sudo pacman -S --needed --noconfirm sddm
   sudo systemctl enable sddm.service
   sudo systemctl set-default graphical.target
+fi
+
+if (( ! SKIP_LOGIN_THEME )); then
+  # Never replace another display manager just to apply an SDDM theme.
+  LOGIN_MANAGER=$(readlink /etc/systemd/system/display-manager.service || true)
+  if [[ "${LOGIN_MANAGER##*/}" == sddm.service ]] ||
+     [[ -z "$LOGIN_MANAGER" && ! -e /etc/systemd/system/display-manager.service && -x /usr/bin/sddm-greeter-qt6 ]]; then
+    log 'Restoring the saved Hyprshell Glass SDDM login screen'
+    sudo python3 "$REPO_DIR/tools/install_login_theme.py"
+  else
+    log 'Keeping the existing login manager appearance (not SDDM)'
+  fi
 fi
 
 if (( ! SKIP_BOOT_SPLASH )); then

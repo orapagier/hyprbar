@@ -103,6 +103,43 @@ def bundled_theme(root, theme):
     return {target / item.name: item.read_bytes() for item in files}
 
 
+def uki_splash_options(text, values, active):
+    """Replace the UKI's static logo while keeping other preset options intact."""
+    uses_splash = False
+    for name in active:
+        if not values.get(name + '_uki', values.get(name + '_efi_image', '')):
+            continue
+        key = name + '_options'
+        options = values.get(key, '')
+        options = options if isinstance(options, list) else words(options)
+        cleaned = []
+        index = 0
+        while index < len(options):
+            option = options[index]
+            if option == '--splash':
+                if index + 1 >= len(options) or options[index + 1].startswith('-'):
+                    raise UnsupportedBoot(f'Missing --splash argument in {key}')
+                index += 2
+            elif option.startswith('--splash='):
+                index += 1
+            else:
+                cleaned.append(option)
+                index += 1
+        cleaned += ['--splash', '/usr/share/hyprshell/uki-splash.bmp']
+        # Quote each option, then quote the whole shell string without evaluating it.
+        line = key + '=' + shlex.quote(shlex.join(cleaned))
+        matches = list(re.finditer(r'^[ \t]*' + key + r'[ \t]*=[ \t]*(\([^)]*\)|[^\n]*)', text, re.M))
+        if len(matches) > 1:
+            raise UnsupportedBoot(f'Duplicate preset option {key}')
+        if matches:
+            match = matches[0]
+            text = text[:match.start()] + line + text[match.end():]
+        else:
+            text = text.rstrip() + '\n' + line + '\n'
+        uses_splash = True
+    return text, uses_splash
+
+
 def build_plan(root, preference):
     """Inspect all targets before scheduling any write; root is injectable in tests."""
     def path(name):
@@ -126,7 +163,8 @@ def build_plan(root, preference):
         raise UnsupportedBoot('No mkinitcpio presets found (dracut is not supported)')
     uki_cmdlines, kernels, images, outputs = set(), set(), set(), set()
     for preset in presets:
-        values = preset_values(preset.read_text())
+        preset_text = preset.read_text()
+        values = preset_values(preset_text)
         active = values.get('PRESETS', [])
         if not isinstance(active, list):
             raise UnsupportedBoot(f'Expected a literal PRESETS array in {preset}')
@@ -157,6 +195,14 @@ def build_plan(root, preference):
                 if cmdline and not cmdline.startswith('/'):
                     raise UnsupportedBoot(f'Expected an absolute command-line path in {preset}')
                 uki_cmdlines.add(path(cmdline or '/etc/kernel/cmdline'))
+        if preference.get('uki_splash', False):
+            updated, uses_splash = uki_splash_options(preset_text, values, active)
+            if uses_splash:
+                plan[preset] = updated
+                splash = REPO / 'config/boot/uki-splash.bmp'
+                if not splash.is_file() or splash.is_symlink():
+                    raise UnsupportedBoot('Render the bundled UKI splash first')
+                plan[path('/usr/share/hyprshell/uki-splash.bmp')] = splash.read_bytes()
     if not outputs:
         raise UnsupportedBoot('No active mkinitcpio image outputs found')
 
@@ -242,13 +288,13 @@ def write_atomic(path, data, mode=0o644):
             temporary.unlink(missing_ok=True)
 
 
-def apply_plan(plan, commands, outputs, backup_root, runner=subprocess.run):
+def apply_plan(plan, commands, outputs, backup_root, runner=subprocess.run, component='Boot splash'):
     data_plan = {path: value.encode() if isinstance(value, str) else value
                  for path, value in plan.items()}
     changed = {path: data for path, data in data_plan.items()
                if not path.exists() or path.read_bytes() != data}
     if not changed:
-        print('Boot splash configuration is already current.')
+        print(f'{component} configuration is already current.')
         return
     for output in outputs:
         parent = output.parent
@@ -277,10 +323,12 @@ def apply_plan(plan, commands, outputs, backup_root, runner=subprocess.run):
                 path.unlink(missing_ok=True)
             else:
                 write_atomic(path, *original)
-        print('Boot configuration restored after failure. Generated boot images may have changed; '
-              'rerun sudo mkinitcpio -P (and grub-mkconfig if used) successfully before rebooting.')
+        print(f'{component} configuration restored after failure.')
+        if commands:
+            print('Generated boot images may have changed; rerun sudo mkinitcpio -P '
+                  '(and grub-mkconfig if used) successfully before rebooting.')
         raise
-    print(f'Hyprshell splash configured. Boot configuration backups: {backup}')
+    print(f'{component} configured. Configuration backups: {backup}')
 
 
 def main():

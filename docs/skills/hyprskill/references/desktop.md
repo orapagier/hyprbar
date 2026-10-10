@@ -25,6 +25,7 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 | Launch helpers | `$HOME/.local/bin/{start-quickshell-bar,hyprshell-settings,app-launcher}` / checkout `bin/` |
 | Install / package lists | checkout `setup.sh`, `tools/install_configs.py`, `packages.txt`, optional `packages-apps.txt` |
 | Boot splash | checkout `config/boot/plymouth.json`, `config/boot/hyprshell/`, `tools/install_boot_splash.py`, `docs/boot-splash.md`; root-owned live Plymouth, mkinitcpio, and bootloader settings; full setup restores Hyprshell Glass with animated text and progress while preserving local disk/encryption options; `docs/boot-splash-preview.html` previews it without starting Plymouth |
+| Login appearance / early UKI splash | checkout `config/sddm/hyprshell-glass/`, `config/boot/uki-splash.bmp`, `tools/install_login_theme.py`, `docs/login-appearance.md`; root-owned `/etc/sddm.conf` and `/usr/share/sddm/themes/hyprshell-glass/`; installer `--with-boot-splash` includes the replacement for the preset's Arch BMP and rebuilds mkinitcpio, without changing systemd-boot; no greeter restart; use SDDM Qt 6 test mode for preview |
 | App autostart overrides | `autostart/*.desktop` / checkout `config/autostart/*.desktop`; installer copies managed entries individually; `nm-applet.desktop` hides the duplicate network tray icon |
 | Sync | `quickshell/settings/github_sync.py`; copies live configs **into** checkout, stages allowed project paths, commits and pushes |
 

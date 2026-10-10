@@ -85,6 +85,35 @@ class BootSplashTests(unittest.TestCase):
         self.assertIn('root=UUID=custom rw quiet splash', plan[self.path('/etc/kernel/local-cmdline')])
         self.assertNotIn(self.path('/boot/fallback.efi'), outputs)
 
+    def test_uki_replaces_arch_logo_preserves_options_and_leaves_loader_untouched(self):
+        preset = self.path('/etc/mkinitcpio.d/linux.preset')
+        preset.write_text('PRESETS=(default)\ndefault_uki="/boot/EFI/Linux/arch-linux.efi"\ndefault_options="-S autodetect --splash=/usr/share/systemd/bootctl/splash-arch.bmp"\nfallback_uki="/boot/fallback.efi"\nfallback_options="--splash /local/fallback.bmp"\n')
+        loader = self.put('/boot/loader/loader.conf', 'default arch-linux.efi\ntimeout 5\n')
+        plan, commands, _ = self.plan()
+        options = boot.preset_values(plan[preset])
+        self.assertEqual(options['default_options'], '-S autodetect --splash /usr/share/hyprshell/uki-splash.bmp')
+        self.assertEqual(options['fallback_options'], '--splash /local/fallback.bmp')
+        self.assertNotIn(loader, plan)
+        self.assertEqual(commands, [['mkinitcpio', '-P']])
+        bmp = plan[self.path('/usr/share/hyprshell/uki-splash.bmp')]
+        self.assertEqual(bmp[:2], b'BM')
+
+    def test_uki_options_array_and_splash_path_with_spaces_are_preserved(self):
+        text = 'PRESETS=(default)\ndefault_uki="/boot/linux.efi"\ndefault_options=(\n-S autodetect --splash "/local/old splash.bmp"\n)\n'
+        updated, used = boot.uki_splash_options(text, boot.preset_values(text), ['default'])
+        self.assertTrue(used)
+        self.assertEqual(boot.preset_values(updated)['default_options'], '-S autodetect --splash /usr/share/hyprshell/uki-splash.bmp')
+
+    def test_uki_splash_can_be_disabled_and_malformed_options_stop_before_writes(self):
+        preference = dict(PREFERENCE, uki_splash=False)
+        plan, _, _ = boot.build_plan(self.root, preference)
+        self.assertNotIn(self.path('/etc/mkinitcpio.d/linux.preset'), plan)
+        self.assertNotIn(self.path('/usr/share/hyprshell/uki-splash.bmp'), plan)
+        for options in ('--splash', '--splash -S autodetect'):
+            text = 'PRESETS=(default)\ndefault_uki="/boot/linux.efi"\ndefault_options="' + options + '"\n'
+            with self.assertRaises(boot.UnsupportedBoot):
+                boot.uki_splash_options(text, boot.preset_values(text), ['default'])
+
     def test_grub_preserves_existing_default_and_encryption_options(self):
         self.classic_preset()
         self.put('/etc/default/grub', 'GRUB_TIMEOUT=3\nGRUB_CMDLINE_LINUX="cryptdevice=UUID=local:root"\nGRUB_CMDLINE_LINUX_DEFAULT="resume=UUID=swap loglevel=7 splash"\n')

@@ -134,12 +134,16 @@ The installer:
 7. Refreshes fonts and user directories.
 8. Restores the saved Plymouth Hyprshell Glass splash on supported mkinitcpio boot
    setups, preserving the destination machine's disk and encryption settings.
+9. Restores the matching animated Glass login theme when the login manager is SDDM.
 
 The base package list is in [packages.txt](packages.txt). It includes Kitty,
 Nautilus, UWSM, portals, the Polkit agent, fonts and icons, screenshot and
 brightness tools, NetworkManager, BlueZ, UPower, PipeWire, and WirePlumber.
 It also includes Plymouth. See [boot splash setup and portability](docs/boot-splash.md)
 for supported UKI, GRUB, and systemd-boot layouts and boot configuration backups.
+The static UKI splash replaces the embedded Arch logo; systemd-boot's text menu
+stays unchanged. See [login appearance](docs/login-appearance.md) for the matching
+SDDM theme and a combined installer for an already configured machine.
 
 Existing configurations at the managed destinations can be replaced. Backups
 are created before replacement; see [backups and restoration](#backups-and-restoration).
@@ -157,6 +161,7 @@ It does not reboot the machine or restart the running desktop.
 | `--extra` | Also install the optional application list in `packages-apps.txt`. |
 | `--skip-browser` | Omit Chromium from the `--extra` application list. |
 | `--skip-boot-splash` | Leave system boot configuration unchanged. |
+| `--skip-login-theme` | Leave the current login screen appearance unchanged. |
 | `--timezone ZONE` | Set an explicit timezone, such as `Europe/London`. |
 | `--keep-timezone` | Preserve the current timezone; this is the default. |
 | `--help` | Show command-line help. |

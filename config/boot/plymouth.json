@@ -1,4 +1,5 @@
 {
   "theme": "hyprshell",
+  "uki_splash": true,
   "kernel_parameters": ["quiet", "splash", "loglevel=3"]
 }
