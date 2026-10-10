@@ -21,6 +21,8 @@ def check_native():
         raise SystemExit('Missing desktop commands: ' + ', '.join(missing))
     ctypes.CDLL(find_library('pulse-simple') or 'libpulse-simple.so.0')
     ctypes.CDLL(find_library('fftw3') or 'libfftw3.so.3')
+    from gi.repository import Gio
+    Gio.AppInfo.get_all()  # Require Python's GIO bindings used by application Settings.
     print('Native Hyprshell commands, Qt 6, PulseAudio client library, and FFTW: OK')
 
 

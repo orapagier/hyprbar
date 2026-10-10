@@ -458,6 +458,22 @@ Physical modes and authentication-free desktop IPC require an accessible live se
 
 ## Application theme
 
+The same page also offers installed application fonts (6–32 points), installed
+XCursor themes, and cursor sizes (16–64 pixels). Choose them and click **Apply
+font and cursor**. The helper merges the corresponding GTK 3/4 settings and
+GSettings keys, propagates cursor environment values through UWSM, and attempts
+`hyprctl setcursor` for the running desktop. GTK-integrated Qt apps use these
+preferences too; application-owned fonts or themes can take precedence.
+See [GTK Settings](https://docs.gtk.org/gtk3/class.Settings.html) for the GTK keys.
+
+The saved version 1 theme snapshot accepts optional `font`, `cursorTheme`, and
+`cursorSize` fields; existing snapshots keep working. Switching Dark/Light keeps
+these fields. A revision covers the saved snapshot, GTK files, UWSM block, and
+current desktop keys to reject edits made since opening the page. File or
+GSettings failures restore the previous appearance. Restore skips missing fonts
+and cursor themes while retaining their saved choices; reopening Settings lets
+the user choose installed replacements.
+
 Open **Application theme** and toggle **Dark theme**; off selects Light. The
 change saves immediately, independently of topbar preferences. The backend sets
 `org.gnome.desktop.interface` color-scheme and GTK theme (Adwaita/Adwaita-dark),
@@ -482,6 +498,51 @@ new backup. Credentials and unrelated GTK preferences are not imported into Git.
 The installer explicitly includes GTK 3, GLib's GSettings tools, and GNOME desktop
 schemas. Tests isolate desktop preferences and files and exercise the native toggle,
 failed saves, rollback, sync, and preservation of topbar settings.
+
+## Default applications and login startup
+
+Open **Default apps & startup** for web browser, email, file manager, PDF, text,
+image, music, and video associations. A group can contain several MIME types;
+selecting an app sets it for all of them. Different existing apps are shown as
+a mixed group. The choices list installed apps advertising support for at least
+one type, plus any installed current default. **Find apps** adds an exact MIME
+type such as `application/zip`. Changes save immediately without opening files
+or launching applications. Explicit shortcut commands stay independently
+editable in Keybindings.
+
+The helper uses GIO for application discovery and effective defaults and merges
+`mimeapps.list`, preserving other associations and removing conflicts for the
+chosen app. Existing user desktop-specific defaults are reconciled because
+they have higher precedence. See the
+[MIME application specification](https://specifications.freedesktop.org/mime-apps/latest-single/).
+
+**Start at login** lists user and system XDG autostart entries. A toggle writes
+a user override of the same filename, retaining its launch command, desktop
+restrictions, and application conditions; the system file is untouched.
+Entries restricted to another desktop or missing their required program carry
+an explanation. **Add app** creates `hyprshell-<desktop-ID>` for Hyprland,
+using `uwsm app -t service -- <desktop-ID>` so the original app's terminal and
+working-directory metadata are honored. Already enabled entries with the same
+launch command are rejected to avoid duplicate starts. Toggles apply at the
+next login and do not stop an app that is currently running. The desktop's own
+bar, wallpaper, power, and authorization services are outside this list.
+See the [XDG autostart specification](https://specifications.freedesktop.org/autostart/latest/)
+and UWSM's installed XDG autostart session integration.
+
+`hyprshell/applications.json` version 1 stores `defaults` as MIME → desktop-ID
+and `startup` as filename → `{enabled, application?}`. Transactions use a lock,
+revision checks, backups, and file-write rollback. A single edit applies only
+its selected association or startup entry, keeping manual changes to other
+saved choices. GitHub sync exports this validated snapshot; unrelated custom
+startup commands and application configuration are not imported. Setup restores
+choices against installed apps before the next login's startup generator runs.
+Missing apps or startup entries are skipped while their preferences remain
+saved. Session startup retries restoration for apps installed later.
+
+Tests use isolated files/homes, real GIO resolution, native QML controls,
+failed-save recovery, and fresh-install restoration. They do not start login
+apps or open personal files. Physical opening and next-login behavior require
+testing in the desktop session.
 
 ## Application launching and theme propagation
 

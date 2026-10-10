@@ -14,6 +14,8 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 | Notifications | `quickshell/NotificationInbox.qml`, `NotificationCard.qml`; Quickshell owns `org.freedesktop.Notifications`; inbox history uses `Quickshell.statePath("notifications.json")` |
 | Settings UI | `quickshell/Settings*.qml`, `SettingsModel.js`, `SettingsStore.qml` |
 | Settings transactions and schema | `quickshell/settings/backend.py`, `defaults.json`; checkout `docs/settings.md` explains inheritance and extension points |
+| Application colors, font, cursor | `SettingsTheme.qml`, `quickshell/settings/theme.py`, `hyprshell/theme.json`; GTK 3/4, GSettings, UWSM environment, and live cursor update |
+| Default apps and login startup | `SettingsApplications.qml`, `quickshell/settings/applications.py`, `hyprshell/applications.json`; GIO discovery, MIME associations, XDG autostart overrides; setup restores saved IDs and skips missing apps |
 | Audio / spectrum | `SettingsSound.qml`, `SoundVolume.qml`, `AudioMenu.qml`, `AudioInputMeter.qml`, `SoundTest.qml`, `AudioRoute.qml`, `AudioSpectrum.qml`, `AudioSpectrumBars.qml`, `helpers/audio-spectrum.c`; shared native helper links libpulse and FFTW; input capture requires an explicit `--source` argument |
 | Wallpaper | `hypr/wallpaper-start.sh`, `wallpaper-cycle.sh`; awww; `$HOME/Pictures/Wallpapers` |
 | Locking | `quickshell/LockingController.qml`, `hypr/hyprlock.conf`; generated `hyprshell/hypridle.conf` belongs to Hyprshell |
@@ -27,6 +29,12 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 Quickshell owns the bar, menus, notification inbox, and optional Hypridle child. Notification popups default off; Settings → Notification delivery controls popups, Do Not Disturb, critical bypass, and per-app delivery. The bell inbox keeps history. Locking is managed while Quickshell runs, not by a separate Hyprshell lock service. Cleanup is separately scheduled with a systemd user timer. Sound device defaults and volumes use PipeWire/WirePlumber state; Settings → Sound provides device selection, an opt-in input meter, a test tone, and per-stream volumes. GitHub config sync does not export sound-system state. Sound device defaults and volumes use PipeWire/WirePlumber state; Settings → Sound provides device selection, an opt-in input meter, a test tone, and per-stream volumes. GitHub config sync does not export sound-system state. Audio uses PipeWire/PipeWire Pulse and WirePlumber; network uses NetworkManager; Bluetooth uses BlueZ; battery uses UPower. Session startup uses UWSM and hyprpolkitagent.
 
 Settings are version 1 JSON with defaults and inheritance. Inspect `backend.py`'s CLI before using `--save-json` / `--expected-json`; preserve its validation, backups, conflict detection, and rollback. Hyprland settings overrides are managed by this backend; avoid competing writes to generated blocks. Adding a preference requires checking defaults, backend validation, UI model, and consumers. Read `docs/settings.md` only for settings work.
+
+Default-app choices affect links and file associations; explicit shortcut commands
+remain configurable independently. Startup toggles take effect at the next login,
+without starting or stopping apps immediately. Sync stores validated application
+IDs and startup booleans, not unrelated custom launch commands. Font/cursor choices
+share application-theme transactions; app-owned appearance preferences can win.
 
 ## Focused verification
 

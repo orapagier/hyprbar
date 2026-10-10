@@ -26,7 +26,8 @@ screenshots, editable shortcuts, screen locking, cleanup, and GitHub config sync
    test sound, and per-app volume. Implemented 2026-10-10; physical audio
    and device persistence testing remains.
 6. **Default apps and startup** — browser, file associations, startup toggles,
-   and GTK/Qt theme, font, and cursor controls.
+   and GTK/Qt theme, font, and cursor controls. Implemented 2026-10-10;
+   physical app-opening, next-login startup, and appearance testing remains.
 7. **Updates and recovery** — guided full system upgrades, useful failure
    messages, configuration restore, and personal-file backup status.
    GitHub config sync does not back up documents.
@@ -234,3 +235,48 @@ with a separate clipping warning and live percentage. A two-second no-new-data
 watchdog clears stale readings and stops capture. Five microphone tests and eight
 Sound Qt checks cover sparse spikes, changing rendered fill, clipping, and stalled
 capture cleanup. The physical cause and laptop result are still unconfirmed.
+
+## Default apps and startup handoff — 2026-10-10
+
+Settings → Default apps & startup now selects installed apps for web links,
+email, folders, PDF, text, images, music, videos, and another MIME type entered
+manually. Groups show when their file types currently use different apps.
+Changes preserve unrelated associations and reconcile higher-priority user
+desktop-specific defaults. Existing shortcut commands remain independently
+customizable in Keybindings.
+
+Startup toggles use user overrides of XDG autostart entries, preserving system
+entries and their desktop/application conditions. Add app creates a Hyprland
+login entry launched through UWSM so terminal and working-directory metadata
+are honored. These changes take effect at the next login; changing a toggle
+does not start or stop an app now. The bar, wallpaper, power and authorization
+services remain managed by the desktop.
+
+Application theme now also offers installed fonts, font size, installed cursor
+themes, and cursor size. The existing Dark/Light choice is retained. GTK 3/4
+and GTK-integrated Qt apps share these choices; apps with independent settings
+may need reopening. Cursor changes also attempt a live compositor update.
+
+Saved choices use backups, conflict detection, and rollback. Setup and GitHub
+sync preserve application IDs and startup choices without importing unrelated
+custom startup commands. Restoration skips missing apps, startup entries,
+fonts, or cursor themes, retaining the saved snapshot for later restoration.
+The installer restores startup choices before the next session's generator runs.
+Python GIO bindings are now an explicit desktop dependency.
+
+Validation: 10 application checks (including real GIO default selection,
+fresh-install restoration, and native UI failure recovery), 11 theme checks
+(including native font/cursor controls), 3 native Settings checks, 15 installer
+checks, 10 GitHub-sync checks, and 147 Qt checks passed. Native dependency checks
+and Lua verification passed. Tests use isolated homes and do not launch startup
+apps or change this laptop's defaults, fonts, or cursor preferences.
+
+Repository and matching live payloads are updated together, dependencies before
+consumers. The active Quickshell instance logged Configuration Loaded after
+activation. Physical link/file opening, next-login startup, font appearance, and
+cursor behavior still need laptop testing because desktop IPC/D-Bus is blocked
+in the agent sandbox.
+
+Next: check Default apps & startup and Application theme on the laptop, then
+priority 7, Updates and recovery. Personal-file backup remains distinct from
+GitHub configuration sync.

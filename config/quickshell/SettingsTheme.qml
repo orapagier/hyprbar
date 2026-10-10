@@ -9,13 +9,21 @@ ColumnLayout {
     property bool loaded: false
     property bool success: true
     property string message: ""
+    property string revision: ""
+    property var appearance: ({font: "", cursorTheme: "", cursorSize: 24})
+    property var fonts: []
+    property var cursors: []
+    property string fontFamily: ""
+    property int fontSize: 11
     readonly property bool busy: worker.running
     spacing: 16
     onVisibleChanged: if (visible && !busy) request("status", mode)
     Component.onCompleted: if (visible) request("status", mode)
-    function request(operation, nextMode) {
+    function request(operation, nextMode, nextAppearance) {
         if (busy) return;
         let payload = {operation: operation, mode: nextMode, expected: mode};
+        if (revision) payload.expectedRevision = revision;
+        if (nextAppearance) { payload.appearance = nextAppearance; payload.expectedAppearance = appearance; }
         worker.command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/theme.py").toString().replace(/^file:\/\//, "")), "--request-json", JSON.stringify(payload)];
         worker.running = true;
     }
@@ -27,7 +35,19 @@ ColumnLayout {
                     let result = JSON.parse(text);
                     page.success = result.ok;
                     page.message = result.message || "";
-                    if (result.ok) { page.mode = result.mode; page.loaded = true; }
+                    if (result.ok) {
+                        page.mode = result.mode; page.loaded = true;
+                        page.revision = result.revision || "";
+                        if (result.font) {
+                            page.appearance = {font: result.font, cursorTheme: result.cursorTheme, cursorSize: result.cursorSize};
+                            page.fonts = result.fonts; page.cursors = result.cursors;
+                            page.fontFamily = result.fontFamily; page.fontSize = result.fontSize;
+                            fontPicker.currentIndex = page.fonts.indexOf(page.fontFamily);
+                            fontPoints.value = page.fontSize;
+                            cursorPicker.currentIndex = page.cursors.indexOf(result.cursorTheme);
+                            cursorPixels.value = result.cursorSize;
+                        }
+                    }
                     themeToggle.checked = Qt.binding(() => page.mode === "dark");
                 } catch (e) { page.success = false; page.message = "Could not read application appearance. Try refreshing."; }
             }
@@ -50,5 +70,31 @@ ColumnLayout {
         Label { text: "Apps with their own appearance setting should use Follow system. Reopen apps that do not change automatically."; color: "#98a5bf"; Layout.fillWidth: true; wrapMode: Text.Wrap }
         Label { visible: !!page.message; text: page.message; color: page.success ? "#a6e3a1" : "#f38ba8"; Layout.fillWidth: true; wrapMode: Text.Wrap }
         SettingsButton { text: "Refresh"; enabled: !page.busy; onClicked: page.request("status", page.mode) }
+    }
+    SettingsCard {
+        Layout.fillWidth: true
+        title: "Application font and cursor"
+        subtitle: "GTK apps and Qt apps using GTK integration share these preferences. Reopen apps that do not update automatically."
+        Label { text: "Application font"; color: "#e2e6f3" }
+        RowLayout {
+            Layout.fillWidth: true
+            SettingsComboBox { id: fontPicker; objectName: "applicationFont"; Layout.fillWidth: true; model: page.fonts; enabled: page.loaded && !page.busy }
+            SpinBox { id: fontPoints; objectName: "applicationFontSize"; from: 6; to: 32; value: 11; enabled: page.loaded && !page.busy }
+            Label { text: "pt"; color: "#98a5bf" }
+        }
+        Label { text: "Cursor theme and size"; color: "#e2e6f3" }
+        RowLayout {
+            Layout.fillWidth: true
+            SettingsComboBox { id: cursorPicker; objectName: "applicationCursor"; Layout.fillWidth: true; model: page.cursors; enabled: page.loaded && !page.busy }
+            SpinBox { id: cursorPixels; objectName: "applicationCursorSize"; from: 16; to: 64; value: 24; stepSize: 4; enabled: page.loaded && !page.busy }
+            Label { text: "px"; color: "#98a5bf" }
+        }
+        SettingsButton {
+            objectName: "saveApplicationAppearance"
+            text: "Apply font and cursor"
+            enabled: page.loaded && !page.busy && fontPicker.currentIndex >= 0 && cursorPicker.currentIndex >= 0
+            onClicked: page.request("save", page.mode, {font: page.fonts[fontPicker.currentIndex] + " " + fontPoints.value, cursorTheme: page.cursors[cursorPicker.currentIndex], cursorSize: cursorPixels.value})
+        }
+        Label { text: "Apps with custom fonts or themes keep their own choices. The topbar uses its separate appearance controls."; color: "#98a5bf"; Layout.fillWidth: true; wrapMode: Text.Wrap }
     }
 }

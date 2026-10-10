@@ -12,6 +12,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 with patch.object(sys, 'path', [str(ROOT / 'config/quickshell/settings')] + sys.path):
     import theme
+    import github_sync
 
 
 class ThemeTests(unittest.TestCase):
@@ -22,13 +23,17 @@ class ThemeTests(unittest.TestCase):
         self.config = self.root / 'config'
         env = patch.dict(os.environ, XDG_CONFIG_HOME=str(self.config), XDG_STATE_HOME=str(self.root / 'state'))
         env.start(); self.addCleanup(env.stop)
-        self.values = {'color-scheme': "'prefer-light'", 'gtk-theme': "'Adwaita'"}
+        self.values = {'color-scheme': "'prefer-light'", 'gtk-theme': "'Adwaita'", 'font-name': "'Noto Sans 11'", 'cursor-theme': "'Adwaita'", 'cursor-size': '24'}
         def setting(action, key, value=None):
             if action == 'get':
                 return self.values[key]
-            self.values[key] = value if value.startswith("'") else "'" + value + "'"
+            self.values[key] = value if key == 'cursor-size' or value.startswith("'") else "'" + value + "'"
             return ''
         mock = patch.object(theme, 'setting', side_effect=setting)
+        mock.start(); self.addCleanup(mock.stop)
+        mock = patch.object(theme, 'font_families', return_value=['Noto Sans', 'DejaVu Sans'])
+        mock.start(); self.addCleanup(mock.stop)
+        mock = patch.object(theme, 'cursor_themes', return_value=['Adwaita'])
         mock.start(); self.addCleanup(mock.stop)
         mock = patch.object(theme.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '', ''))
         mock.start(); self.addCleanup(mock.stop)
@@ -107,6 +112,47 @@ class ThemeTests(unittest.TestCase):
         self.values['color-scheme'] = "'prefer-dark'"
         self.assertEqual(theme.status()['mode'], 'dark')
 
+    def test_font_cursor_persist_through_color_switch_and_sync(self):
+        appearance = {'font': 'DejaVu Sans 14', 'cursorTheme': 'Adwaita', 'cursorSize': 32}
+        theme.apply('light', appearance=appearance, expected_appearance=theme.effective(), expected_revision=theme.revision())
+        theme.apply('dark')
+        self.assertEqual(theme.saved(), {'version': 1, 'mode': 'dark', **appearance})
+        self.assertEqual(self.values['font-name'], "'DejaVu Sans 14'")
+        self.assertEqual(self.values['cursor-size'], '32')
+        for version in ('3.0', '4.0'):
+            text = (self.config / ('gtk-' + version) / 'settings.ini').read_text()
+            self.assertIn('gtk-font-name = DejaVu Sans 14', text)
+            self.assertIn('gtk-cursor-theme-size = 32', text)
+        self.assertIn('export XCURSOR_SIZE=32', (self.config / 'uwsm/env-hyprland').read_text())
+        github_sync.snapshot_managed_files(self.root / 'repo', self.config, self.root)
+        self.assertEqual(json.loads((self.root / 'repo/config/hyprshell/theme.json').read_text()), theme.saved())
+
+    def test_font_cursor_failure_rolls_back_and_external_edit_is_rejected(self):
+        original = self.values.copy()
+        atomic = theme.atomic
+        def fail(path, text):
+            if path.name == 'theme.json':
+                raise OSError('Failed saved appearance write')
+            atomic(path, text)
+        appearance = {'font': 'DejaVu Sans 14', 'cursorTheme': 'Adwaita', 'cursorSize': 32}
+        with patch.object(theme, 'atomic', side_effect=fail), self.assertRaises(OSError):
+            theme.apply('dark', appearance=appearance)
+        self.assertEqual(self.values, original)
+        old_revision = theme.revision()
+        self.values['font-name'] = "'Noto Sans 12'"
+        with self.assertRaisesRegex(ValueError, 'changed elsewhere'):
+            theme.apply('light', appearance=appearance, expected_revision=old_revision)
+        self.assertIsNone(theme.saved())
+
+    def test_restore_skips_unavailable_font_and_cursor_without_losing_snapshot(self):
+        data = {'version': 1, 'mode': 'dark', 'font': 'Missing Font 14', 'cursorTheme': 'Missing', 'cursorSize': 32}
+        path = self.config / 'hyprshell/theme.json'
+        path.parent.mkdir(parents=True); path.write_text(json.dumps(data))
+        theme.apply('dark', restoring=True)
+        self.assertEqual(self.values['font-name'], "'Noto Sans 11'")
+        self.assertEqual(self.values['cursor-size'], '24')
+        self.assertEqual(theme.saved(), data)
+
 
 class ThemeNativeTests(unittest.TestCase):
     def test_toggle_calls_backend_and_recovers_after_save_failure(self):
@@ -119,12 +165,16 @@ from pathlib import Path
 request = json.loads(sys.argv[2])
 marker = Path(__file__).with_name('theme-test-state')
 mode = marker.read_text() if marker.exists() else 'light'
+appearance_marker = marker.with_name('appearance-test-state')
+appearance = json.loads(appearance_marker.read_text()) if appearance_marker.exists() else {'font': 'Noto Sans 11', 'cursorTheme': 'Adwaita', 'cursorSize': 24}
 if request['operation'] == 'save' and request['mode'] == 'light':
     print(json.dumps({'ok': False, 'message': 'Simulated failure'}))
 else:
     if request['operation'] == 'save':
         mode = request['mode']; marker.write_text(mode)
-    print(json.dumps({'ok': True, 'mode': mode}))
+        if request.get('appearance'):
+            appearance = request['appearance']; appearance_marker.write_text(json.dumps(appearance))
+    print(json.dumps({'ok': True, 'mode': mode, **appearance, 'fontFamily': appearance['font'].rsplit(' ', 1)[0], 'fontSize': int(appearance['font'].rsplit(' ', 1)[1]), 'fonts': ['Noto Sans', 'DejaVu Sans'], 'cursors': ['Adwaita']}))
 ''')
             fixture = payload / 'ThemeNative.qml'
             fixture.write_text('''import QtQuick
@@ -135,7 +185,7 @@ ShellRoot {
     id: test
     property int phase: 0
     Window { visible: true; width: 600; height: 600; SettingsTheme { id: page; width: 580 } }
-    function find(root) { if (root.objectName === "applicationDarkTheme") return root; for (let child of root.children || []) { let match = find(child); if (match) return match; } return null; }
+    function find(root, name = "applicationDarkTheme") { if (root.objectName === name) return root; for (let child of root.children || []) { let match = find(child, name); if (match) return match; } return null; }
     Timer { interval: 50; running: true; repeat: true
         onTriggered: {
             let toggle = test.find(page);
@@ -145,7 +195,13 @@ ShellRoot {
             } else if (test.phase === 1 && !page.busy && page.mode === "dark") {
                 toggle.checked = false; toggle.toggled(); test.phase = 2;
             } else if (test.phase === 2 && !page.busy && !page.success) {
-                if (!toggle.checked || page.mode !== "dark") console.error("THEME_FAILED recovery");
+                if (!toggle.checked || page.mode !== "dark") { console.error("THEME_FAILED recovery"); Qt.quit(); return; }
+                test.find(page, "applicationFont").currentIndex = 1;
+                test.find(page, "applicationFontSize").value = 14;
+                test.find(page, "applicationCursorSize").value = 32;
+                test.find(page, "saveApplicationAppearance").clicked(); test.phase = 3;
+            } else if (test.phase === 3 && !page.busy && page.success) {
+                if (page.appearance.font !== "DejaVu Sans 14" || page.appearance.cursorSize !== 32) console.error("THEME_FAILED font cursor");
                 else console.log("THEME_NATIVE_OK");
                 Qt.quit();
             }
