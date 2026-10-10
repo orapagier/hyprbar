@@ -6,6 +6,11 @@
     "workspaceList": [
       1
     ],
+    "workspaceOverrides": {
+      "1": false,
+      "2": true,
+      "3": true
+    },
     "adaptiveColors": true,
     "randomVibrantColors": true,
     "height": 32,
