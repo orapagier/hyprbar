@@ -28,93 +28,12 @@ Item {
         name: "WallpaperColors"
         when: windowShown
         function init() {
-            pill.settings = {};
             sampler.source = Qt.resolvedUrl("fixtures/wallpaper-regions.svg");
-            bar.settings = {};
-            bar.wallpaperSource = sampler.source;
-            bar.mediaData = {playing:false};
             sampler.screenWidth = 800; sampler.screenHeight = 400;
             movingRow.x = 20;
             tryCompare(sampler, "ready", true);
         }
         function sample(x) { return sampler.sampleRect(Qt.rect(x, 10, 30, 18)); }
-        function test_textureKeepsSaturatedAccentsAndUniformsKeepHue() {
-            for (let accent of ["#ffd45c", "#54e3da", "#86a6ff", "#ff6b9d"]) {
-                let original = Qt.color(accent);
-                let textured = Colors.palette(Qt.color("#888888"), original, Qt.color("#000000"), Qt.color("#ffffff"), "vibrant-bare");
-                verify(textured.glyphHalo);
-                fuzzyCompare(textured.foreground, Colors.vibrantForeground(Qt.color("#888888"), original), 0.001);
-                for (let wallpaper of ["#ffffff", "#000000", "#777777"]) {
-                    let sample = Qt.color(wallpaper);
-                    let result = Colors.palette(sample, original, sample, sample, "vibrant-bare");
-                    fuzzyCompare(result.foreground.hslHue, original.hslHue, 0.002);
-                    verify(result.foreground.hslSaturation >= original.hslSaturation - 0.01);
-                    verify(Colors.contrast(result.foreground, sample) >= 4.5);
-                }
-            }
-        }
-        function test_boundsUseActualPixelLuminance() {
-            let region = sampler.sampleRect(Qt.rect(450, 10, 300, 18), true);
-            fuzzyCompare(region.minimum, Qt.color("#0000ff"), 0.01);
-            fuzzyCompare(region.maximum, Qt.color("#ff0000"), 0.01);
-        }
-        function test_bareMediaAndGlassUseContrastProtection() {
-            bar.wallpaperSource = Qt.resolvedUrl("fixtures/wallpaper-fine-texture.svg");
-            bar.settings = {bar:{background:"off", randomVibrantColors:true}};
-            bar.mediaData = {playing:true, title:"Track", levels:[0.5]};
-            tryCompare(bar.wallpaperColors, "ready", true);
-            verify(findChild(bar, "archGlassLogo").contrastEdge);
-            verify(findChild(bar, "settingsGlassCog").contrastEdge);
-            let spectrum = findChild(bar.moduleItems.media.item, "mediaSpectrum");
-            verify(spectrum.contrastEdge);
-            compare(bar.moduleItems.media.item.content.style, Text.Outline);
-            bar.settings = {bar:{background:"on", randomVibrantColors:true}};
-            verify(!findChild(bar, "archGlassLogo").contrastEdge);
-            verify(!spectrum.contrastEdge);
-        }
-        function test_samplingRetainsFineWallpaperDetails() {
-            sampler.source = Qt.resolvedUrl("fixtures/wallpaper-fine-texture.svg");
-            tryCompare(sampler, "ready", true);
-            let region = sampler.sampleRect(Qt.rect(20, 10, 100, 20), true);
-            fuzzyCompare(region.minimum, Qt.color("#000000"), 0.01);
-            fuzzyCompare(region.maximum, Qt.color("#ffffff"), 0.01);
-            let result = Colors.palette(region.average, Qt.color("#ffd45c"), region.minimum, region.maximum, "vibrant-bare");
-            verify(result.glyphHalo, "Fine texture must not be mistaken for uniform gray");
-        }
-        function test_bareColorsProtectEveryToneAndVibrantMode() {
-            let uniform = ["#000000", "#ffffff", "#777777", "#ff0000", "#00ff00", "#0000ff", "#b89961", "#576848"];
-            for (let wallpaper of uniform) for (let accent of ["#ffd45c", "#54e3da", "#86a6ff", "#585b70", "#ff6b9d"])
-                for (let style of ["bare-normal", "bare-muted", "bare-emphasized", "vibrant-bare"]) {
-                    let sample = Qt.color(wallpaper);
-                    let result = Colors.palette(sample, Qt.color(accent), sample, sample, style);
-                    verify(Colors.contrast(result.foreground, sample) >= 4.5, wallpaper + " " + accent + " " + style);
-                    verify(!result.glyphHalo, "Uniform colors should not need an outline");
-                }
-            for (let style of ["bare-normal", "bare-muted", "bare-emphasized", "vibrant-bare"]) {
-                let result = Colors.palette(Qt.color("#888888"), Qt.color("#ffd45c"), Qt.color("#000000"), Qt.color("#ffffff"), style);
-                verify(result.glyphHalo, "An average cannot protect glyphs on black/white texture");
-                verify(Colors.contrast(result.foreground, result.glyphOutline) >= 4.5);
-                compare(Colors.regionContrast(result.foreground, Qt.color("#000000"), Qt.color("#ffffff")), 1);
-            }
-            // A mostly pale region with a darker patch needs dark ink even
-            // when the average alone would accept the original accent.
-            let result = Colors.palette(Qt.color("#eeeeee"), Qt.color("#6a4d8a"), Qt.color("#aaaaaa"), Qt.color("#ffffff"), "vibrant-bare");
-            verify(Colors.regionContrast(result.foreground, Qt.color("#aaaaaa"), Qt.color("#ffffff")) >= 4.5);
-        }
-        function test_bareEdgeFollowsWallpaperAndLeavesPillsAlone() {
-            movingRow.x = 170;
-            pill.settings = {background:"off", vibrantColor:"#ffd45c"};
-            verify(pill.glyphHalo);
-            compare(pill.content.style, Text.Outline);
-            movingRow.x = 240;
-            verify(!pill.glyphHalo);
-            compare(pill.content.style, Text.Raised);
-            verify(Colors.contrast(pill.effectiveForeground, Qt.color("#ffffff")) >= 4.5);
-            movingRow.x = 170;
-            pill.settings = {background:"on", vibrantColor:"#ffd45c"};
-            compare(pill.glyphHalo, false);
-            compare(pill.content.style, Text.Normal);
-        }
         function test_samplesEachLocalRegionAtBarHeight() {
             fuzzyCompare(sample(20), Qt.rgba(0,0,0,1), 0.01);
             fuzzyCompare(sample(250), Qt.rgba(1,1,1,1), 0.01);

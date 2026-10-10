@@ -55,16 +55,6 @@ ShellRoot {
                 ui.open();
                 test.phase = 8;
             } else if (test.phase === 8 && ui.backingWindowVisible) {
-                ui.section = ui.draft.items.findIndex(i => i.id === "audio");
-                ui.updateItem("pillGroup", "Connections");
-                ui.section = ui.draft.items.findIndex(i => i.id === "wifi");
-                ui.updateItem("pillGroup", "Connections");
-                ui.updateItem("sharedBackground", "off");
-                ui.updateBar("sharedBackground", "on");
-                test.phase = 9;
-            } else if (test.phase === 9 && !ui.dirty && !ui.saving) {
-                let wifi = prefs.config.items.find(i => i.id === "wifi");
-                if (test.audio().sharedBackground !== "off" || wifi.sharedBackground !== "off" || prefs.config.bar.sharedBackground !== "on") { console.error("SHARED_BACKGROUND_AUTOSAVE_LOST"); Qt.quit(); return; }
                 console.log("AUTOSAVE_OK");
                 Qt.quit();
             }

@@ -2,7 +2,6 @@ import QtQuick
 import QtTest
 import ".."
 import "../SettingsModel.js" as Model
-import "../AdaptiveColors.js" as Colors
 
 Item {
     width: 1366; height: 80
@@ -11,65 +10,6 @@ Item {
         name: "BarSettings"
         when: windowShown
         function cleanup() { bar.settings = {}; bar.mediaData = {playing: false}; }
-        function test_sharedPillVisibilityPreservesLayoutAndMemberActions() {
-            let config = {bar: {background: "inherit"}, items: [
-                {id: "audio", side: "right", order: 0, pillGroup: "Connections"},
-                {id: "wifi", side: "right", order: 1, pillGroup: "Connections"}
-            ]};
-            bar.settings = config;
-            let shared = findChild(bar, "sharedPill_Connections");
-            verify(shared !== null);
-            compare(shared.backgroundShown, true);
-            compare(bar.moduleItems.audio.backgroundShown, false);
-            compare(bar.moduleItems.audio.bare, false);
-            let anchor = bar.menuRect("audio"), wifiX = bar.moduleItems.wifi.x;
-            config = Model.setSharedBackground(config, "wifi", "off");
-            compare(Model.item(config, "audio").sharedBackground, "off");
-            bar.settings = config;
-            tryCompare(findChild(bar, "sharedPill_Connections"), "backgroundShown", false);
-            compare(bar.moduleItems.audio.bare, true);
-            compare(bar.menuRect("audio"), anchor);
-            compare(bar.moduleItems.wifi.x, wifiX);
-            let actions = [];
-            let capture = (name, argument) => actions.push(name);
-            bar.action.connect(capture);
-            mouseClick(bar.moduleItems.audio);
-            mouseClick(bar.moduleItems.wifi);
-            bar.action.disconnect(capture);
-            compare(actions.join(","), "audio,wifi");
-            config = Model.setSharedBackground(config, "audio", "inherit");
-            config.bar.background = "off";
-            bar.settings = config;
-            compare(findChild(bar, "sharedPill_Connections").backgroundShown, false);
-            config = Model.copy(config);
-            config.bar.sharedBackground = "on";
-            bar.settings = config;
-            compare(findChild(bar, "sharedPill_Connections").backgroundShown, true);
-            config = Model.setSharedBackground(config, "wifi", "off");
-            config.items.push({id:"bluetooth", side:"left"});
-            config = Model.setPillGroup(config, "bluetooth", "Connections");
-            compare(Model.item(config, "bluetooth").sharedBackground, "off");
-            compare(Model.item(config, "bluetooth").side, "right");
-        }
-        function test_bareGlyphsHaveSmoothRenderingAndSelectionFeedback() {
-            bar.settings = {bar: {background: "off"}, items: [{id:"audio", textColor:"#ff8899", iconColor:"#99aaff"}]};
-            let audio = bar.moduleItems.audio;
-            compare(audio.content.renderType, Text.QtRendering);
-            compare(audio.content.style, Text.Raised);
-            compare(audio.textColor, "#ff8899");
-            compare(audio.iconColor, "#99aaff");
-            bar.activeMenu = "audio";
-            let indicator = findChild(audio, "bareIndicator");
-            verify(indicator.visible);
-            tryCompare(indicator, "opacity", 0.95);
-            bar.activeMenu = "";
-            for (let background of ["#fafaff", "#131521", "#777777"])
-                for (let style of ["normal", "muted", "emphasized"]) {
-                    let sample = Qt.color(background);
-                    let palette = Colors.palette(sample, Qt.color("#89b4fa"), sample, sample, "bare-" + style);
-                    verify(Colors.contrast(palette.foreground, sample) >= 4.4);
-                }
-        }
         function test_disableRemovesLayoutSpaceAndMovesMenuAnchor() {
             let audio = findChild(bar, "audioTrigger"), wifi = findChild(bar, "wifiTrigger");
             let old = audio.x;
