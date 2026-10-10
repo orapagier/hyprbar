@@ -7,9 +7,9 @@
       1
     ],
     "workspaceOverrides": {
-      "1": false,
-      "2": true,
-      "3": true
+      "1": true,
+      "2": false,
+      "3": false
     },
     "adaptiveColors": true,
     "randomVibrantColors": true,
@@ -22,7 +22,8 @@
     "iconSize": 15,
     "groupSpacing": 3,
     "popdownTranslucency": 0.05,
-    "sharedBackground": "inherit"
+    "sharedBackground": "inherit",
+    "position": "top"
   },
   "items": [
     {

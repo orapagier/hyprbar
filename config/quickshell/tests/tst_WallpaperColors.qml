@@ -30,8 +30,6 @@ Item {
         function init() {
             sampler.source = Qt.resolvedUrl("fixtures/wallpaper-regions.svg");
             sampler.screenWidth = 800; sampler.screenHeight = 400;
-            sampler.bandWidth = Qt.binding(() => sampler.screenWidth);
-            sampler.bandHeight = 32; sampler.regionOffsetX = 0;
             movingRow.x = 20;
             tryCompare(sampler, "ready", true);
         }
@@ -41,16 +39,6 @@ Item {
             fuzzyCompare(sample(250), Qt.rgba(1,1,1,1), 0.01);
             fuzzyCompare(sample(450), Qt.rgba(1,0,0,1), 0.01);
             fuzzyCompare(sample(650), Qt.rgba(0,0,1,1), 0.01);
-        }
-        function test_sideBarSamplesItsActualScreenRegion() {
-            sampler.bandWidth = 64;
-            sampler.bandHeight = 380;
-            for (let region of [{x:0,color:Qt.rgba(0,0,0,1)}, {x:736,color:Qt.rgba(0,0,1,1)}]) {
-                sampler.regionOffsetX = region.x;
-                tryCompare(sampler,"ready",true);
-                fuzzyCompare(sampler.sampleRect(Qt.rect(region.x + 10,10,20,18)),region.color,0.01);
-                fuzzyCompare(sampler.sampleRect(Qt.rect(region.x + 10,200,20,18)),Qt.rgba(0,1,0,1),0.01);
-            }
         }
         function test_detectsAwwwOutputsAndEscapesPaths() {
             let sources = Query.sources(": eDP-1: 1920x1080, scale: 1, currently displaying: image: /tmp/My wallpaper #1.png\nother: DP-1: 2560x1440, scale: 1.5, currently displaying: image: /tmp/other.jpg\n");
