@@ -67,11 +67,14 @@ Item {
         return Qt.rect(first.x, (height-h)/2, last.x + last.width - first.x, h);
     }
     function appearance(id) {
-        return Settings.appearance(settings, id, wallpaperSource.toString());
+        let style = Settings.appearance(settings, id, wallpaperSource.toString());
+        let group = sharedPills.find(group => group.ids.includes(id));
+        if (group) style.sharedBackgroundShown = Settings.sharedBackground(settings, group.ids[0]) !== "off";
+        return style;
     }
     function sharedStyle(id) {
         let style = bar.appearance(id);
-        style.background = "on";
+        style.background = Settings.sharedBackground(settings, id);
         style.hideText = true;
         style.hideIcon = true;
         return style;
@@ -396,6 +399,9 @@ Item {
             visible: !!bar.notificationData && bar.notificationData.count > 0
             text: bar.notificationData ? String(bar.notificationData.count || "") : ""
             color: bell.effectiveForeground
+            style: bell.bare ? Text.Raised : Text.Normal
+            styleColor: bell.glyphShadow
+            renderType: Text.QtRendering
             font.family: "DejaVu Sans"
             font.pixelSize: 8
             font.bold: true

@@ -33,6 +33,23 @@ Item {
         }
         function control(page, key) { return findChild(page, key + "Control"); }
         function track(page, key) { return findChild(control(page, key), "effectSlider"); }
+        function test_sharedPillSwitchesEditGlobalAndGroupChoices() {
+            let globalControl = control(barPage, "sharedBackground");
+            let globalSwitch = findChild(globalControl, "backgroundPillSwitch");
+            verify(globalSwitch.checked);
+            mouseClick(globalSwitch);
+            compare(barPage.settings.sharedBackground, "off");
+            itemPage.settings = Object.assign({}, itemPage.settings, {pillGroup: "Connections"});
+            barPage.visible = false; itemPage.visible = true;
+            let groupControl = control(itemPage, "sharedBackground");
+            let groupSwitch = findChild(groupControl, "backgroundPillSwitch");
+            verify(groupControl.visible);
+            verify(!groupSwitch.checked);
+            mouseClick(groupSwitch);
+            compare(itemPage.settings.sharedBackground, "on");
+            mouseClick(groupSwitch);
+            compare(itemPage.settings.sharedBackground, "off");
+        }
         function test_barSliderKeyboardAndResetPreserveOtherValues() {
             let slider = track(barPage, "height");
             slider.forceActiveFocus(); keyClick(Qt.Key_Right);

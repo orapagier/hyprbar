@@ -186,8 +186,10 @@ class SettingsTests(unittest.TestCase):
 
     def test_shared_pills_round_trip_and_validate(self):
         self.data['bar']['groupSpacing'] = 8
+        self.data['bar']['sharedBackground'] = 'off'
         for entry in self.data['items']:
             entry['pillGroup'] = 'Connections' if entry['id'] in ('wifi', 'bluetooth', 'audio') else ''
+            entry['sharedBackground'] = 'on' if entry['pillGroup'] else 'inherit'
         backend.save(self.data)
         self.assertEqual(json.loads(self.path.read_text()), self.data)
         for value in (True, None, 'x' * 41, 'bad\nname'):
@@ -200,13 +202,24 @@ class SettingsTests(unittest.TestCase):
             data['bar']['groupSpacing'] = value
             with self.subTest(value=value), self.assertRaises(ValueError):
                 backend.validate(data)
+        for value in (True, None, 'yes'):
+            for target in ('bar', 'item'):
+                data = copy.deepcopy(self.data)
+                section = data['bar'] if target == 'bar' else data['items'][0]
+                section['sharedBackground'] = value
+                with self.subTest(target=target, value=value), self.assertRaises(ValueError):
+                    backend.validate(data)
         legacy = copy.deepcopy(self.data)
         del legacy['bar']['groupSpacing']
+        del legacy['bar']['sharedBackground']
         for entry in legacy['items']:
             del entry['pillGroup']
+            del entry['sharedBackground']
         restored = backend.validate(legacy)
         self.assertEqual(restored['bar']['groupSpacing'], 3)
         self.assertTrue(all(i['pillGroup'] == '' for i in restored['items']))
+        self.assertEqual(restored['bar']['sharedBackground'], 'inherit')
+        self.assertTrue(all(i['sharedBackground'] == 'inherit' for i in restored['items']))
 
     def test_individual_padding_round_trip_and_validation(self):
         self.data['items'][0].update(paddingLeft=12, paddingRight=-2)

@@ -60,6 +60,20 @@ function appearance(config, id, wallpaperSource) {
     return result;
 }
 
+function sharedBackground(config, id) {
+    let mode = item(config, id).sharedBackground || 'inherit';
+    if (mode === 'inherit') mode = config.bar?.sharedBackground || 'inherit';
+    if (mode === 'inherit') mode = config.bar?.background || 'inherit';
+    return mode === 'off' ? 'off' : 'on';
+}
+
+function setSharedBackground(config, id, mode) {
+    let next = copy(config), current = item(next, id);
+    for (let entry of next.items)
+        if (entry.id === id || (current.pillGroup && entry.pillGroup === current.pillGroup)) entry.sharedBackground = mode;
+    return next;
+}
+
 // Insert before a destination item, or append to the chosen side.
 function reorder(config, id, side, beforeId) {
     let next = copy(config);
@@ -104,7 +118,10 @@ function setPillGroup(config, id, name) {
     let next = copy(config), moving = item(next, id);
     let peer = next.items.find(i => i.id !== id && i.pillGroup === name && name);
     moving.pillGroup = name;
-    if (peer) moving.side = peer.side;
+    if (peer) {
+        moving.side = peer.side;
+        moving.sharedBackground = peer.sharedBackground || 'inherit';
+    }
     return next;
 }
 function setItemSide(config, id, side) {

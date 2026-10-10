@@ -92,6 +92,7 @@ FloatingWindow {
     function updateItem(key, value) {
         let next = Model.copy(draft);
         if (key === "pillGroup") next = Model.setPillGroup(draft, selected.id, value);
+        else if (key === "sharedBackground") next = Model.setSharedBackground(draft, selected.id, value);
         else if (key === "side") next = Model.setItemSide(draft, selected.id, value);
         else next.items[section][key] = value;
         draft = next;

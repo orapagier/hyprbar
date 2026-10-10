@@ -64,6 +64,17 @@ function palette(sample, accent, minimum, maximum, style) {
     maximum = maximum || sample;
     if (style === "vibrant" || style === "vibrant-bare")
         return vibrantPalette(sample, accent, minimum, maximum);
+    if (style && style.indexOf("bare-") === 0) {
+        // Without glass, measure contrast against the wallpaper itself.
+        let target = luminance(sample) > 0.179 ? Qt.rgba(0.025, 0.03, 0.045, 1) : Qt.rgba(1, 1, 1, 1);
+        if (style === "bare-muted" && luminance(sample) > 0.179) target = Qt.rgba(0.03, 0.03, 0.03, 1);
+        let foreground = style === "bare-muted" ? Qt.rgba(0.62, 0.62, 0.62, 1) : accent;
+        for (let i = 0; i < 50 && contrast(foreground, sample) < 5.2; ++i)
+            foreground = mix(foreground, target, 0.12);
+        let result = palette(sample, accent, minimum, maximum, style.slice(5));
+        result.foreground = foreground;
+        return result;
+    }
     let light = luminance(sample) > 0.179;
     if (style === "muted") {
         let gray = 0.2126 * sample.r + 0.7152 * sample.g + 0.0722 * sample.b;

@@ -18,7 +18,7 @@ Item {
     property var colorSampler: null
     property Item colorRoot: null
     property string colorStyle: "normal"
-    readonly property var adaptivePalette: colorSampler ? colorSampler.paletteFor(pill, colorRoot, settings.vibrantColor ? Qt.color(settings.vibrantColor) : foreground, settings.vibrantColor ? (backgroundShown ? "vibrant" : "vibrant-bare") : colorStyle) : null
+    readonly property var adaptivePalette: colorSampler ? colorSampler.paletteFor(pill, colorRoot, settings.vibrantColor ? Qt.color(settings.vibrantColor) : foreground, settings.vibrantColor ? (bare ? "vibrant-bare" : "vibrant") : (bare ? "bare-" + colorStyle : colorStyle)) : null
     readonly property color effectiveForeground: adaptivePalette ? adaptivePalette.foreground : settings.vibrantColor || foreground
     property color tint: Qt.rgba(30/255, 30/255, 46/255, 0.28)
     property color outline: Qt.rgba(1, 1, 1, 0.16)
@@ -36,6 +36,8 @@ Item {
     property bool raised: true
     property bool backgroundVisible: true
     readonly property bool backgroundShown: settings.background === "on" || (settings.background !== "off" && backgroundVisible)
+    readonly property bool bare: !backgroundShown && !settings.sharedBackgroundShown
+    readonly property color glyphShadow: (0.2126 * effectiveForeground.r + 0.7152 * effectiveForeground.g + 0.0722 * effectiveForeground.b) > 0.5 ? Qt.rgba(0.025, 0.03, 0.05, 0.45) : Qt.rgba(1, 1, 1, 0.35)
     readonly property bool hovered: pointer.containsMouse
     property bool selected: false
     property color hoverTint: tint
@@ -77,6 +79,18 @@ Item {
             color: Qt.rgba(1, 1, 1, 0.10)
         }
     }
+    Rectangle {
+        objectName: "bareIndicator"
+        visible: pill.bare
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: parent.height - height - 1
+        width: Math.min(14, Math.max(6, parent.width - 8))
+        height: 2
+        radius: 1
+        color: pill.shownIcon.length ? pill.iconColor : pill.textColor
+        opacity: pill.selected ? 0.95 : pill.interactive && pill.hovered ? 0.55 : 0
+        Behavior on opacity { NumberAnimation { duration: 140 } }
+    }
     Text {
         x: pill.effectiveLeftPadding
         anchors.verticalCenter: parent.verticalCenter
@@ -85,11 +99,11 @@ Item {
         visible: pill.shownIcon.length > 0
         text: pill.shownIcon
         color: pill.iconColor
-        style: pill.settings.vibrantColor && !pill.backgroundShown && !pill.settings.iconColor ? Text.Outline : Text.Normal
-        styleColor: pill.adaptivePalette && pill.adaptivePalette.glyphOutline ? pill.adaptivePalette.glyphOutline : "#090a0f"
+        style: pill.bare ? Text.Raised : Text.Normal
+        styleColor: pill.glyphShadow
         font.family: "GoMono Nerd Font"; font.pixelSize: pill.effectiveIconSize
         horizontalAlignment: Text.AlignHCenter
-        renderType: Text.NativeRendering
+        renderType: Text.QtRendering
     }
     Text {
         id: label
@@ -99,15 +113,15 @@ Item {
         text: pill.shownText
         textFormat: pill.textFormat
         color: pill.textColor
-        style: pill.settings.vibrantColor && !pill.backgroundShown && !pill.settings.textColor && !(pill.labelIsIcon && pill.settings.iconColor) ? Text.Outline : Text.Normal
-        styleColor: pill.adaptivePalette && pill.adaptivePalette.glyphOutline ? pill.adaptivePalette.glyphOutline : "#090a0f"
+        style: pill.bare ? Text.Raised : Text.Normal
+        styleColor: pill.glyphShadow
         font.family: pill.family
         font.pixelSize: pill.labelIsIcon ? pill.effectiveGlyphSize : pill.settings.fontSize || pill.pixelSize
         font.bold: pill.bold
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
-        renderType: Text.NativeRendering
+        renderType: Text.QtRendering
     }
     MouseArea {
         id: pointer

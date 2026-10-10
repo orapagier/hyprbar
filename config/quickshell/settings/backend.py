@@ -80,6 +80,8 @@ def validate(data):
         number(bar['iconSize'], 8, 48, True)
     if bar['background'] not in ('inherit', 'on', 'off'):
         raise ValueError('Invalid global background')
+    if bar['sharedBackground'] not in ('inherit', 'on', 'off'):
+        raise ValueError('Invalid shared background')
     for key, low, high in [('height', 28, 80), ('marginTop', 0, 100), ('marginSide', 0, 200), ('spacing', 0, 30), ('groupSpacing', 0, 30)]:
         number(bar[key], low, high, True)
     if not isinstance(bar['clockFormat'], str) or not 1 <= len(bar['clockFormat']) <= 100:
@@ -100,7 +102,7 @@ def validate(data):
         for key in ('enabled', 'hideText', 'hideIcon'):
             if type(target[key]) is not bool:
                 raise ValueError(f'{key} must be boolean')
-        for key, choices in [('side', ('left', 'center', 'right')), ('adaptiveColors', ('inherit', 'on', 'off')), ('background', ('inherit', 'on', 'off'))]:
+        for key, choices in [('side', ('left', 'center', 'right')), ('adaptiveColors', ('inherit', 'on', 'off')), ('background', ('inherit', 'on', 'off')), ('sharedBackground', ('inherit', 'on', 'off'))]:
             if target[key] not in choices:
                 raise ValueError(f'Invalid {key}')
         if not isinstance(target['pillGroup'], str) or len(target['pillGroup']) > 40 or any(ord(c) < 32 for c in target['pillGroup']):

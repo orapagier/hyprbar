@@ -97,6 +97,16 @@ ColumnLayout {
             inheritDescription: "Original backgrounds · the launcher and settings icons have no pill."
             onEdited: mode => root.edited("background", mode)
         }
+        SettingsBackgroundControl {
+            objectName: "sharedBackgroundControl"
+            Layout.fillWidth: true
+            switchText: "Show shared (common) pills"
+            mode: root.settings.sharedBackground || "inherit"
+            inheritedVisible: root.settings.background !== "off"
+            inheritLabel: "Follow background pills"
+            inheritDescription: "Shared pills follow the background switch above. Modules keep their grouping and spacing when the pill is hidden."
+            onEdited: mode => root.edited("sharedBackground", mode)
+        }
         SettingsIconSize {
             Layout.fillWidth: true
             settingValue: root.settings.iconSize

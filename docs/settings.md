@@ -43,8 +43,8 @@ inheriting item icons and labels distinct bright colors. The shuffled palette
 reshuffles when the wallpaper image changes, while staying stable during edits
 and matching the preview to the live bar on the same screen. Returning to a
 wallpaper restores its palette for the current session. Colors stay bright on pale and dark wallpapers. Pill backgrounds become darker
-and more opaque where needed for contrast; icons without pills use a thin dark
-outline. Restarting the shell reshuffles the palette. Turning it off restores the current
+and more opaque where needed for contrast; icons without pills use a subtle
+shadow with smooth glyph rendering. Restarting the shell reshuffles the palette. Turning it off restores the current
 theme. Manual text/icon colors and explicit item adaptation on/off choices take
 priority. Pill backgrounds adapt with the vibrant accent for contrast, and tray artwork remains
 application-provided. The preference defaults to off on existing installations.
@@ -53,6 +53,17 @@ Background controls use an explicit **Show background pill** switch: switching
 off removes the pill immediately in the preview and saves that choice. The
 general control affects all inheriting items; each item can set its own switch
 or choose **Use general setting** to follow the global choice again.
+**Show shared (common) pills** controls named group backgrounds separately and
+defaults to following the general background switch. Select any member and use
+**Shared pill → Show this shared pill** to override the whole group; the choice
+is saved on every member, so hiding or reordering members preserves it. Joining
+a group adopts its existing shared background choice. Hiding a shared background
+keeps the group's layout, padding, spacing, and individual actions.
+
+With backgrounds hidden, icons and text use smooth Qt glyph rendering and a
+subtle contrasting shadow, including manual colors. Wallpaper adaptation measures
+bare text against the wallpaper itself. An accent underline marks a hovered or
+selected control and the active workspace without restoring a background pill.
 
 The editor keeps a draft and saves it automatically after 500 ms without an
 edit. A bottom status message names the settings in the successfully saved
@@ -101,6 +112,11 @@ Bluetooth's left spacing at 0). Hidden items contribute no spacing.
 `bar.background` accepts `inherit`, `on`, or `off`. Inherit preserves each
 component's original background; on/off shows/hides all item pills. Individual
 `background` overrides take priority; inherit follows the global choice.
+`bar.sharedBackground` and item `sharedBackground` accept `inherit`, `on`, or
+`off`. The item setting controls its named group's background, then inherits
+the bar shared choice, then the general background choice. Inherit preserves
+visible shared backgrounds when the general choice is also inherit. The first
+visible group member supplies the background colors, opacity, and radius.
 
 `adaptiveColors` and `background` on items accept `inherit`, `on`, or `off`.
 Empty text/icon/color strings inherit original values. `hideText` and

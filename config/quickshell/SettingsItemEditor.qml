@@ -72,6 +72,16 @@ ColumnLayout {
             value: root.settings.pillGroup || ""
             onEdited: value => root.edited("pillGroup", value)
         }
+        SettingsBackgroundControl {
+            objectName: "sharedBackgroundControl"
+            Layout.fillWidth: true
+            visible: !!root.settings.pillGroup
+            switchText: "Show this shared pill"
+            mode: root.settings.sharedBackground || "inherit"
+            inheritedVisible: root.barSettings.sharedBackground === "on" || (root.barSettings.sharedBackground !== "off" && root.barSettings.background !== "off")
+            inheritDescription: "Following the general shared pill setting. This switch changes the whole named group."
+            onEdited: mode => root.edited("sharedBackground", mode)
+        }
     }
     SettingsCard {
         Layout.fillWidth: true
@@ -182,6 +192,7 @@ ColumnLayout {
         }
         SettingsBackgroundControl {
             Layout.fillWidth: true
+            visible: !root.settings.pillGroup
             mode: root.settings.background || "inherit"
             inheritedVisible: root.barSettings.background === "on" || (root.barSettings.background !== "off" && root.settings.id !== "launcher" && root.settings.id !== "settings")
             onEdited: mode => root.edited("background", mode)
