@@ -8,6 +8,7 @@ MODE=install
 DRY_RUN=0
 INSTALL_APPS=0
 SKIP_BROWSER=0
+SKIP_BOOT_SPLASH=0
 TIMEZONE=
 
 usage() {
@@ -19,6 +20,7 @@ Run as your normal user, with sudo access, on an installed Arch Linux system.
   --config-only      Copy configs, compile helpers, and copy wallpapers only
   --extra            Also install daily-driver apps from packages-apps.txt
   --skip-browser     Exclude Chromium from --extra
+  --skip-boot-splash  Leave system boot configuration unchanged
   --timezone ZONE    Set the system timezone (default: preserve current timezone)
   --keep-timezone    Leave the system timezone unchanged
   -h, --help         Show this help
@@ -41,6 +43,7 @@ while (( $# )); do
     --config-only) MODE=config-only ;;
     --extra) INSTALL_APPS=1 ;;
     --skip-browser) SKIP_BROWSER=1 ;;
+    --skip-boot-splash) SKIP_BOOT_SPLASH=1 ;;
     --keep-timezone) TIMEZONE= ;;
     --timezone)
       (( $# >= 2 )) || die '--timezone requires a timezone name'
@@ -127,6 +130,11 @@ if (( DRY_RUN )); then
     fi
     printf 'Enable NetworkManager, Bluetooth, UPower, PipeWire, and WirePlumber; Quickshell owns the notification inbox\n'
     printf 'Timezone: %s\n' "${TIMEZONE:-unchanged}"
+    if (( SKIP_BOOT_SPLASH )); then
+      printf 'Boot splash: leave boot configuration unchanged\n'
+    else
+      printf 'Boot splash: restore saved Arch Plymouth theme for supported mkinitcpio boot layouts; preserve local disk/encryption options\n'
+    fi
   fi
   printf 'Config destination: %s\nWallpaper destination: %s\n' "$CONFIG_DIR" "$HOME/Pictures/Wallpapers"
   printf 'Backups: %s/hyprshell/backups/\n' "$STATE_DIR"
@@ -201,6 +209,11 @@ if ! has_login_manager; then
   sudo pacman -S --needed --noconfirm sddm
   sudo systemctl enable sddm.service
   sudo systemctl set-default graphical.target
+fi
+
+if (( ! SKIP_BOOT_SPLASH )); then
+  log 'Restoring the saved Arch boot splash'
+  sudo python3 "$REPO_DIR/tools/install_boot_splash.py"
 fi
 
 log 'Setup complete'

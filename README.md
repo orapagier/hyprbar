@@ -13,7 +13,8 @@ This repository includes the shell, a Hyprland configuration, an Arch Linux
 installer, desktop utilities, and wallpapers. It is intended for users who
 want a complete starting point that they can customize for their own machine.
 It installs onto an existing Arch system; it does not install the operating
-system or configure disk partitions, a bootloader, or GPU drivers.
+system, partition disks, install a bootloader, or install GPU drivers. It can
+configure an Arch logo splash for a supported existing boot setup.
 
 ## Contents
 
@@ -131,10 +132,14 @@ The installer:
 5. Checks the native runtime, QML components, and Hyprland configuration.
 6. Enables networking, Bluetooth, and user audio services, and starts UPower.
 7. Refreshes fonts and user directories.
+8. Restores the saved Plymouth Arch logo splash on supported mkinitcpio boot
+   setups, preserving the destination machine's disk and encryption settings.
 
 The base package list is in [packages.txt](packages.txt). It includes Kitty,
 Nautilus, UWSM, portals, the Polkit agent, fonts and icons, screenshot and
 brightness tools, NetworkManager, BlueZ, UPower, PipeWire, and WirePlumber.
+It also includes Plymouth. See [boot splash setup and portability](docs/boot-splash.md)
+for supported UKI, GRUB, and systemd-boot layouts and boot configuration backups.
 
 Existing configurations at the managed destinations can be replaced. Backups
 are created before replacement; see [backups and restoration](#backups-and-restoration).
@@ -151,6 +156,7 @@ It does not reboot the machine or restart the running desktop.
 | `--config-only` | Install configurations, utilities, and wallpapers, and compile the spectrum helper; skip package and service changes. |
 | `--extra` | Also install the optional application list in `packages-apps.txt`. |
 | `--skip-browser` | Omit Chromium from the `--extra` application list. |
+| `--skip-boot-splash` | Leave system boot configuration unchanged. |
 | `--timezone ZONE` | Set an explicit timezone, such as `Europe/London`. |
 | `--keep-timezone` | Preserve the current timezone; this is the default. |
 | `--help` | Show command-line help. |

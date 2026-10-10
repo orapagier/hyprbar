@@ -1,0 +1,4 @@
+{
+  "theme": "script",
+  "kernel_parameters": ["quiet", "splash", "loglevel=3"]
+}

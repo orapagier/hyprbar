@@ -40,6 +40,16 @@ class InstallerTests(unittest.TestCase):
             self.assertIn('Preview only', result.stdout)
             self.assertFalse(self.home.exists())
 
+    def test_boot_splash_preview_and_opt_out(self):
+        self.mock_package_database()
+        result = self.run_setup('--dry-run')
+        self.assertIn('Boot splash: restore saved Arch Plymouth theme', result.stdout)
+        result = self.run_setup('--dry-run', '--skip-boot-splash')
+        self.assertIn('Boot splash: leave boot configuration unchanged', result.stdout)
+        result = self.run_setup('--config-only', '--dry-run')
+        self.assertNotIn('Boot splash:', result.stdout)
+        self.assertFalse(self.home.exists())
+
     def mock_package_database(self, missing=()):
         mock_bin = self.root / 'package commands'
         mock_bin.mkdir()
@@ -68,7 +78,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn('Missing desktop packages: hyprland quickshell wpa_supplicant upower', result.stdout)
         targets = queries[2][1:]
         for required in ('hyprpolkitagent', 'qt6-wayland', 'gcc', 'libpulse', 'fftw',
-                         'pipewire-pulse', 'upower', 'wpa_supplicant', 'ttf-go-nerd', 'nautilus'):
+                         'pipewire-pulse', 'upower', 'wpa_supplicant', 'ttf-go-nerd', 'nautilus', 'plymouth'):
             self.assertIn(required, targets)
         for unrelated in ('brave-bin', 'firefox', 'chromium', 'yay', 'waybar', 'mako',
                           'rofi', 'fuzzel', 'cosmic-greeter', 'base-devel',
@@ -162,6 +172,7 @@ class InstallerTests(unittest.TestCase):
         self.assertIn(['sudo', 'systemctl', 'enable', '--now',
                        'NetworkManager.service', 'bluetooth.service'], commands)
         self.assertIn(['sudo', 'systemctl', 'start', 'upower.service'], commands)
+        self.assertIn(['sudo', 'python3', str(ROOT / 'tools/install_boot_splash.py')], commands)
         self.assertIn(['systemctl', '--user', '--root=/', '--no-reload', 'enable',
                        'pipewire.socket', 'pipewire-pulse.socket', 'wireplumber.service'], commands)
         self.assertFalse(any('timedatectl' in c or 'cosmic-greeter' in c for c in commands))

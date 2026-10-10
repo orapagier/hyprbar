@@ -7,6 +7,7 @@ Inspected 2026-10-09. These facts describe ramlej's machine, not every Hyprshell
 - Intel Core i5-1235U (10 cores, 12 threads); integrated Alder Lake Iris Xe; about 16 GiB RAM and 4 GiB swap. Intel CNVi Wi-Fi and Intel PCH audio.
 - Main monitor config uses preferred/auto; `hyprland-gui.lua` overrides eDP-1 to 1920×1080 at 60.01 Hz, scale 1, position 0x0, sRGB. This was verified in files, not via live monitor IPC.
 - `/etc/systemd/system/display-manager.service` points to SDDM. Hyprland startup launches the bar through UWSM, hyprpolkitagent, and the wallpaper helper.
+- Boot splash configured 2026-10-10: Plymouth `script` Arch logo theme, `plymouth` after `udev` in mkinitcpio hooks, and `quiet splash loglevel=3` in `/etc/kernel/cmdline`. The Linux preset generates a UKI at `/boot/EFI/Linux/arch-linux.efi`. User reported a successful rebuild; appearance awaits reboot verification. No disk identifiers belong in the saved splash preference.
 - Kitty terminal, Nautilus file manager; Super release opens launcher; Super+B invokes Brave (binding alone does not prove browser installation). Super+W / Super+Shift+W cycle wallpaper. Print and Insert both screenshot because this keyboard's Print emits Insert.
 - Wallpaper startup selects `$HOME/Pictures/Wallpapers/default.jpg` through awww.
 - Saved locking: enabled, `hyprlock`, 60 idle minutes, before sleep. Confirm current settings before changing locking.

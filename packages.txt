@@ -64,6 +64,9 @@ libnotify
 pacman-contrib
 sudo
 
+# Arch logo during boot (configured for existing mkinitcpio boot setups)
+plymouth
+
 # GitHub sync and browser authentication
 git
 github-cli
