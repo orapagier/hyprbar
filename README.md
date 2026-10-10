@@ -15,12 +15,15 @@ want a complete starting point that they can customize for their own machine.
 It installs onto an existing Arch system; it does not install the operating
 system, partition disks, install a bootloader, or install GPU drivers. It can
 configure the animated Hyprshell Glass splash for a supported existing boot setup.
+Full setup also installs the matching animated SDDM login theme and restores
+the desktop preferences saved in this checkout.
 
 ## Contents
 
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Restoring the saved setup on a new machine](#restoring-the-saved-setup-on-a-new-machine)
 - [First login and machine-specific configuration](#first-login-and-machine-specific-configuration)
 - [Using the desktop](#using-the-desktop)
 - [Keyboard and mouse shortcuts](#keyboard-and-mouse-shortcuts)
@@ -36,6 +39,8 @@ configure the animated Hyprshell Glass splash for a supported existing boot setu
 
 | Component | What it provides |
 | --- | --- |
+| Boot appearance | Animated Hyprshell Glass Plymouth splash, plus matching static artwork for supported unified kernel images. |
+| Login screen | Matching animated Glass SDDM theme with user, password, session, keyboard layout, and power controls. |
 | Application launcher | Search installed desktop applications and launch them from the bar or Super key. |
 | Workspace controls | Switch between Hyprland workspaces. |
 | Media display | Playback information and a twelve-band audio spectrum captured from speaker output. |
@@ -47,7 +52,7 @@ configure the animated Hyprshell Glass splash for a supported existing boot setu
 | Battery | Charge and health information when available from the hardware. |
 | System tray | Application-provided tray icons. |
 | Power menu | Lock, sleep, logout, reboot, and shutdown actions. |
-| Settings | A live bar preview, drag-to-reorder modules, appearance controls, selected Hyprland settings, and a shortcut editor. |
+| Settings | A live bar preview, drag-to-reorder modules, desktop and application appearance, displays, input, power, default apps, login startup, and a shortcut editor. |
 | Shortcut overlay | Search active Hyprland shortcuts with `Super+K`. |
 | Optional management tools | Screen locking, scheduled file cleanup, and GitHub configuration sync. |
 
@@ -132,9 +137,10 @@ The installer:
 5. Checks the native runtime, QML components, and Hyprland configuration.
 6. Enables networking, Bluetooth, and user audio services, and starts UPower.
 7. Refreshes fonts and user directories.
-8. Restores the saved Plymouth Hyprshell Glass splash on supported mkinitcpio boot
+8. Installs and enables SDDM if no login manager is found, then restores the
+   matching animated Glass login theme when the login manager is SDDM.
+9. Restores the saved Plymouth Hyprshell Glass splash on supported mkinitcpio boot
    setups, preserving the destination machine's disk and encryption settings.
-9. Restores the matching animated Glass login theme when the login manager is SDDM.
 
 The base package list is in [packages.txt](packages.txt). It includes Kitty,
 Nautilus, UWSM, portals, the Polkit agent, fonts and icons, screenshot and
@@ -151,6 +157,25 @@ The installer preserves your timezone and existing login manager. If no login
 manager is configured or detected as an installed service, it installs SDDM,
 enables it for the next boot, and selects the graphical boot target.
 It does not reboot the machine or restart the running desktop.
+
+### Boot and login appearance
+
+The startup sequence uses a shared dark glass design with lavender/cyan
+lighting and Hyprshell lettering. On a supported UKI installation, a static
+matching image appears before Plymouth animates the title, glow, and boot
+progress. SDDM then shows the animated login card. Plymouth also supplies
+password prompts and shutdown artwork.
+
+![Hyprshell Glass boot splash](docs/assets/boot-splash-preview.png)
+
+![Hyprshell Glass login screen](docs/assets/login-preview.png)
+
+Firmware logos and the existing bootloader menu remain machine-specific.
+Plymouth and SDDM have separate animation clocks; graphics initialization can
+cause a brief blank frame between them. Check the sequence after reboot on
+each machine. The detailed [boot](docs/boot-splash.md) and
+[login](docs/login-appearance.md) guides include previews, separate installers,
+supported layouts, and recovery instructions.
 
 ### Installation options
 
@@ -205,6 +230,55 @@ uwsm start -e -D Hyprland hyprland.desktop
 Use `Super+T` to open a terminal and press and release `Super` to open the
 application launcher. The Windows key is normally the Super key.
 
+## Restoring the saved setup on a new machine
+
+On a fresh, bootable x86_64 Arch installation, full setup restores the saved
+boot appearance, SDDM login theme, and Hyprshell desktop from your checkout.
+It restores the configuration you saved; it does not clone the entire previous
+machine or guarantee identical behavior on different hardware.
+
+Before moving, use **Settings → Sync to GitHub** on the original machine and
+check that it succeeds. On the new machine, clone **your synced repository**
+using the installation steps above. A clone receives pushed commits; changes
+that exist only in the old machine's checkout or installed files are not
+available there. Then run:
+
+```bash
+./setup.sh --extra --dry-run
+./setup.sh --extra
+```
+
+`--extra` includes the optional applications and Hyprlock needed by this
+checkout's saved automatic-locking preference. Plain `./setup.sh` installs the
+base desktop, boot splash, and login theme, but skips the optional application
+list. Reboot after successful setup and select **Hyprland (uwsm-managed)**.
+
+| Saved configuration | What setup restores |
+| --- | --- |
+| Boot splash | Bundled Plymouth artwork, animation, and quiet-boot preferences on supported mkinitcpio UKI, GRUB, or systemd-boot layouts. Supported UKI presets receive the matching static BMP. |
+| Login appearance | Bundled animated `hyprshell-glass` SDDM theme. Setup installs SDDM when no login manager is found; an existing different manager keeps its appearance. |
+| Desktop | Quickshell bar, launcher, menus, notification policy, saved layout and appearance, Hyprland Lua sections, shortcuts, input, power, locking, and cleanup preferences. |
+| Application preferences | Saved light/dark mode and any saved font/cursor choices are applied at desktop startup when available. Default-app and login-startup choices are restored for installed application entries. |
+| Utilities and wallpapers | Managed launch helpers, Bash shortcuts, portal and autostart files, application shortcuts, and bundled wallpapers. Startup selects `default.jpg`; a cycled wallpaper is not saved as the next login's selection. |
+
+Review the saved display rules on the new hardware, especially this checkout's
+explicit `eDP-1` mode. Boot setup requires an existing supported boot layout,
+a writable boot partition, and suitable graphics drivers; other layouts need
+manual integration or `--skip-boot-splash`. Hardware changes can affect display
+scaling, splash transitions, audio devices, brightness, Bluetooth, and battery
+information. Setup preserves the destination machine's timezone unless you
+pass `--timezone ZONE`.
+
+Keep separate backups or installation steps for personal files, credentials,
+Wi-Fi connections, Bluetooth pairings, browser profiles, app-specific settings,
+audio routing/volumes, notification history, and recovery checkpoints. Apps
+outside the package lists and Distrobox containers are not recreated. For
+example, `Super+B` invokes Brave, which neither package list installs, and this
+checkout's saved media defaults refer to `fedora-vlc.desktop`, which is skipped
+until that container-exported application is available. Additional wallpapers
+are included in sync only when their filenames are already managed by the
+repository. Running windows and other session state are not restored.
+
 ## First login and machine-specific configuration
 
 The supplied configuration is a starting point. Review these defaults for your
@@ -212,7 +286,7 @@ own hardware and preferences:
 
 | Setting | Where to change it |
 | --- | --- |
-| Display resolution, refresh rate, scale, and position | `~/.config/hyprshell/hyprland/monitors.lua` and generated `hypr/hyprland-gui.lua` |
+| Display resolution, refresh rate, scale, and position | Settings → Displays; underlying rules in `~/.config/hyprshell/hyprland/monitors.lua` and `hypr/hyprland-gui.lua`. |
 | Keyboard layout | The `input.kb_layout` value in `~/.config/hyprshell/hyprland/input.lua`; bundled value is `us`. |
 | Terminal and file manager | The `terminal` and `fileManager` entries in `~/.config/hyprshell/hyprland/programs.lua`. |
 | Browser shortcut | The `Super+B` default binding in `hyprshell/hyprland/shortcuts.lua`; it currently invokes Brave, which the installer does not install. |
@@ -401,9 +475,11 @@ Lua configuration. The settings backend also supports traditional `.conf`
 main configurations. Changes are validated and backed up; a failed Hyprland
 reload rolls back affected files.
 
-The Settings window does not manage monitor layouts, arbitrary third-party
-Quickshell components, or every Hyprland option. Edit
-the appropriate configuration files for those changes. See
+Settings → Displays manages connected outputs and saves confirmed choices in
+`hyprshell/displays.json` and generated `displays.lua`. New outputs follow the
+automatic monitor rule. Arbitrary third-party Quickshell components and
+Hyprland options outside the available settings still require editing the
+appropriate configuration files. See
 [the settings reference](docs/settings.md) for detailed behavior and extension
 points.
 
@@ -423,8 +499,10 @@ shows active bindings, including these edits.
 
 ## Screen locking
 
-Automatic locking starts disabled. To use the supplied locker and idle
-manager, install them through `--extra` or separately:
+The component default for automatic locking is disabled, but this checkout's
+saved preferences enable Hyprlock after 60 idle minutes and before sleep.
+Setup restores those saved preferences. Install the locker through `--extra`
+or install the locker and idle manager separately:
 
 ```bash
 sudo pacman -Syu --needed hypridle hyprlock
@@ -477,8 +555,10 @@ to a repository named `hyprshell` in your authenticated GitHub account.
 4. Select **Check again** and verify the displayed account and target.
 5. Start the sync and check its result.
 
-The tool snapshots live `hypr/` and `quickshell/` configurations and saved
-`hyprshell/settings.json`, cleanup preferences, and shortcut customizations.
+The tool snapshots live `hypr/` and `quickshell/` configurations, editable
+Hyprland sections, and saved `hyprshell/settings.json`, cleanup preferences,
+shortcut and display customizations, application appearance, default apps,
+and login-startup choices.
 It also captures installed copies of files already managed by the checkout:
 portal preferences, autostart overrides, utilities, application shortcuts, and
 bundled wallpaper filenames. Additional personal files in those locations are
@@ -486,6 +566,12 @@ not imported automatically. It also commits project files: configuration,
 utilities, assets, tools, tests, documentation, workflows, package manifests,
 the installer, and README. This keeps the installation guide and installer in
 sync with the desktop. Tracked deletions in these paths are included.
+
+Boot and SDDM artwork, preferences, and their installers are preserved as
+repository files. Sync does not read back root-owned boot or login files;
+preserve changes to those themes in `config/boot/` or `config/sddm/` and their
+installers before syncing. Setup derives the new machine's boot configuration
+locally rather than copying the old machine's disk identifiers or boot images.
 
 Backups, logs, Python caches, and the compiled spectrum helper are excluded
 from the live snapshot. Files outside the explicit project paths remain
@@ -693,11 +779,14 @@ and Hyprshell is running. Review errors on the Screen locking page.
 | `config/quickshell/` | QML/JavaScript shell, service bindings, and settings helpers. |
 | `config/hypr/` | Bundled Hyprland configuration and wallpaper scripts. |
 | `config/hyprshell/` | Saved preferences installed with the desktop. |
+| `config/boot/` | Saved Plymouth preferences, animated Glass theme, source artwork, and static UKI splash. |
+| `config/sddm/hyprshell-glass/` | Matching animated Qt 6 login theme and artwork. |
 | `config/autostart/` | Managed application autostart overrides. |
 | `config/xdg-desktop-portal/` | Portal configuration. |
 | `bin/` | Shell launcher, application launcher, and settings shortcut. |
 | `assets/` | Wallpapers and application desktop entries. |
 | `tools/` | Installer and runtime validation helpers. |
+| `docs/boot-splash.md` / `docs/login-appearance.md` | Boot/login installation, previews, portability limits, and recovery. |
 | `tests/` | Python tests for installation, settings, sync, locking, and cleanup. |
 | `config/quickshell/tests/` | QML component tests and spectrum checks. |
 | `packages.txt` / `packages-apps.txt` | Base desktop and optional application manifests. |
