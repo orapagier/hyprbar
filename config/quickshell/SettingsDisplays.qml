@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import Quickshell.Io
@@ -117,8 +118,8 @@ ColumnLayout {
             SettingsButton { objectName: "applyDisplays"; text: "Apply changes…"; highlighted: true; visible: !page.pending; enabled: page.loaded && page.entries.length > 0 && !page.busy; onClicked: page.request("preview") }
             SettingsButton { text: "Refresh"; visible: !page.pending; enabled: !page.busy; onClicked: page.request("status") }
         }
-        Label { visible: !!page.message; text: page.message; color: page.success ? "#a6e3a1" : "#f38ba8"; Layout.fillWidth: true; wrapMode: Text.Wrap }
-        Label { visible: page.loaded && !page.monitors.length; text: "No active displays found."; color: "#aeb9d2" }
+        Label { visible: !!page.message; text: page.message; color: page.success ? Style.success : Style.danger; Layout.fillWidth: true; wrapMode: Text.Wrap }
+        Label { visible: page.loaded && !page.monitors.length; text: "No active displays found."; color: Style.muted }
     }
     Repeater {
         model: page.monitors
@@ -145,7 +146,7 @@ ColumnLayout {
                 columnSpacing: 20; rowSpacing: 16
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Label { text: "Resolution"; color: "#aeb9d2" }
+                    Label { text: "Resolution"; color: Style.muted }
                     SettingsComboBox {
                         objectName: "displayResolution"
                         Layout.fillWidth: true
@@ -159,7 +160,7 @@ ColumnLayout {
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Label { text: "Refresh rate"; color: "#aeb9d2" }
+                    Label { text: "Refresh rate"; color: Style.muted }
                     SettingsComboBox {
                         objectName: "displayRefresh"
                         Layout.fillWidth: true
@@ -170,7 +171,7 @@ ColumnLayout {
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Label { text: "Scale"; color: "#aeb9d2" }
+                    Label { text: "Scale"; color: Style.muted }
                     SettingsComboBox {
                         objectName: "displayScale"
                         Layout.fillWidth: true
@@ -186,7 +187,7 @@ ColumnLayout {
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Label { text: "Rotation"; color: "#aeb9d2" }
+                    Label { text: "Rotation"; color: Style.muted }
                     SettingsComboBox {
                         objectName: "displayRotation"
                         Layout.fillWidth: true
@@ -199,7 +200,7 @@ ColumnLayout {
             ColumnLayout {
                 Layout.fillWidth: true
                 visible: page.monitors.length > 1
-                Label { text: "Place this display next to"; color: "#aeb9d2" }
+                Label { text: "Place this display next to"; color: Style.muted }
                 SettingsComboBox {
                     id: anchorDisplay
                     Layout.fillWidth: true
@@ -222,14 +223,14 @@ ColumnLayout {
             RowLayout {
                 Layout.fillWidth: true
                 visible: card.entry.position !== "auto"
-                Label { text: "X"; color: "#aeb9d2" }
+                Label { text: "X"; color: Style.muted }
                 SpinBox {
                     objectName: "displayX"
                     Layout.fillWidth: true; editable: true; from: -32000; to: 32000
                     value: parseInt(card.entry.position.split("x")[0]) || 0
                     onValueModified: page.edit(card.index, "position", value + "x" + card.entry.position.split("x")[1])
                 }
-                Label { text: "Y"; color: "#aeb9d2" }
+                Label { text: "Y"; color: Style.muted }
                 SpinBox {
                     objectName: "displayY"
                     Layout.fillWidth: true; editable: true; from: -32000; to: 32000
@@ -237,7 +238,7 @@ ColumnLayout {
                     onValueModified: page.edit(card.index, "position", card.entry.position.split("x")[0] + "x" + value)
                 }
             }
-            Label { text: "Place a second display beside the first using its width ÷ scale for X (use height ÷ scale when rotated). Negative X places it to the left."; Layout.fillWidth: true; wrapMode: Text.Wrap; color: "#98a5bf"; font.pixelSize: 11 }
+            Label { text: "Place a second display beside the first using its width ÷ scale for X (use height ÷ scale when rotated). Negative X places it to the left."; Layout.fillWidth: true; wrapMode: Text.Wrap; color: Style.muted; font.pixelSize: Style.captionSize }
         }
     }
 }

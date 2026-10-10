@@ -1,33 +1,39 @@
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 
 Button {
     id: control
     property string symbol: "󰒓"
     property bool itemEnabled: true
-    implicitHeight: 34
+    implicitHeight: 42
     leftPadding: 13; rightPadding: 13
     hoverEnabled: true
+    Accessible.name: text
+    Accessible.description: highlighted ? "Current page" : itemEnabled ? "" : "Bar item is hidden"
+    ToolTip.visible: (hovered || activeFocus) && truncated
+    ToolTip.text: text
+    readonly property bool truncated: labelText.truncated
     contentItem: Item {
-        implicitWidth: 190; implicitHeight: 22
+        implicitWidth: 180; implicitHeight: 24
         Text {
             text: control.symbol; width: 22; anchors.verticalCenter: parent.verticalCenter
-            color: control.highlighted ? "#d3c6ff" : "#8f9ab8"
+            color: control.highlighted ? Style.text : Style.muted
             font.family: "GoMono Nerd Font"; font.pixelSize: 16
         }
         Text {
-            x: 33; width: parent.width - 43; anchors.verticalCenter: parent.verticalCenter
-            text: control.text; font.pixelSize: 12
-            color: control.highlighted ? "#eeeaff" : control.itemEnabled ? "#b7c0d8" : "#758099"
+            id: labelText
+            x: 33; width: parent.width - 33; anchors.verticalCenter: parent.verticalCenter
+            text: control.text; font.pixelSize: Style.bodySize; font.weight: control.highlighted ? Font.DemiBold : Font.Normal
+            color: control.itemEnabled ? Style.text : Style.disabled
             elide: Text.ElideRight
         }
-        Rectangle { width: 4; height: 4; radius: 2; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; color: control.highlighted ? "#c0acff" : "transparent" }
     }
     background: Rectangle {
         radius: 8
-        color: control.highlighted ? "#302d43" : control.hovered ? "#232b38" : "transparent"
-        border.width: control.highlighted || control.activeFocus ? 1 : 0
-        border.color: control.activeFocus ? "#b4a2ff" : "#504865"
-        Behavior on color { ColorAnimation { duration: 140 } }
+        color: control.highlighted ? Style.selection : control.hovered ? Style.button : "transparent"
+        border.width: control.activeFocus ? 2 : 0
+        border.color: control.activeFocus ? Style.accentText : Style.border
+        Behavior on color { ColorAnimation { duration: Style.duration(control, 140) } }
     }
 }

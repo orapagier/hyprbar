@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
@@ -86,8 +87,8 @@ ColumnLayout {
             Layout.fillWidth: true
             text: "Give each item a bright color. Colors reshuffle when the wallpaper changes and stay readable. Turn off to use the current theme. Individual colors and wallpaper choices take priority."
             wrapMode: Text.WordWrap
-            color: "#939bb3"
-            font.pixelSize: 11
+            color: Style.muted
+            font.pixelSize: Style.captionSize
         }
         SettingsBackgroundControl {
             Layout.fillWidth: true
@@ -128,8 +129,8 @@ ColumnLayout {
         Label {
             Layout.fillWidth: true
             text: "Preview   " + Qt.formatDateTime(new Date(), root.settings.clockFormat)
-            color: "#b9afd9"
-            font.pixelSize: 13
+            color: Style.accentText
+            font.pixelSize: Style.bodySize
             wrapMode: Text.Wrap
         }
     }

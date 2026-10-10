@@ -1,29 +1,36 @@
 import QtQuick
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
+import "SettingsStyle.js" as Style
 
-Rectangle {
+ColumnLayout {
     id: root
     required property string title
     property string subtitle: ""
     default property alias controls: body.data
-    implicitHeight: content.implicitHeight + 40
     Layout.minimumWidth: 0
-    color: "#1d2430"
-    radius: 12
-    border.color: "#303948"
+    spacing: 10
     ColumnLayout {
-        id: content
-        anchors.fill: parent
-        anchors.margins: 20
-        spacing: 16
+        Layout.fillWidth: true
+        Layout.leftMargin: 2
+        Layout.rightMargin: 2
+        spacing: 4
+        Label { Layout.fillWidth: true; text: root.title; color: Style.text; font.pixelSize: Style.sectionSize; font.weight: Font.DemiBold; wrapMode: Text.WordWrap }
+        Label { visible: text !== ""; text: root.subtitle; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Style.muted; font.pixelSize: Style.captionSize }
+    }
+    Rectangle {
+        Layout.fillWidth: true
+        implicitHeight: body.implicitHeight + 36
+        color: Style.surface
+        radius: Style.radius
+        border.color: Style.separator
         ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 5
-            Label { text: root.title; color: "#edf0fa"; font.pixelSize: 15; font.bold: true }
-            Label { visible: text !== ""; text: root.subtitle; Layout.fillWidth: true; wrapMode: Text.WordWrap; color: "#98a5bf"; font.pixelSize: 11 }
+            id: body
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 18
+            spacing: 16
         }
-        Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: "#303a50" }
-        ColumnLayout { id: body; Layout.fillWidth: true; spacing: 20 }
     }
 }

@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
@@ -13,8 +14,8 @@ ColumnLayout {
     spacing: 6
     RowLayout {
         Layout.fillWidth: true
-        Label { Layout.fillWidth: true; text: control.label; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: "#ecebff" }
-        Label { text: control.displayMuted ? "Muted" : control.available ? Math.round(control.node.audio.volume * 100) + "%" : "—"; color: "#b4befe" }
+        Label { Layout.fillWidth: true; text: control.label; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: Style.text }
+        Label { text: control.displayMuted ? "Muted" : control.available ? Math.round(control.node.audio.volume * 100) + "%" : "—"; color: Style.accentText }
         SettingsButton {
             objectName: "soundMuteControl"
             text: control.available && control.node.audio.muted ? "Unmute" : "Mute"
@@ -39,9 +40,9 @@ ColumnLayout {
         background: Rectangle {
             implicitWidth: 200; implicitHeight: 4
             x: slider.leftPadding; y: slider.height / 2 - height / 2
-            width: slider.availableWidth; height: implicitHeight; radius: 2; color: "#363e58"
-            Rectangle { width: slider.visualPosition * parent.width; height: 4; radius: 2; color: "#b4befe" }
+            width: slider.availableWidth; height: implicitHeight; radius: 2; color: Style.controlBorder
+            Rectangle { width: slider.visualPosition * parent.width; height: 4; radius: 2; color: Style.accentText }
         }
-        handle: Rectangle { x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width); y: slider.height / 2 - height / 2; implicitWidth: 14; implicitHeight: 14; radius: 7; color: "#cdd6f4" }
+        handle: Rectangle { x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width); y: slider.height / 2 - height / 2; implicitWidth: 14; implicitHeight: 14; radius: 7; color: Style.onAccent }
     }
 }

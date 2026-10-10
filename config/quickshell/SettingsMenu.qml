@@ -1,4 +1,5 @@
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Layouts
 
 ColumnLayout {
@@ -11,7 +12,7 @@ ColumnLayout {
         Layout.fillWidth: true
         text: "Arrange your bar, personalize its colors, and fine-tune Hyprland."
         wrapMode: Text.WordWrap
-        color: "#a6adc8"
+        color: Style.muted
     }
     SettingsButton {
         objectName: "openSettingsButton"

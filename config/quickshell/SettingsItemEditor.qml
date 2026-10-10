@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
@@ -33,7 +34,7 @@ ColumnLayout {
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 8
-                Label { text: "Alignment"; color: "#aeb9d2"; font.pixelSize: 12 }
+                Label { text: "Alignment"; color: Style.muted; font.pixelSize: Style.bodySize }
                 SettingsComboBox {
                     Layout.fillWidth: true
                     model: ["Left", "Center", "Right"]
@@ -44,7 +45,7 @@ ColumnLayout {
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 8
-                Label { text: "Order within group"; color: "#aeb9d2"; font.pixelSize: 12 }
+                Label { text: "Order within group"; color: Style.muted; font.pixelSize: Style.bodySize }
                 RowLayout {
                     Layout.fillWidth: true
                     SettingsButton { Layout.fillWidth: true; text: "← Earlier"; onClicked: root.moveRequested(-1) }
@@ -183,7 +184,7 @@ ColumnLayout {
         subtitle: "Custom colors take priority over wallpaper colors."
         RowLayout {
             Layout.fillWidth: true
-            Label { text: "Wallpaper colors"; color: "#e2e6f3"; font.pixelSize: 12; Layout.fillWidth: true }
+            Label { text: "Wallpaper colors"; color: Style.text; font.pixelSize: Style.bodySize; Layout.fillWidth: true }
             SettingsComboBox {
                 model: ["Use general setting", "Enabled", "Disabled"]
                 currentIndex: Math.max(0, ["inherit", "on", "off"].indexOf(root.settings.adaptiveColors))

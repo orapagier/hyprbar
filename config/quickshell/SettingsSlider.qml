@@ -1,4 +1,5 @@
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
@@ -33,15 +34,15 @@ ColumnLayout {
         Layout.fillWidth: true
         Label {
             text: root.label
-            color: "#e2e6f3"
-            font.pixelSize: 12
+            color: Style.text
+            font.pixelSize: Style.bodySize
             Layout.fillWidth: true
         }
         Label {
             objectName: "sliderValue"
             text: root.inherited ? root.inheritedText : Number(root.displayValue.toFixed(2)) + root.suffix
-            color: root.inherited ? "#8996b1" : "#c9bdff"
-            font.pixelSize: 12
+            color: root.inherited ? Style.muted : Style.accentText
+            font.pixelSize: Style.bodySize
         }
         ToolButton {
             objectName: "sliderReset"
@@ -53,8 +54,8 @@ ColumnLayout {
             hoverEnabled: true
             Accessible.name: "Reset " + root.label
             onClicked: root.edited("")
-            contentItem: Text { text: parent.text; color: root.inherited ? "#59647e" : "#b9c4dd"; font.pixelSize: 18; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-            background: Rectangle { radius: 7; color: parent.hovered || parent.activeFocus ? "#35405a" : "transparent"; border.color: parent.activeFocus ? "#b4a2ff" : "transparent" }
+            contentItem: Text { text: parent.text; color: root.inherited ? Style.disabled : Style.muted; font.pixelSize: 18; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+            background: Rectangle { radius: 7; color: parent.hovered || parent.activeFocus ? Style.controlBorder : "transparent"; border.color: parent.activeFocus ? Style.accentText : "transparent" }
             ToolTip.visible: hovered
             ToolTip.text: root.resetDescription
         }
@@ -91,12 +92,12 @@ ColumnLayout {
                 width: slider.availableWidth
                 height: 5
                 radius: 3
-                color: "#35405a"
+                color: Style.controlBorder
                 Rectangle {
                     width: slider.visualPosition * parent.width
                     height: parent.height
                     radius: 3
-                    color: root.inherited ? "#63718e" : "#aa96ed"
+                    color: root.inherited ? Style.muted : Style.accentText
                 }
             }
             handle: Rectangle {
@@ -105,9 +106,9 @@ ColumnLayout {
                 implicitWidth: 18
                 implicitHeight: 18
                 radius: 9
-                color: slider.pressed ? "#ffffff" : "#e5ddff"
+                color: slider.pressed ? Style.onAccent : Style.text
                 border.width: slider.activeFocus || slider.hovered ? 3 : 2
-                border.color: slider.activeFocus || slider.hovered ? "#ab94f3" : "#756796"
+                border.color: slider.activeFocus || slider.hovered ? Style.accentText : Style.onAccent
             }
         }
         SettingsButton {
@@ -125,8 +126,8 @@ ColumnLayout {
         visible: root.description !== ""
         Layout.fillWidth: true
         text: root.description
-        color: "#8f9bb5"
-        font.pixelSize: 11
+        color: Style.muted
+        font.pixelSize: Style.captionSize
         wrapMode: Text.WordWrap
     }
 }

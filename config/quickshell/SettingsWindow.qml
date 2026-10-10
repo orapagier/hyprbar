@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import Quickshell
@@ -29,7 +30,47 @@ FloatingWindow {
     onDraftChanged: if (editingSession) autoSave.restart()
     onVisibleChanged: if (!visible && editingSession && dirty) apply()
     property int section: -1
-    onSectionChanged: Qt.callLater(() => { if (editorScroll.contentItem) editorScroll.contentItem.contentY = 0; })
+    property var scrollPositions: ({})
+    property int previousSection: -1
+    property string searchQuery: ""
+    property bool barItemsExpanded: false
+    readonly property var navigation: [
+        {group: "Desktop", pages: [
+            {section: -8, title: "Appearance", symbol: "󰔎", keywords: "theme colors font cursor"},
+            {section: -2, title: "Windows", symbol: "󰖲", keywords: "hyprland transparency blur gaps animations"},
+            {section: -1, title: "Bar & layout", symbol: "󰕮", keywords: "topbar hyprbar spacing"},
+            {section: -13, title: "Applications", symbol: "󰀻", keywords: "default apps startup"},
+            {section: -11, title: "Notifications", symbol: "󰂚", keywords: "delivery popups disturb"}
+        ]},
+        {group: "Devices", pages: [
+            {section: -7, title: "Displays", symbol: "󰍹", keywords: "monitor resolution scale rotation"},
+            {section: -12, title: "Sound", symbol: "󰕾", keywords: "audio volume microphone speakers"},
+            {section: -9, title: "Mouse & keyboard", symbol: "󰍽", keywords: "input touchpad scrolling typing layouts"},
+            {section: -6, title: "Keyboard shortcuts", symbol: "󰌌", keywords: "keybindings hotkeys"}
+        ]},
+        {group: "System", pages: [
+            {section: -10, title: "Power & battery", symbol: "󰁹", keywords: "brightness sleep lid profiles"},
+            {section: -3, title: "Screen locking", symbol: "󰌾", keywords: "security idle lock"},
+            {section: -4, title: "Cleanup", symbol: "󰃢", keywords: "storage files maintenance"},
+            {section: -14, title: "Updates & recovery", symbol: "󰁯", keywords: "backup restore checkpoints"},
+            {section: -5, title: "Hyprskill", symbol: "󰒓", keywords: "agents coding knowledge"}
+        ]}
+    ]
+    readonly property var barNavigation: draft.items.map((item, index) => ({section: index, title: names[item.id] || item.id, symbol: symbols[item.id] || "󰒓", keywords: "bar item " + item.id, itemEnabled: item.enabled}))
+    readonly property var searchResults: navigation.reduce((pages, group) => pages.concat(matchingPages(group.pages)), []).concat(matchingPages(barNavigation))
+    function matchingPages(pages) {
+        let query = searchQuery.trim().toLowerCase();
+        return pages.filter(page => !query || (page.title + " " + page.keywords).toLowerCase().includes(query));
+    }
+    onSectionChanged: {
+        if (editorScroll.contentItem) scrollPositions[previousSection] = editorScroll.contentItem.contentY;
+        previousSection = section;
+        if (section >= 0) barItemsExpanded = true;
+        Qt.callLater(() => {
+            if (editorScroll.contentItem) editorScroll.contentItem.contentY = scrollPositions[section] || 0;
+        });
+        pageFade.restart();
+    }
     property string message: ""
     property bool success: true
     property string savedNotice: ""
@@ -67,8 +108,8 @@ FloatingWindow {
     visible: false
     title: "Hyprshell Settings"
     implicitWidth: screen ? Math.min(1180, Math.round(screen.width * 0.9)) : 1180
-    implicitHeight: screen ? Math.round(screen.height * 0.75) : 810
-    color: "#10131c"
+    implicitHeight: screen ? Math.min(860, Math.round(screen.height * 0.85)) : 810
+    color: Style.background
     function open() {
         minimized = false;
         if (visible) {
@@ -263,6 +304,20 @@ FloatingWindow {
             }
         }
     }
+    Shortcut {
+        sequence: "Ctrl+F"
+        enabled: window.visible
+        onActivated: { searchField.forceActiveFocus(); searchField.selectAll(); }
+    }
+    NumberAnimation {
+        id: pageFade
+        target: pageContent
+        property: "opacity"
+        from: 0.65
+        to: 1
+        duration: window.draft.hyprland.animations === false ? 0 : 140
+        easing.type: Easing.OutCubic
+    }
     Popup {
         id: githubDialog
         objectName: "githubSyncDialog"
@@ -271,12 +326,12 @@ FloatingWindow {
         padding: 24
         modal: true
         closePolicy: githubSync.running ? Popup.NoAutoClose : Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        background: Rectangle { color: "#1c2130"; radius: 14; border.color: "#545d79" }
+        background: Rectangle { color: Style.surface; radius: 14; border.color: Style.controlBorder }
         contentItem: ColumnLayout {
             spacing: 14
-            Label { text: "  Sync to GitHub"; color: "#ecebff"; font.pixelSize: 20; font.bold: true }
-            Label { objectName: "githubRepositoryLabel"; text: window.syncRepository || "Sign in to find your repository"; color: "#b4a2ff" }
-            Label { Layout.fillWidth: true; text: window.syncMessage; wrapMode: Text.WordWrap; color: window.syncSuccess ? "#9eafb7" : "#f38ba8" }
+            Label { text: "Sync to GitHub"; color: Style.text; font.pixelSize: 20; font.bold: true }
+            Label { objectName: "githubRepositoryLabel"; text: window.syncRepository || "Sign in to find your repository"; color: Style.accentText }
+            Label { Layout.fillWidth: true; text: window.syncMessage; wrapMode: Text.WordWrap; color: window.syncSuccess ? Style.muted : Style.danger }
             RowLayout {
                 SettingsButton {
                     objectName: "githubForkButton"
@@ -339,39 +394,44 @@ FloatingWindow {
         }
     }
     Pane {
+        objectName: "settingsRoot"
         anchors.fill: parent
-        padding: 20
-        topPadding: 20
-        bottomPadding: 12
-        palette.window: "#10131c"
-        palette.windowText: "#ecebff"
-        palette.text: "#ecebff"
-        palette.base: "#1c2130"
-        palette.button: "#252b3d"
-        palette.buttonText: "#ecebff"
-        palette.highlight: "#b4a2ff"
-        palette.highlightedText: "#151020"
-        palette.brightText: "#151020"
-        palette.dark: "#b4a2ff"
-        palette.mid: "#363e58"
-        font.family: "DejaVu Sans"
-        background: Rectangle { color: "#141820" }
+        padding: 0
+        property bool settingsMotionEnabled: window.draft.hyprland.animations !== false
+        palette.window: Style.background
+        palette.windowText: Style.text
+        palette.text: Style.text
+        palette.base: Style.surface
+        palette.button: Style.button
+        palette.buttonText: Style.text
+        palette.highlight: Style.accent
+        palette.highlightedText: Style.onAccent
+        palette.brightText: Style.onAccent
+        palette.dark: Style.accentText
+        palette.mid: Style.border
+        font.family: "Noto Sans"
+        font.pixelSize: Style.bodySize
+        background: Rectangle { color: Style.background }
         contentItem: ColumnLayout {
-            spacing: 16
+            spacing: 0
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: false
+                Layout.preferredHeight: 64
+                Layout.leftMargin: 22
+                Layout.rightMargin: 22
                 ColumnLayout {
                     spacing: 2
                     Label {
-                        text: "Hyprshell"
-                        font.pixelSize: 24
+                        text: "Settings"
+                        font.pixelSize: 18
                         font.bold: true
-                        color: "#ecebff"
+                        color: Style.text
                     }
                     Label {
-                        text: "Settings"
-                        color: "#939bb3"
+                        text: "Hyprshell"
+                        font.pixelSize: Style.captionSize
+                        color: Style.muted
                     }
                 }
                 Item {
@@ -379,7 +439,7 @@ FloatingWindow {
                 }
                 SettingsButton {
                     objectName: "githubSyncButton"
-                    text: githubSync.running ? "Syncing…" : "  Sync to GitHub"
+                    text: githubSync.running ? "Syncing…" : "Sync to GitHub"
                     enabled: !githubSync.running && !window.dirty && !window.saving && window.success && window.store.loaded && !cleanupPage.busy && !recoveryPage.busy
                     ToolTip.visible: hovered
                     ToolTip.text: "Commit and push your desktop setup to your GitHub hyprshell repository"
@@ -400,277 +460,239 @@ FloatingWindow {
                     }
                 }
             }
-            Rectangle {
-                Layout.fillWidth: true
-                visible: window.section >= -1
-                Layout.preferredHeight: previewBar.y + previewBar.height * previewBar.scale + 16
-                radius: 12
-                color: "#1a202b"
-                border.color: "#2c3443"
-                Label {
-                    x: 16
-                    y: 12
-                    text: "LIVE PREVIEW   ·   Drag to rearrange, click to customize"
-                    color: "#949dbb"
-                    font.pixelSize: 10
-                    font.letterSpacing: 0.3
-                }
-                Bar {
-                    id: previewBar
-                    x: 12
-                    y: 34
-                    width: Math.max(1000, parent.width - 24)
-                    scale: Math.min(1, (parent.width - 24) / width)
-                    transformOrigin: Item.TopLeft
-                    settings: window.draft
-                    wallpaperSource: window.screen ? window.wallpaperSources[window.screen.name] || "" : ""
-                    trayModel: [{icon: Qt.resolvedUrl("icons/preview-tray.svg")} ]
-                    clockText: Qt.formatDateTime(new Date(), window.draft.bar.clockFormat)
-                    statusData: ({
-                            workspaces: [
-                                {
-                                    id: 1,
-                                    name: "1",
-                                    active: true
-                                },
-                                {
-                                    id: 2,
-                                    name: "2"
-                                }
-                            ],
-                            audio: {
-                                text: "64%",
-                                icon: "󰕾"
-                            },
-                            network: {
-                                text: "󰤨",
-                                connected: true
-                            },
-                            bluetooth: {
-                                text: "󰂯",
-                                powered: true
-                            },
-                            battery: {
-                                present: true,
-                                text: "󰁹 86%"
-                            }
-                        })
-                    mediaData: ({
-                            playing: true,
-                            title: "Your favorite track",
-                            levels: [0.2, 0.5, 0.8, 0.4, 0.9, 0.6, 0.3, 0.7, 0.5, 0.9, 0.3, 0.6]
-                        })
-                    notificationData: ({
-                            count: 2
-                        })
-                    PreviewLayoutEditor {
-                        anchors.fill: parent
-                        bar: previewBar
-                        names: window.names
-                        onItemSelected: id => window.section = window.draft.items.findIndex(i => i.id === id)
-                        onItemDropped: (id, side, beforeId) => window.rearrangeItem(id, side, beforeId)
-                    }
-                }
-            }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Style.separator }
             RowLayout {
                 enabled: !githubSync.running && !recoveryPage.busy
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 16
+                spacing: 0
                 ScrollView {
                     id: sidebar
-                    Layout.preferredWidth: window.width < 900 ? 200 : 226
+                    objectName: "settingsSidebar"
+                    Layout.preferredWidth: window.width < 900 ? 228 : 250
                     Layout.fillHeight: true
                     clip: true
-                    padding: 8
+                    padding: 12
                     contentWidth: availableWidth
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    background: Rectangle {
-                        radius: 12
-                        color: "#191e28"
-                        border.color: "#2c3443"
-                    }
+                    background: Rectangle { color: Style.sidebar }
                     ColumnLayout {
                         width: sidebar.availableWidth
-                        spacing: 1
-                        Label {
-                            text: "PERSONALIZE"
-                            color: "#7c89a7"
-                            font.pixelSize: 9
-                            font.letterSpacing: 1.6
-                            Layout.leftMargin: 13
-                            Layout.topMargin: 6
-                            Layout.bottomMargin: 8
-                        }
-                        SettingsNavButton {
-                            text: "Bar & layout"
-                            symbol: "󰕮"
+                        spacing: 4
+                        TextField {
+                            id: searchField
+                            objectName: "settingsSearch"
                             Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -1
-                            onClicked: window.section = -1
-                        }
-                        SettingsNavButton {
-                            symbol: "󰖲"
-                            text: "Hyprland"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -2
-                            onClicked: window.section = -2
-                        }
-                        SettingsNavButton {
-                            text: "Application theme"
-                            symbol: "󰔎"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -8
-                            onClicked: window.section = -8
-                        }
-                        SettingsNavButton {
-                            text: "Default apps & startup"
-                            symbol: "󰀻"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -13
-                            onClicked: window.section = -13
-                        }
-                        SettingsNavButton {
-                            text: "Displays"
-                            symbol: "󰍹"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -7
-                            onClicked: window.section = -7
-                        }
-                        SettingsNavButton {
-                            symbol: "󰍽"
-                            text: "Mouse & keyboard"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -9
-                            onClicked: window.section = -9
-                        }
-                        SettingsNavButton {
-                            symbol: "󰌌"
-                            text: "Keybindings"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -6
-                            onClicked: window.section = -6
-                        }
-                        SettingsNavButton {
-                            symbol: "󰁹"
-                            text: "Power & battery"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -10
-                            onClicked: window.section = -10
-                        }
-                        SettingsNavButton {
-                            symbol: "󰂚"
-                            text: "Notification delivery"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -11
-                            onClicked: window.section = -11
-                        }
-                        SettingsNavButton {
-                            symbol: "󰕾"
-                            text: "Sound"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -12
-                            onClicked: window.section = -12
-                        }
-                        SettingsNavButton {
-                            symbol: "󰌾"
-                            text: "Screen locking"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -3
-                            onClicked: window.section = -3
-                        }
-                        SettingsNavButton {
-                            symbol: "󰃢"
-                            text: "System cleanup"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -4
-                            onClicked: window.section = -4
-                        }
-                        SettingsNavButton {
-                            symbol: "󰁯"
-                            text: "Updates & recovery"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -14
-                            onClicked: window.section = -14
-                        }
-                        SettingsNavButton {
-                            symbol: "󰒓"
-                            text: "Hyprskill"
-                            Layout.fillWidth: true
-                            flat: true
-                            highlighted: window.section === -5
-                            onClicked: window.section = -5
-                        }
-                        Label {
-                            text: "TOPBAR ITEMS"
-                            color: "#727d9a"
-                            font.pixelSize: 10
-                            Layout.topMargin: 10
-                            Layout.bottomMargin: 6
-                            Layout.leftMargin: 13
-                            font.letterSpacing: 1.6
+                            Layout.bottomMargin: 10
+                            implicitHeight: 38
+                            placeholderText: "Search settings"
+                            color: Style.text
+                            placeholderTextColor: Style.muted
+                            font.pixelSize: Style.bodySize
+                            leftPadding: 12
+                            rightPadding: searchClear.visible ? 38 : 12
+                            selectByMouse: true
+                            Accessible.name: "Search settings"
+                            onTextChanged: window.searchQuery = text
+                            onAccepted: if (window.searchResults.length) window.section = window.searchResults[0].section
+                            Keys.onEscapePressed: event => {
+                                if (text.length) { clear(); event.accepted = true; }
+                                else event.accepted = false;
+                            }
+                            background: Rectangle {
+                                radius: Style.controlRadius
+                                color: Style.field
+                                border.width: searchField.activeFocus ? 2 : 1
+                                border.color: searchField.activeFocus ? Style.accentText : Style.border
+                            }
+                            ToolButton {
+                                id: searchClear
+                                objectName: "settingsSearchClear"
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 34; height: 34
+                                text: "×"
+                                visible: searchField.text.length > 0
+                                Accessible.name: "Clear search"
+                                onClicked: { searchField.clear(); searchField.forceActiveFocus(); }
+                                contentItem: Text { text: searchClear.text; color: Style.muted; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                                background: Rectangle { radius: 6; color: searchClear.hovered ? Style.hover : "transparent"; border.color: searchClear.activeFocus ? Style.accentText : "transparent" }
+                            }
                         }
                         Repeater {
-                            model: window.draft.items
+                            model: window.navigation
+                            delegate: ColumnLayout {
+                                id: navGroup
+                                required property var modelData
+                                readonly property var pages: window.matchingPages(modelData.pages)
+                                visible: pages.length > 0
+                                Layout.fillWidth: true
+                                spacing: 3
+                                Label {
+                                    text: navGroup.modelData.group
+                                    Layout.leftMargin: 12
+                                    Layout.topMargin: 12
+                                    Layout.bottomMargin: 5
+                                    color: Style.muted
+                                    font.pixelSize: Style.captionSize
+                                    font.weight: Font.DemiBold
+                                }
+                                Repeater {
+                                    model: navGroup.pages
+                                    delegate: SettingsNavButton {
+                                        required property var modelData
+                                        objectName: "settingsNav" + modelData.section
+                                        text: modelData.title
+                                        symbol: modelData.symbol
+                                        Layout.fillWidth: true
+                                        highlighted: window.section === modelData.section
+                                        onClicked: window.section = modelData.section
+                                    }
+                                }
+                            }
+                        }
+                        SettingsButton {
+                            objectName: "settingsBarItemsToggle"
+                            Layout.fillWidth: true
+                            Layout.topMargin: 16
+                            flat: true
+                            text: "Bar items  " + (window.barItemsExpanded || window.searchQuery.trim() ? "⌃" : "⌄")
+                            visible: window.matchingPages(window.barNavigation).length > 0
+                            Accessible.description: window.barItemsExpanded ? "Expanded" : "Collapsed"
+                            onClicked: window.barItemsExpanded = !window.barItemsExpanded
+                        }
+                        Repeater {
+                            model: window.barItemsExpanded || window.searchQuery.trim() ? window.matchingPages(window.barNavigation) : []
                             delegate: SettingsNavButton {
                                 required property var modelData
-                                required property int index
-                                text: window.names[modelData.id]
-                                symbol: window.symbols[modelData.id] || "󰒓"
-                                itemEnabled: modelData.enabled
+                                text: modelData.title
+                                symbol: modelData.symbol
+                                itemEnabled: modelData.itemEnabled
                                 Layout.fillWidth: true
-                                flat: true
-                                highlighted: window.section === index
-                                onClicked: window.section = index
+                                highlighted: window.section === modelData.section
+                                onClicked: window.section = modelData.section
                             }
+                        }
+                        Label {
+                            objectName: "settingsSearchEmpty"
+                            visible: window.searchResults.length === 0
+                            Layout.fillWidth: true
+                            Layout.margins: 12
+                            text: "No settings found. Try another search."
+                            color: Style.muted
+                            font.pixelSize: Style.bodySize
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }
+                Rectangle { Layout.fillHeight: true; implicitWidth: 1; color: Style.separator }
                 ScrollView {
                     id: editorScroll
+                    objectName: "settingsEditorScroll"
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     clip: true
                     contentWidth: availableWidth
-                    padding: window.width < 900 ? 16 : 24
+                    padding: window.width < 900 ? 22 : 36
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    background: Rectangle {
-                        radius: 12
-                        color: "#171c26"
-                        border.color: "#2c3443"
-                    }
+                    background: Rectangle { color: Style.background }
                     ColumnLayout {
-                        width: editorScroll.availableWidth
-                        spacing: 20
+                        id: pageContent
+                        objectName: "settingsPageContent"
+                        width: Math.min(840, editorScroll.availableWidth)
+                        x: Math.max(0, (editorScroll.availableWidth - width) / 2)
+                        spacing: 24
                         Label {
-                            text: window.section === -14 ? "SYSTEM / RECOVERY" : window.section === -13 ? "DESKTOP / APPLICATIONS" : window.section === -12 ? "SYSTEM / SOUND" : window.section === -11 ? "DESKTOP / NOTIFICATIONS" : window.section === -10 ? "SYSTEM / POWER" : window.section === -9 ? "DESKTOP / INPUT" : window.section === -8 ? "DESKTOP / APPEARANCE" : window.section === -7 ? "DESKTOP / DISPLAYS" : window.section === -6 ? "DESKTOP / SHORTCUTS" : window.section === -5 ? "SYSTEM / AGENTS" : window.section === -4 ? "SYSTEM / MAINTENANCE" : window.section === -3 ? "DESKTOP / SECURITY" : window.section === -2 ? "COMPOSITOR" : window.section === -1 ? "DESKTOP / TOPBAR" : "TOPBAR / APPEARANCE"
-                            color: "#8796b5"
-                            font.pixelSize: 9
-                            font.letterSpacing: 1.6
-                        }
-                        Label {
-                            text: window.section === -14 ? "Updates & recovery" : window.section === -13 ? "Default apps & startup" : window.section === -12 ? "Sound" : window.section === -11 ? "Notification delivery" : window.section === -10 ? "Power & battery" : window.section === -9 ? "Mouse, touchpad & keyboard" : window.section === -8 ? "Application theme" : window.section === -7 ? "Displays" : window.section === -6 ? "Keybindings" : window.section === -5 ? "Hyprskill" : window.section === -4 ? "System cleanup" : window.section === -3 ? "Screen locking" : window.section === -1 ? "Bar & layout" : window.section === -2 ? "Hyprland appearance" : window.names[window.selected.id] || ""
-                            font.pixelSize: 23
+                            objectName: "settingsPageTitle"
+                            text: window.section >= 0 ? window.names[window.selected.id] || "" : window.navigation.reduce((pages, group) => pages.concat(group.pages), []).find(page => page.section === window.section)?.title || "Settings"
+                            font.pixelSize: Style.titleSize
                             font.bold: true
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
                         }
                         Label {
                             Layout.fillWidth: true
+                            Layout.topMargin: -14
+                            font.pixelSize: Style.bodySize
                             text: window.section === -14 ? "Keep your system updated, recover saved desktop settings, and track your personal backup checks." : window.section === -13 ? "Choose which apps open files and which start when you log in." : window.section === -12 ? "Choose sound devices, check your microphone, and adjust application volumes." : window.section === -11 ? "Choose popups, Do Not Disturb, and preferences for each application." : window.section === -10 ? "Adjust brightness, inactivity timers, laptop lid behavior, and supported power profiles." : window.section === -9 ? "Adjust pointing, scrolling, typing, and keyboard layouts. Changes save and apply automatically." : window.section === -8 ? "Choose application colors, fonts, and cursors." : window.section === -7 ? "Set resolution, refresh rate, scale, rotation, and monitor positions. Confirm changes before they are saved." : window.section === -6 ? "Record a shortcut, choose its action, and save. Changes appear in Super + K." : window.section === -5 ? "Give your coding agents reusable knowledge of your machine." : window.section === -4 ? "Schedule cleanup and review files before removing them." : window.section === -3 ? "Choose your lock screen and when it activates." : window.section === -1 ? "Set the layout and default appearance for your desktop bar." : window.section === -2 ? "Fine-tune transparency, frosted glass, and window details. Changes save and apply automatically." : "Customize this item. Empty fields follow the original appearance."
                             wrapMode: Text.WordWrap
-                            color: "#939bb3"
+                            color: Style.muted
+                        }
+                        Rectangle {
+                            objectName: "settingsBarPreview"
+                            Layout.fillWidth: true
+                            visible: window.section >= -1
+                            Layout.preferredHeight: previewBar.y + previewBar.height * previewBar.scale + 16
+                            radius: Style.radius
+                            color: Style.surface
+                            border.color: Style.border
+                            Label {
+                                id: previewLabel
+                                x: 16
+                                y: 12
+                                width: parent.width - 32
+                                wrapMode: Text.WordWrap
+                                text: "Bar preview · drag to rearrange, click to customize"
+                                color: Style.muted
+                                font.pixelSize: Style.captionSize
+                                font.letterSpacing: 0
+                            }
+                            Bar {
+                                id: previewBar
+                                x: 12
+                                y: previewLabel.y + previewLabel.height + 12
+                                width: Math.max(1000, parent.width - 24)
+                                scale: Math.min(1, (parent.width - 24) / width)
+                                transformOrigin: Item.TopLeft
+                                settings: window.draft
+                                wallpaperSource: window.screen ? window.wallpaperSources[window.screen.name] || "" : ""
+                                trayModel: [{icon: Qt.resolvedUrl("icons/preview-tray.svg")} ]
+                                clockText: Qt.formatDateTime(new Date(), window.draft.bar.clockFormat)
+                                statusData: ({
+                                        workspaces: [
+                                            {
+                                                id: 1,
+                                                name: "1",
+                                                active: true
+                                            },
+                                            {
+                                                id: 2,
+                                                name: "2"
+                                            }
+                                        ],
+                                        audio: {
+                                            text: "64%",
+                                            icon: "󰕾"
+                                        },
+                                        network: {
+                                            text: "󰤨",
+                                            connected: true
+                                        },
+                                        bluetooth: {
+                                            text: "󰂯",
+                                            powered: true
+                                        },
+                                        battery: {
+                                            present: true,
+                                            text: "󰁹 86%"
+                                        }
+                                    })
+                                mediaData: ({
+                                        playing: true,
+                                        title: "Your favorite track",
+                                        levels: [0.2, 0.5, 0.8, 0.4, 0.9, 0.6, 0.3, 0.7, 0.5, 0.9, 0.3, 0.6]
+                                    })
+                                notificationData: ({
+                                        count: 2
+                                    })
+                                PreviewLayoutEditor {
+                                    anchors.fill: parent
+                                    bar: previewBar
+                                    names: window.names
+                                    onItemSelected: id => window.section = window.draft.items.findIndex(i => i.id === id)
+                                    onItemDropped: (id, side, beforeId) => window.rearrangeItem(id, side, beforeId)
+                                }
+                            }
                         }
                         SettingsBarEditor {
                             visible: window.section === -1
@@ -789,12 +811,16 @@ FloatingWindow {
             Label {
                 Layout.fillWidth: true
                 objectName: "settingsSaveNotice"
-                Layout.minimumHeight: implicitHeight || 14
-                text: !window.success ? (window.message || window.store.error) : window.savedNotice
+                Layout.minimumHeight: 30
+                Layout.leftMargin: 16
+                Layout.rightMargin: 16
+                topPadding: 7
+                bottomPadding: 7
+                text: !window.success ? (window.message || window.store.error) : window.saving ? "Saving changes…" : window.savedNotice || "Changes save automatically"
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
-                font.pixelSize: 11
-                color: window.success ? "#939bb3" : "#f38ba8"
+                font.pixelSize: Style.captionSize
+                color: window.success ? Style.muted : Style.danger
             }
         }
     }

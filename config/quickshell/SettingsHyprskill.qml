@@ -1,4 +1,5 @@
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import Quickshell.Io
@@ -55,7 +56,7 @@ ColumnLayout {
             Layout.fillWidth: true
             text: "Restart your agents after installing. Keep the Hyprshell checkout available; skill updates follow changes in the repository. Existing custom skills are preserved."
             wrapMode: Text.WordWrap
-            color: "#939bb3"
+            color: Style.muted
         }
         Label {
             objectName: "hyprskillResult"
@@ -63,7 +64,7 @@ ColumnLayout {
             visible: page.message !== ""
             text: page.message
             wrapMode: Text.WrapAnywhere
-            color: page.success ? "#9eafb7" : "#f38ba8"
+            color: page.success ? Style.muted : Style.danger
         }
     }
 }

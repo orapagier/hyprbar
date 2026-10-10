@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "SettingsStyle.js" as Style
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
@@ -40,7 +41,7 @@ ColumnLayout {
         Label {
             Layout.fillWidth: true
             text: page.sink ? "Current output: " + (page.sink.description || page.sink.name) : "Audio output is unavailable. Check the device connection and PipeWire."
-            color: page.sink ? "#98a5bf" : "#f38ba8"
+            color: page.sink ? Style.muted : Style.danger
             textFormat: Text.PlainText; wrapMode: Text.Wrap
         }
         SoundVolume { objectName: "soundOutputVolume"; Layout.fillWidth: true; node: page.sink; label: "Output volume" }
@@ -53,7 +54,7 @@ ColumnLayout {
         Label {
             Layout.fillWidth: true
             text: (page.testSound ? page.testSound.message : "") || "Plays a short, quiet tone on the selected output. Your output volume and mute setting remain in effect."
-            color: !page.testSound || page.testSound.success ? "#98a5bf" : "#f38ba8"
+            color: !page.testSound || page.testSound.success ? Style.muted : Style.danger
             wrapMode: Text.Wrap
         }
     }
@@ -72,7 +73,7 @@ ColumnLayout {
         Label {
             Layout.fillWidth: true
             text: page.microphone ? "Current input: " + (page.microphone.description || page.microphone.name) : "Microphone is unavailable. Check the device connection and PipeWire."
-            color: page.microphone ? "#98a5bf" : "#f38ba8"
+            color: page.microphone ? Style.muted : Style.danger
             textFormat: Text.PlainText; wrapMode: Text.Wrap
         }
         SoundVolume { objectName: "soundInputVolume"; Layout.fillWidth: true; node: page.microphone; label: "Microphone volume"; showMutedAsZero: true }
@@ -97,7 +98,7 @@ ColumnLayout {
             Layout.fillWidth: true
             implicitHeight: 72
             visible: page.meterEnabled
-            color: "#252c40"; radius: 8
+            color: Style.surface; radius: 8
             Accessible.name: "Live microphone audio spectrum"
             AudioSpectrumBars {
                 objectName: "soundInputSpectrum"
@@ -107,14 +108,14 @@ ColumnLayout {
                 spacing: 5
                 levels: page.inputLevels
                 active: page.meterReady && !page.meterError && !!(page.microphone && page.microphone.audio && !page.microphone.audio.muted)
-                color: page.inputClipping ? "#f38ba8" : "#94e2d5"
+                color: page.inputClipping ? Style.danger : Style.success
             }
         }
         Label {
             Layout.fillWidth: true
             objectName: "soundInputStatus"
             text: page.meterEnabled ? page.meterError ? page.meterError : page.microphone && page.microphone.audio && page.microphone.audio.muted ? "Microphone is muted." : !page.meterReady ? "Starting microphone test…" : page.inputClipping ? "Input is clipping. Lower microphone volume and try speaking again." : "Speak to see your microphone’s live audio." : "Start the test to view the live input level. Audio is not saved or played back."
-            wrapMode: Text.Wrap; color: page.meterError ? "#f38ba8" : "#98a5bf"
+            wrapMode: Text.Wrap; color: page.meterError ? Style.danger : Style.muted
         }
     }
     SettingsCard {
@@ -125,7 +126,7 @@ ColumnLayout {
             Layout.fillWidth: true
             visible: page.streams.length === 0
             text: "No applications are using audio. Start playback or a call to show its controls."
-            wrapMode: Text.Wrap; color: "#98a5bf"
+            wrapMode: Text.Wrap; color: Style.muted
         }
         Repeater {
             model: page.streams

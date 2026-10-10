@@ -1,14 +1,36 @@
 # Settings implementation
 
 **hyprbar** means Hyprshell's top bar. This document also uses “bar” and
-“topbar”; settings labels, IPC methods, and configuration keys keep their
-existing names.
+"topbar"; IPC methods and configuration keys keep their existing names.
 
 The settings app is part of the existing Quickshell process. `SettingsWindow.qml`
 is created on demand by `SettingsController.qml` through the `bar settings` IPC
 method; `bin/hyprshell-settings` and the desktop entry provide normal
 application-launcher access. No web server,
 browser, or additional GUI framework is required.
+
+Settings follows GNOME and COSMIC's restrained desktop conventions: a persistent
+sidebar, a compact header, a centered editor, and rounded preference groups with
+headings above the surface. `SettingsStyle.js` owns the neutral dark surfaces,
+blue accent, semantic feedback colors, typography, and control sizes. The
+direction was informed by [UI/UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+and the [GNOME boxed-list guidelines](https://developer.gnome.org/hig/patterns/containers/boxed-lists.html).
+Settings keeps its own opaque dark interface; the application color preference
+continues to control application windows separately.
+
+Navigation groups pages under **Desktop**, **Devices**, and **System**. The shorter
+sidebar labels **Appearance**, **Windows**, **Applications**, **Keyboard shortcuts**,
+and **Cleanup** lead to the existing application theme, Hyprland, default apps,
+keybindings, and system cleanup controls. **Bar items** expands individual module
+editors and opens automatically when a preview item is selected. Search matches
+page labels and related terms (for example, "touchpad" or "backup"), including
+collapsed bar items. **Ctrl+F** focuses search; **Enter** opens the first match;
+**Escape** or the clear button clears the query. Browsing and searching do not
+write preferences. Each page keeps its scroll position within the current window.
+The bar preview appears within bar and item pages. Control feedback and the short
+page fade honor an explicit disabled Hyprland animation preference.
+
+![Hyprshell Settings, Windows page](assets/settings-preview.png)
 
 `SettingsController.qml` owns a `LazyLoader` that is inactive at startup. Both
 the cog and launcher activate the same controller. Closing the native window
@@ -223,7 +245,7 @@ faces while their pills are hidden. Shared visible pills retain their glass styl
 Old experimental motion preferences are ignored and removed on the next save;
 popdowns use the original fade-and-slide transition.
 
-All settings pages share the same card structure and spacing. **Bar & layout**
+All settings pages share the same preference-group structure and spacing. **Bar & layout**
 groups layout sliders, default appearance, and clock formatting with a sample.
 Item pages group visibility/position, text/icon overrides, colors/background,
 and shape/transparency. Grids stack into one column below 600 px of editor

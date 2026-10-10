@@ -19,6 +19,25 @@ class AutosaveTests(unittest.TestCase):
     def test_lazy_loading_close_flush_failed_draft_and_reopen(self):
         self.run_ui_scenario('SettingsLifecycle', 'LIFECYCLE_OK', ('right', '#00ff00', 1))
 
+    def test_search_navigation_scroll_and_responsive_layout(self):
+        with tempfile.TemporaryDirectory(prefix='hyprshell-navigation-') as directory:
+            root = Path(directory)
+            payload = root / 'config/quickshell'
+            shutil.copytree(ROOT / 'config/quickshell', payload, ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
+            entry = payload / 'SettingsNavigation.qml'
+            entry.write_text((payload / 'tests/SettingsNavigation.qml').read_text().replace('import ".."', 'import "."'))
+            runtime = root / 'runtime'
+            runtime.mkdir(mode=0o700)
+            env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'),
+                       XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORMTHEME='', QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software')
+            result = subprocess.run(['quickshell', '-p', str(entry)], env=env, capture_output=True, text=True, timeout=18)
+            output = result.stdout + result.stderr
+            self.assertIn('NAVIGATION_OK', output, output)
+            self.assertEqual(result.returncode, 0, output)
+            for error in ('NAVIGATION_FAILED', 'TypeError', 'ReferenceError', 'Unable to assign', 'Binding loop'):
+                self.assertNotIn(error, output, output)
+            self.assertFalse((root / 'config/hyprshell/settings.json').exists(), 'Navigation must not save preferences')
+
     def test_github_setup_popup(self):
         with tempfile.TemporaryDirectory(prefix='hyprshell-github-ui-') as directory:
             root = Path(directory)
@@ -37,7 +56,7 @@ class AutosaveTests(unittest.TestCase):
             entry.write_text((payload / 'tests/GithubSetup.qml').read_text().replace('import ".."', 'import "."'))
             runtime = root / 'runtime'
             runtime.mkdir(mode=0o700)
-            env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software')
+            env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORMTHEME='', QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software')
             result = subprocess.run(['quickshell', '-p', str(entry)], env=env, capture_output=True, text=True, timeout=20)
             self.assertIn('GITHUB_SETUP_OK', result.stdout + result.stderr, result.stdout + result.stderr)
             self.assertNotIn('FAIL!', result.stdout + result.stderr)
@@ -57,7 +76,7 @@ class AutosaveTests(unittest.TestCase):
             shutil.copytree(ROOT / 'config/quickshell', payload, ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
             entry = payload / (scenario + '.qml')
             entry.write_text((payload / 'tests' / (scenario + '.qml')).read_text().replace('import ".."', 'import "."'))
-            env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software', PATH=str(commands) + os.pathsep + os.environ['PATH'])
+            env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORMTHEME='', QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software', PATH=str(commands) + os.pathsep + os.environ['PATH'])
             result = subprocess.run(['quickshell', '-p', str(entry)], env=env, capture_output=True, text=True, timeout=20)
             self.assertIn(marker, result.stdout + result.stderr, result.stdout + result.stderr)
             self.assertEqual(result.returncode, 0)
