@@ -30,6 +30,13 @@ write preferences. Each page keeps its scroll position within the current window
 The bar preview appears within bar and item pages. Control feedback and the short
 page fade honor an explicit disabled Hyprland animation preference.
 
+Bar layout follows each module's enabled setting and data availability, rather
+than its inherited `Item.visible` value. Hiding the Settings preview or a
+workspace-specific bar keeps module positions, shared pills, and height intact.
+This avoids rebuilding the layout and repeatedly sampling wallpaper colors
+during a page or workspace switch. Disabling an individual module still removes
+its layout space, including while the whole bar is hidden.
+
 ![Hyprshell Settings, Windows page](assets/settings-preview.png)
 
 `SettingsController.qml` owns a `LazyLoader` that is inactive at startup. Both

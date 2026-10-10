@@ -9,7 +9,28 @@ Item {
     TestCase {
         name: "BarSettings"
         when: windowShown
-        function cleanup() { bar.settings = {}; bar.mediaData = {playing: false}; }
+        function cleanup() { bar.visible = true; bar.settings = {}; bar.mediaData = {playing: false}; }
+        function test_hidingBarPreservesModuleGeometryAndSharedPills() {
+            bar.settings = {bar: {iconSize: 40}, items: [
+                {id: "audio", pillGroup: "Connections"},
+                {id: "wifi", pillGroup: "Connections"}
+            ]};
+            let order = JSON.stringify(bar.orderedItems("right"));
+            let groups = JSON.stringify(bar.sharedPills);
+            let audioRect = bar.menuRect("audio");
+            let height = bar.implicitHeight;
+            bar.visible = false;
+            compare(JSON.stringify(bar.orderedItems("right")), order);
+            compare(JSON.stringify(bar.sharedPills), groups);
+            compare(bar.menuRect("audio"), audioRect);
+            compare(bar.implicitHeight, height);
+            // A deliberate module change must still update hidden layouts.
+            bar.settings = {items: [{id: "wifi", enabled: false}]};
+            verify(!bar.orderedItems("right").includes("wifi"));
+            bar.visible = true;
+            verify(!bar.moduleItems.wifi.visible);
+            verify(bar.moduleItems.audio.visible);
+        }
         function test_disableRemovesLayoutSpaceAndMovesMenuAnchor() {
             let audio = findChild(bar, "audioTrigger"), wifi = findChild(bar, "wifiTrigger");
             let old = audio.x;

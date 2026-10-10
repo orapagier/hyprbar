@@ -33,9 +33,18 @@ Item {
         return Settings.item(settings, id).side || defaultSides[id] || "right";
     }
     function pillName(id) { return Settings.item(settings, id).pillGroup || ""; }
+    function itemShown(id) {
+        // Item.visible also becomes false when an ancestor is hidden. Keep
+        // module geometry stable when switching Settings pages or workspaces.
+        if (!itemEnabled(id)) return false;
+        if (id === "media") return mediaSlot.active;
+        if (id === "tray") return trayIcons.count > 0;
+        if (id === "battery") return !!statusData.battery.present;
+        return true;
+    }
     function orderedItems(sideName) {
         let keys = Object.keys(moduleItems);
-        let sorted = keys.filter(k => side(k) === sideName && moduleItems[k].visible);
+        let sorted = keys.filter(k => side(k) === sideName && itemShown(k));
         sorted.sort((a, b) => ((Settings.item(settings, a).order ?? keys.indexOf(a)) - (Settings.item(settings, b).order ?? keys.indexOf(b))) || keys.indexOf(a) - keys.indexOf(b));
         let result = [], seen = new Set();
         for (let id of sorted) {
@@ -171,7 +180,7 @@ Item {
         return Qt.rgba(parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255, alpha);
     }
     implicitHeight: Math.max(settings.bar ? (settings.bar.height || 32) : 32,
-        ...Object.keys(moduleItems).filter(id => moduleItems[id].visible).map(id => moduleItems[id].height + 4))
+        ...Object.keys(moduleItems).filter(id => itemShown(id)).map(id => moduleItems[id].height + 4))
     height: implicitHeight
     Repeater {
         model: bar.sharedPills
