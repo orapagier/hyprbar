@@ -16,6 +16,8 @@ Item {
     }
     property rect triggerRect: Qt.rect(12, 4, 32, 20)
     property string alignment: "center"
+    property string edge: "top"
+    readonly property bool vertical: edge === "left" || edge === "right"
     property color accent: "#b4befe"
     property string title: ""
     property string symbol: ""
@@ -28,30 +30,51 @@ Item {
     signal hoverChanged(bool inside)
     signal cardClicked()
     readonly property real bodyWidth: Math.min(300, width - 24)
-    // Anchor the card to its bar group; the funnel still follows the icon.
-    readonly property real bodyX: alignment === "left" ? 12
-        : alignment === "right" ? width - bodyWidth - 12
-        : (width - bodyWidth) / 2
-    readonly property real neckY: triggerRect.y + triggerRect.height - 1
-    readonly property real bodyY: connected ? neckY + 34 : Math.max(48, triggerRect.y + triggerRect.height + 12)
-    readonly property real bodyHeight: Math.min(height - bodyY - 16, contents.implicitHeight + 36)
+    function clamp(value, low, high) { return Math.max(low, Math.min(Math.max(low, high), value)); }
+    readonly property real bodyX: !connected || !vertical
+        ? (alignment === "left" ? 12 : alignment === "right" ? width - bodyWidth - 12 : (width - bodyWidth) / 2)
+        : edge === "left" ? clamp(triggerRect.x + triggerRect.width + 33, 12, width - bodyWidth - 12)
+        : clamp(triggerRect.x - 33 - bodyWidth, 12, width - bodyWidth - 12)
+    readonly property real availableHeight: !connected || vertical ? height - 64
+        : edge === "bottom" ? triggerRect.y - 49 : height - triggerRect.y - triggerRect.height - 49
+    readonly property real bodyHeight: Math.max(0, Math.min(availableHeight, contents.implicitHeight + 36))
+    readonly property real bodyY: !connected ? Math.max(48, triggerRect.y + triggerRect.height + 12)
+        : edge === "top" ? triggerRect.y + triggerRect.height + 33
+        : edge === "bottom" ? triggerRect.y - 33 - bodyHeight
+        : clamp(alignment === "left" ? 12 : alignment === "right" ? height - bodyHeight - 12 : (height - bodyHeight) / 2, 12, height - bodyHeight - 12)
     readonly property real bodyRight: bodyX + bodyWidth
     readonly property real bodyBottom: bodyY + bodyHeight
-    readonly property real tipX: triggerRect.x + triggerRect.width / 2
+    // Draw the existing funnel in coordinates that always point inward, while
+    // the card contents stay upright on every edge.
+    readonly property real shapeX: vertical ? bodyY : bodyX
+    readonly property real shapeY: edge === "bottom" ? height - bodyBottom : edge === "right" ? width - bodyRight : vertical ? bodyX : bodyY
+    readonly property real shapeWidth: vertical ? bodyHeight : bodyWidth
+    readonly property real shapeHeight: vertical ? bodyWidth : bodyHeight
+    readonly property real neckY: edge === "bottom" ? height - triggerRect.y - 1
+        : edge === "right" ? width - triggerRect.x - 1
+        : edge === "left" ? triggerRect.x + triggerRect.width - 1 : triggerRect.y + triggerRect.height - 1
+    readonly property real tipX: vertical ? triggerRect.y + triggerRect.height / 2 : triggerRect.x + triggerRect.width / 2
     readonly property real neckHalfWidth: 0.75
     readonly property real attachmentHalfWidth: 8
     readonly property real waistY: neckY + 7
-    readonly property real shoulder: Math.max(bodyX + 52, Math.min(bodyRight - 52, triggerRect.x + triggerRect.width / 2))
+    readonly property real shoulder: clamp(tipX, shapeX + 52, shapeX + shapeWidth - 52)
     readonly property bool pointerInside: opened && tracking.hovered && containsPointer(tracking.point.position)
 
     function containsPointer(point) {
         if (point.y >= bodyY && point.y <= bodyBottom && point.x >= bodyX && point.x <= bodyRight)
             return true;
         if (!connected) return false;
-        // A forgiving bridge lets the pointer travel diagonally into the menu.
-        return point.y >= neckY - 4 && point.y < bodyY + (connected ? 0 : 14)
-            && point.x >= Math.min(triggerRect.x - 12, bodyX)
-            && point.x <= Math.max(triggerRect.x + triggerRect.width + 12, bodyRight);
+        // Keep a forgiving bridge between the trigger and the inward card.
+        if (vertical) {
+            let triggerEdge = edge === "left" ? triggerRect.x + triggerRect.width : triggerRect.x;
+            let cardEdge = edge === "left" ? bodyX : bodyRight;
+            return point.x >= Math.min(triggerEdge, cardEdge) - 4 && point.x <= Math.max(triggerEdge, cardEdge) + 4
+                && point.y >= Math.min(triggerRect.y - 12, bodyY) && point.y <= Math.max(triggerRect.y + triggerRect.height + 12, bodyBottom);
+        }
+        let triggerEdge = edge === "bottom" ? triggerRect.y : triggerRect.y + triggerRect.height;
+        let cardEdge = edge === "bottom" ? bodyBottom : bodyY;
+        return point.y >= Math.min(triggerEdge, cardEdge) - 4 && point.y <= Math.max(triggerEdge, cardEdge) + 4
+            && point.x >= Math.min(triggerRect.x - 12, bodyX) && point.x <= Math.max(triggerRect.x + triggerRect.width + 12, bodyRight);
     }
     onPointerInsideChanged: hoverChanged(pointerInside)
     HoverHandler { id: tracking }
@@ -81,11 +104,17 @@ Item {
             objectName: "menuFunnel"
             anchors.fill: parent
             preferredRendererType: Shape.CurveRenderer
+            transform: Matrix4x4 {
+                matrix: popover.edge === "bottom" ? Qt.matrix4x4(1,0,0,0, 0,-1,0,popover.height, 0,0,1,0, 0,0,0,1)
+                    : popover.edge === "left" ? Qt.matrix4x4(0,1,0,0, 1,0,0,0, 0,0,1,0, 0,0,0,1)
+                    : popover.edge === "right" ? Qt.matrix4x4(0,-1,0,popover.width, 1,0,0,0, 0,0,1,0, 0,0,0,1)
+                    : Qt.matrix4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+            }
             ShapePath {
                 strokeWidth: 1
                 strokeColor: glass.rimColor
                 fillGradient: LinearGradient {
-                    x1: 0; y1: popover.neckY; x2: 0; y2: popover.bodyBottom
+                    x1: 0; y1: popover.neckY; x2: 0; y2: (popover.shapeY + popover.shapeHeight)
                     GradientStop { position: 0; color: glass.rimColor }
                     GradientStop { position: 0.23; color: glass.topColor }
                     GradientStop { position: 1; color: glass.bottomColor }
@@ -99,20 +128,20 @@ Item {
                 }
                 PathCubic {
                     control1X: popover.tipX + popover.neckHalfWidth; control1Y: popover.waistY + 12
-                    control2X: popover.shoulder + 12; control2Y: popover.bodyY
-                    x: popover.shoulder + 36; y: popover.bodyY
+                    control2X: popover.shoulder + 12; control2Y: popover.shapeY
+                    x: popover.shoulder + 36; y: popover.shapeY
                 }
-                PathLine { x: popover.bodyRight - 18; y: popover.bodyY }
-                PathQuad { controlX: popover.bodyRight; controlY: popover.bodyY; x: popover.bodyRight; y: popover.bodyY + 18 }
-                PathLine { x: popover.bodyRight; y: popover.bodyBottom - 18 }
-                PathQuad { controlX: popover.bodyRight; controlY: popover.bodyBottom; x: popover.bodyRight - 18; y: popover.bodyBottom }
-                PathLine { x: popover.bodyX + 18; y: popover.bodyBottom }
-                PathQuad { controlX: popover.bodyX; controlY: popover.bodyBottom; x: popover.bodyX; y: popover.bodyBottom - 18 }
-                PathLine { x: popover.bodyX; y: popover.bodyY + 18 }
-                PathQuad { controlX: popover.bodyX; controlY: popover.bodyY; x: popover.bodyX + 18; y: popover.bodyY }
-                PathLine { x: popover.shoulder - 36; y: popover.bodyY }
+                PathLine { x: (popover.shapeX + popover.shapeWidth) - 18; y: popover.shapeY }
+                PathQuad { controlX: (popover.shapeX + popover.shapeWidth); controlY: popover.shapeY; x: (popover.shapeX + popover.shapeWidth); y: popover.shapeY + 18 }
+                PathLine { x: (popover.shapeX + popover.shapeWidth); y: (popover.shapeY + popover.shapeHeight) - 18 }
+                PathQuad { controlX: (popover.shapeX + popover.shapeWidth); controlY: (popover.shapeY + popover.shapeHeight); x: (popover.shapeX + popover.shapeWidth) - 18; y: (popover.shapeY + popover.shapeHeight) }
+                PathLine { x: popover.shapeX + 18; y: (popover.shapeY + popover.shapeHeight) }
+                PathQuad { controlX: popover.shapeX; controlY: (popover.shapeY + popover.shapeHeight); x: popover.shapeX; y: (popover.shapeY + popover.shapeHeight) - 18 }
+                PathLine { x: popover.shapeX; y: popover.shapeY + 18 }
+                PathQuad { controlX: popover.shapeX; controlY: popover.shapeY; x: popover.shapeX + 18; y: popover.shapeY }
+                PathLine { x: popover.shoulder - 36; y: popover.shapeY }
                 PathCubic {
-                    control1X: popover.shoulder - 12; control1Y: popover.bodyY
+                    control1X: popover.shoulder - 12; control1Y: popover.shapeY
                     control2X: popover.tipX - popover.neckHalfWidth; control2Y: popover.waistY + 12
                     x: popover.tipX - popover.neckHalfWidth; y: popover.waistY
                 }
@@ -141,8 +170,8 @@ Item {
             }
         }
         MouseArea {
-            x: popover.bodyX; y: popover.connected ? popover.neckY : popover.bodyY
-            width: popover.bodyWidth; height: popover.bodyBottom - y
+            x: popover.bodyX; y: popover.bodyY
+            width: popover.bodyWidth; height: popover.bodyHeight
             enabled: popover.opened
             cursorShape: popover.cardClickable ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: if (popover.cardClickable) popover.cardClicked()

@@ -69,6 +69,8 @@ def validate(data):
         raise ValueError('Unknown bar setting')
     result['bar'].update(bar)
     bar = result['bar']
+    if bar['position'] not in ('top', 'left', 'right', 'bottom'):
+        raise ValueError('Bar position must be top, left, right, or bottom')
     if type(bar['visible']) is not bool:
         raise ValueError('Bar visibility must be boolean')
     if bar['workspaceScope'] not in ('all', 'selected'):

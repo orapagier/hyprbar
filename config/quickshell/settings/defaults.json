@@ -16,7 +16,8 @@
     "iconSize": 0,
     "groupSpacing": 3,
     "popdownTranslucency": 0.06,
-    "sharedBackground": "inherit"
+    "sharedBackground": "inherit",
+    "position": "top"
   },
   "items": [
     {

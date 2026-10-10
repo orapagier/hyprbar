@@ -27,6 +27,23 @@ class SettingsTests(unittest.TestCase):
         self.data = copy.deepcopy(backend.DEFAULTS)
         self.path = self.config / 'hyprshell/settings.json'
 
+    def test_bar_position_inherits_top_and_round_trips_all_edges(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['position']
+        self.assertEqual(backend.validate(legacy)['bar']['position'], 'top')
+        for position in ('top', 'left', 'right', 'bottom'):
+            self.data['bar']['position'] = position
+            self.assertTrue(backend.save(self.data)['ok'])
+            self.assertEqual(json.loads(self.path.read_text())['bar']['position'], position)
+
+    def test_bar_position_rejects_invalid_values_before_writing(self):
+        for position in ('center', 'TOP', '', None, True, 1, [], {}):
+            with self.subTest(position=position):
+                self.data['bar']['position'] = position
+                with self.assertRaisesRegex(ValueError, 'Bar position'):
+                    backend.save(self.data)
+                self.assertFalse(self.path.exists())
+
     def test_notification_preferences_round_trip_backup_and_conflict(self):
         self.assertTrue(backend.save(self.data)['ok'])
         original = self.path.read_text()

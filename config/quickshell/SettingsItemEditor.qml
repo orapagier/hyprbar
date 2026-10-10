@@ -37,7 +37,7 @@ ColumnLayout {
                 Label { text: "Alignment"; color: Style.muted; font.pixelSize: Style.bodySize }
                 SettingsComboBox {
                     Layout.fillWidth: true
-                    model: ["Left", "Center", "Right"]
+                    model: ["left", "right"].includes(root.barSettings.position) ? ["Top", "Center", "Bottom"] : ["Left", "Center", "Right"]
                     currentIndex: Math.max(0, ["left", "center", "right"].indexOf(root.settings.side))
                     onActivated: root.edited("side", ["left", "center", "right"][currentIndex])
                 }

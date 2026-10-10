@@ -9,6 +9,8 @@ Item {
     property real offsetX: 10
     property real offsetY: 5
     property real bandHeight: 32
+    property real bandWidth: screenWidth
+    property real regionOffsetX: 0
     property var pixels: []
     readonly property var linearChannels: Array.from({length: 256}, (_, value) => {
         let channel = value / 255;
@@ -26,14 +28,16 @@ Item {
     onScreenHeightChanged: invalidate()
     onOffsetYChanged: invalidate()
     onBandHeightChanged: invalidate()
+    onBandWidthChanged: invalidate()
+    onRegionOffsetXChanged: invalidate()
 
     function sampleRect(rect, includeBounds) {
         if (!ready) {
             let fallback = Qt.rgba(0.08, 0.09, 0.13, 1);
             return includeBounds ? {average: fallback, minimum: fallback, maximum: fallback} : fallback;
         }
-        let x0 = Math.max(0, Math.min(strip.width - 1, Math.floor(rect.x / screenWidth * strip.width)));
-        let x1 = Math.max(x0 + 1, Math.min(strip.width, Math.ceil((rect.x + rect.width) / screenWidth * strip.width)));
+        let x0 = Math.max(0, Math.min(strip.width - 1, Math.floor((rect.x - regionOffsetX) / bandWidth * strip.width)));
+        let x1 = Math.max(x0 + 1, Math.min(strip.width, Math.ceil((rect.x + rect.width - regionOffsetX) / bandWidth * strip.width)));
         let y0 = Math.max(0, Math.min(strip.height - 1, Math.floor((rect.y - offsetY) / bandHeight * strip.height)));
         let y1 = Math.max(y0 + 1, Math.min(strip.height, Math.ceil((rect.y + rect.height - offsetY) / bandHeight * strip.height)));
         let r = 0, g = 0, b = 0, count = 0;
@@ -79,8 +83,8 @@ Item {
         id: strip
         // Preserve small bright/dark details instead of averaging them away
         // before bare-glyph contrast is measured.
-        width: Math.min(4096, Math.max(1, Math.ceil(sampler.screenWidth)))
-        height: Math.min(160, Math.max(1, Math.ceil(sampler.bandHeight)))
+        width: Math.min(4096, Math.max(1, Math.ceil(sampler.bandWidth)))
+        height: Math.min(sampler.bandWidth < sampler.screenWidth ? 4096 : 160, Math.max(1, Math.ceil(sampler.bandHeight)))
         onAvailableChanged: if (available) requestPaint()
         onWidthChanged: sampler.invalidate()
         onHeightChanged: sampler.invalidate()
@@ -90,11 +94,11 @@ Item {
             if (!iw || !ih) return;
             // Match awww's default center-cropped, aspect-preserving wallpaper.
             let scale = Math.max(sampler.screenWidth / iw, sampler.screenHeight / ih);
-            let sx = (iw - sampler.screenWidth / scale) / 2;
+            let sx = (iw - sampler.screenWidth / scale) / 2 + sampler.regionOffsetX / scale;
             let sy = (ih - sampler.screenHeight / scale) / 2 + sampler.offsetY / scale;
             let ctx = getContext("2d");
             ctx.clearRect(0, 0, width, height);
-            ctx.drawImage(wallpaper, sx, sy, sampler.screenWidth / scale, sampler.bandHeight / scale, 0, 0, width, height);
+            ctx.drawImage(wallpaper, sx, sy, sampler.bandWidth / scale, sampler.bandHeight / scale, 0, 0, width, height);
             let data = ctx.getImageData(0, 0, width, height).data;
             let copy = [];
             for (let i = 0; i < data.length; ++i) copy.push(data[i]);

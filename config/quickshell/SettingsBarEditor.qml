@@ -15,7 +15,7 @@ ColumnLayout {
     spacing: 16
     SettingsCard {
         Layout.fillWidth: true
-        title: "Topbar visibility"
+        title: "Bar visibility"
         subtitle: "Alt+T toggles only the current workspace. Use these buttons to show or hide hyprbar on all workspaces and clear individual choices."
         RowLayout {
             Layout.fillWidth: true
@@ -84,6 +84,19 @@ ColumnLayout {
         Layout.fillWidth: true
         title: "Layout & spacing"
         subtitle: "Set the global gap here. Select a module in the sidebar or preview to adjust its individual spacing."
+        Label { text: "Screen edge"; color: Style.muted; font.pixelSize: Style.bodySize }
+        SettingsComboBox {
+            objectName: "barPositionControl"
+            Layout.fillWidth: true
+            model: ["Top", "Left", "Right", "Bottom"]
+            currentIndex: Math.max(0, ["top", "left", "right", "bottom"].indexOf(root.settings.position || "top"))
+            onActivated: index => root.edited("position", ["top", "left", "right", "bottom"][index])
+        }
+        Label {
+            Layout.fillWidth: true
+            text: "On either side edge, the left group sits at the top and the right group sits at the bottom."
+            wrapMode: Text.WordWrap; color: Style.muted; font.pixelSize: Style.captionSize
+        }
         GridLayout {
             Layout.fillWidth: true
             columns: root.width >= 600 ? 2 : 1
@@ -92,11 +105,11 @@ ColumnLayout {
             rowSpacing: 20
             Repeater {
                 model: [
-                    {key: "height", label: "Bar height", min: 28, max: 80, fallback: 32},
+                    {key: "height", label: "Bar thickness", min: 28, max: 80, fallback: 32},
                     {key: "groupSpacing", label: "Inside shared pills", min: 0, max: 30, fallback: 3},
                     {key: "spacing", label: "Between items / pills", min: 0, max: 30, fallback: 3},
-                    {key: "marginTop", label: "Top margin", min: 0, max: 100, fallback: 5},
-                    {key: "marginSide", label: "Side margins", min: 0, max: 200, fallback: 10}
+                    {key: "marginTop", label: "Edge margin", min: 0, max: 100, fallback: 5},
+                    {key: "marginSide", label: "End margins", min: 0, max: 200, fallback: 10}
                 ]
                 delegate: SettingsSlider {
                     required property var modelData

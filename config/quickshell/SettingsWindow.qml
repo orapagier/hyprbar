@@ -39,7 +39,7 @@ FloatingWindow {
         {group: "Desktop", pages: [
             {section: -8, title: "Appearance", symbol: "󰔎", keywords: "theme colors font cursor"},
             {section: -2, title: "Windows", symbol: "󰖲", keywords: "hyprland transparency blur gaps animations"},
-            {section: -1, title: "Bar & layout", symbol: "󰕮", keywords: "topbar hyprbar spacing workspace workspaces"},
+            {section: -1, title: "Bar & layout", symbol: "󰕮", keywords: "topbar hyprbar position screen edge top bottom left right spacing workspace workspaces"},
             {section: -13, title: "Applications", symbol: "󰀻", keywords: "default apps startup"},
             {section: -11, title: "Notifications", symbol: "󰂚", keywords: "delivery popups disturb"}
         ]},
@@ -650,8 +650,9 @@ FloatingWindow {
                                 id: previewBar
                                 x: 12
                                 y: previewLabel.y + previewLabel.height + 12
-                                width: Math.max(1000, parent.width - 24)
-                                scale: Math.min(1, (parent.width - 24) / width)
+                                width: vertical ? implicitWidth : Math.max(1000, parent.width - 24)
+                                height: vertical ? Math.max(720, window.screen ? window.screen.height - 2 * (window.draft.bar.marginSide || 0) : 720) : implicitHeight
+                                scale: vertical ? Math.min(1, 320 / height) : Math.min(1, (parent.width - 24) / width)
                                 transformOrigin: Item.TopLeft
                                 settings: window.draft
                                 wallpaperSource: window.screen ? window.wallpaperSources[window.screen.name] || "" : ""

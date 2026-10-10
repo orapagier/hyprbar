@@ -67,9 +67,24 @@ ShellRoot {
             }
             exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
             onVisibleChanged: if (!visible) menuState.close()
-            anchors { top: true; left: true; right: true }
-            margins { top: preferences.config.bar.marginTop; left: preferences.config.bar.marginSide; right: preferences.config.bar.marginSide }
+            readonly property string edge: preferences.config.bar.position || "top"
+            readonly property bool vertical: edge === "left" || edge === "right"
+            anchors {
+                top: edge !== "bottom"
+                bottom: edge !== "top"
+                left: edge !== "right"
+                right: edge !== "left"
+            }
+            margins {
+                top: edge === "top" ? preferences.config.bar.marginTop : vertical ? preferences.config.bar.marginSide : 0
+                bottom: edge === "bottom" ? preferences.config.bar.marginTop : vertical ? preferences.config.bar.marginSide : 0
+                left: edge === "left" ? preferences.config.bar.marginTop : !vertical ? preferences.config.bar.marginSide : 0
+                right: edge === "right" ? preferences.config.bar.marginTop : !vertical ? preferences.config.bar.marginSide : 0
+            }
+            implicitWidth: bar.implicitWidth
             implicitHeight: bar.implicitHeight
+            readonly property real originX: edge === "right" ? screen.width - margins.right - width : margins.left
+            readonly property real originY: edge === "bottom" ? screen.height - margins.bottom - height : margins.top
             color: "transparent"
             WlrLayershell.namespace: "hyprshell"
             Bar {
@@ -83,8 +98,8 @@ ShellRoot {
                 wallpaperSource: wallpapers.sources[panel.screen.name] || ""
                 screenWidth: panel.screen.width
                 screenHeight: panel.screen.height
-                screenOffsetX: panel.margins.left
-                screenOffsetY: panel.margins.top
+                screenOffsetX: panel.originX
+                screenOffsetY: panel.originY
                 clockText: shell.clockText
                 trayModel: tray.items
                 activeMenu: menuState.section
@@ -117,7 +132,8 @@ ShellRoot {
                 wallpaperSource: bar.wallpaperSource
                 translucency: Settings.popdownTranslucency(preferences.config, menuState.displayedSection)
                 screen: panel.screen
-                barBottom: panel.visible ? panel.margins.top + panel.height : 0
+                barEdge: panel.visible ? panel.edge : "top"
+                barRect: panel.visible ? Qt.rect(panel.originX, panel.originY, panel.width, panel.height) : Qt.rect(0,0,0,0)
                 connected: panel.visible
                 movePointerOnOpen: !panel.visible || menuState.openedByShortcut
                 section: menuState.section
@@ -127,7 +143,7 @@ ShellRoot {
                 triggerRect: {
                     if (!panel.visible) return Qt.rect(panel.screen.width / 2, 0, 0, 0);
                     let rect = bar.menuRect(menuState.displayedSection);
-                    return Qt.rect(rect.x + panel.margins.left, rect.y + panel.margins.top, rect.width, rect.height);
+                    return Qt.rect(rect.x + panel.originX, rect.y + panel.originY, rect.width, rect.height);
                 }
                 accent: bar.menuAccent(menuState.displayedSection)
                 services: shell.services

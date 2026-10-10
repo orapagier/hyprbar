@@ -19,6 +19,10 @@ class AutosaveTests(unittest.TestCase):
     def test_lazy_loading_close_flush_failed_draft_and_reopen(self):
         self.run_ui_scenario('SettingsLifecycle', 'LIFECYCLE_OK', ('right', '#00ff00', 1))
 
+    def test_bar_positions_autosave_and_survive_reopening(self):
+        settings = self.run_ui_scenario('SettingsBarPosition', 'BAR_POSITION_OK', ('right', '', 1))
+        self.assertEqual(settings['bar']['position'], 'top')
+
     def test_workspace_shortcut_queues_with_autosave_and_survives_reopening(self):
         settings = self.run_ui_scenario('SettingsWorkspaceVisibility', 'WORKSPACE_VISIBILITY_OK', ('right', '', 1))
         self.assertEqual(settings['bar']['workspaceOverrides'], {'1': False, '3': True})

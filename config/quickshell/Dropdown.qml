@@ -18,7 +18,14 @@ PanelWindow {
     property bool connected: true
     property bool movePointerOnOpen: !connected
     property bool pinned: false
-    property real barBottom: 37
+    property string barEdge: "top"
+    property rect barRect: Qt.rect(0, 5, width, 32)
+    readonly property real barBottom: barRect.y + barRect.height
+    readonly property rect inputRect: !connected ? Qt.rect(0, 0, width, height)
+        : barEdge === "bottom" ? Qt.rect(0, 0, width, barRect.y)
+        : barEdge === "left" ? Qt.rect(barRect.x + barRect.width, 0, width - barRect.x - barRect.width, height)
+        : barEdge === "right" ? Qt.rect(0, 0, barRect.x, height)
+        : Qt.rect(0, barBottom, width, height - barBottom)
     readonly property bool opened: section.length > 0
     signal hoverChanged(bool inside)
     required property var services
@@ -33,7 +40,7 @@ PanelWindow {
     color: "transparent"
     // Keep the bar reachable while this overlay is open, so hovering a
     // neighboring icon can switch menus without closing the current one.
-    mask: Region { x: 0; y: dropdown.barBottom; width: dropdown.width; height: dropdown.opened ? Math.max(0, dropdown.height - dropdown.barBottom) : 0 }
+    mask: Region { x: dropdown.inputRect.x; y: dropdown.inputRect.y; width: Math.max(0, dropdown.inputRect.width); height: dropdown.opened ? Math.max(0, dropdown.inputRect.height) : 0 }
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "hyprshell"
     WlrLayershell.keyboardFocus: !opened ? WlrKeyboardFocus.None : pinned ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand
@@ -57,6 +64,7 @@ PanelWindow {
             triggerRect: dropdown.triggerRect
             alignment: dropdown.alignment
             connected: dropdown.connected
+            edge: dropdown.barEdge
             accent: dropdown.accent
             opened: dropdown.opened
             cardClickable: dropdown.displayedSection === "settings"

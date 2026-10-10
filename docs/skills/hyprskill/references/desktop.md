@@ -36,8 +36,15 @@ Quickshell owns the bar, menus, notification inbox, and optional Hypridle child.
 
 Settings are version 1 JSON with defaults and inheritance. Inspect `backend.py`'s CLI before using `--save-json` / `--expected-json`; preserve its validation, backups, conflict detection, and rollback. Hyprland settings overrides are managed by this backend; avoid competing writes to generated blocks. Adding a preference requires checking defaults, backend validation, UI model, and consumers. Read `docs/settings.md` only for settings work.
 
+Settings → Bar & layout → Layout & spacing → Screen edge selects Top, Left,
+Right, or Bottom (`bar.position`, default `top`). On either side, saved left
+items sit at the top and right items sit at the bottom, with upright labels and
+vertical workspaces/tray icons. Edge margin is `marginTop`; end margins are
+`marginSide`. Menus open inward from the selected edge; the Settings preview
+and item alignment labels follow the orientation.
+
 Alt+T toggles hyprbar only on the focused monitor's active numbered workspace.
-Settings → Bar & layout → Topbar visibility provides Show on all / Hide on all
+Settings → Bar & layout → Bar visibility provides Show on all / Hide on all
 (clearing individual choices) and a workspace selector with an individual switch.
 Saved `bar.workspaceOverrides` booleans take priority over the legacy visibility
 and selected-workspace defaults. The CLI toggle requires a workspace number:

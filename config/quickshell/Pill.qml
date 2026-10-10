@@ -4,6 +4,7 @@ import "AdaptiveColors.js" as Colors
 Item {
     id: pill
     property var settings: ({})
+    property bool vertical: false
     readonly property string shownText: settings.hideText ? "" : settings.text || text
     readonly property string shownIcon: settings.hideIcon ? "" : settings.icon || icon
     readonly property color textColor: settings.textColor || (family === "GoMono Nerd Font" ? settings.iconColor : "") || effectiveForeground
@@ -55,8 +56,8 @@ Item {
     readonly property int effectiveGlyphSize: settings.iconSize || settings.fontSize || pixelSize
     readonly property int effectiveTextSize: settings.fontSize || Math.max(8, Math.round(pixelSize * (settings.iconSize || 16) / 16))
     readonly property int iconWidth: shownIcon.length ? effectiveIconSize + 5 : 0
-    implicitWidth: Math.min(maximumWidth, Math.max(minimumTextWidth, label.implicitWidth) + iconWidth + effectiveLeftPadding + effectiveRightPadding)
-    implicitHeight: Math.max(28, shownIcon.length ? effectiveIconSize + 8 : 0, shownText.length ? label.implicitHeight + 8 : 0)
+    implicitWidth: Math.min(maximumWidth, Math.max(minimumTextWidth, label.implicitWidth, vertical && shownIcon.length ? effectiveIconSize : 0) + (vertical ? 0 : iconWidth) + effectiveLeftPadding + effectiveRightPadding)
+    implicitHeight: vertical ? Math.max(28, (shownIcon.length ? effectiveIconSize + (shownText.length ? 4 : 0) : 0) + (shownText.length ? label.implicitHeight : 0) + 8) : Math.max(28, shownIcon.length ? effectiveIconSize + 8 : 0, shownText.length ? label.implicitHeight + 8 : 0)
     Rectangle {
         visible: pill.backgroundShown
         anchors.fill: parent
@@ -97,8 +98,8 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 140 } }
     }
     Text {
-        x: pill.effectiveLeftPadding
-        anchors.verticalCenter: parent.verticalCenter
+        x: pill.vertical ? (parent.width - width) / 2 : pill.effectiveLeftPadding
+        y: pill.vertical && pill.shownText.length ? 4 : (parent.height - height) / 2
         objectName: "pillIcon"
         width: pill.effectiveIconSize
         visible: pill.shownIcon.length > 0
@@ -112,9 +113,10 @@ Item {
     }
     Text {
         id: label
-        x: pill.effectiveLeftPadding + pill.iconWidth
-        anchors.verticalCenter: parent.verticalCenter
-        width: parent.width - pill.effectiveLeftPadding - pill.effectiveRightPadding - pill.iconWidth
+        x: pill.effectiveLeftPadding + (pill.vertical ? 0 : pill.iconWidth)
+        y: (parent.height - height + (pill.vertical && pill.shownIcon.length ? pill.effectiveIconSize + 4 : 0)) / 2
+        width: Math.max(1, parent.width - pill.effectiveLeftPadding - pill.effectiveRightPadding - (pill.vertical ? 0 : pill.iconWidth))
+        wrapMode: pill.vertical ? Text.Wrap : Text.NoWrap
         text: pill.shownText
         textFormat: pill.textFormat
         color: pill.textColor
@@ -125,7 +127,7 @@ Item {
         font.bold: pill.bold
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        elide: Text.ElideRight
+        elide: pill.vertical ? Text.ElideNone : Text.ElideRight
         renderType: Text.QtRendering
     }
     MouseArea {

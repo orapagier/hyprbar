@@ -11,6 +11,7 @@ Item {
     property real pressX: 0
     property real pressY: 0
     property real pointerX: 0
+    property real pointerY: 0
     property var destination: ({side:"left", beforeId:"", markerX:0})
     signal itemSelected(string id)
     signal itemDropped(string id, string side, string beforeId)
@@ -24,12 +25,15 @@ Item {
     }
     function dropAt(x, y) {
         let hoveredId = itemAt(x, y);
-        let side = hoveredId ? bar.side(hoveredId) : x < width / 3 ? "left" : x > width * 2 / 3 ? "right" : "center";
+        let cursor = bar.vertical ? y : x, length = bar.vertical ? height : width;
+        let start = item => bar.vertical ? item.y : item.x;
+        let size = item => bar.vertical ? item.height : item.width;
+        let side = hoveredId ? bar.side(hoveredId) : cursor < length / 3 ? "left" : cursor > length * 2 / 3 ? "right" : "center";
         let group = Object.keys(bar.moduleItems).filter(id => id !== draggedId && bar.moduleItems[id].visible && bar.side(id) === side)
-            .sort((a, b) => bar.moduleItems[a].x - bar.moduleItems[b].x);
-        let before = group.find(id => x < bar.moduleItems[id].x + bar.moduleItems[id].width / 2);
+            .sort((a, b) => start(bar.moduleItems[a]) - start(bar.moduleItems[b]));
+        let before = group.find(id => cursor < start(bar.moduleItems[id]) + size(bar.moduleItems[id]) / 2);
         let last = group.length ? bar.moduleItems[group[group.length - 1]] : null;
-        return {side:side, beforeId:before || "", markerX:before ? bar.moduleItems[before].x - 2 : last ? last.x + last.width + 2 : side === "left" ? 2 : side === "right" ? width - 2 : width / 2};
+        return {side:side, beforeId:before || "", markerX:before ? start(bar.moduleItems[before]) - 2 : last ? start(last) + size(last) + 2 : side === "left" ? 2 : side === "right" ? length - 2 : length / 2};
     }
     // This overlay captures gestures only in the settings preview.
     MouseArea {
@@ -43,12 +47,14 @@ Item {
             editor.pressX = mouse.x;
             editor.pressY = mouse.y;
             editor.pointerX = mouse.x;
+            editor.pointerY = mouse.y;
         }
         onPositionChanged: mouse => {
             if (!pressed || !editor.draggedId) return;
             if (Math.abs(mouse.x-editor.pressX) + Math.abs(mouse.y-editor.pressY) >= 6)
                 editor.dragging = true;
             editor.pointerX = mouse.x;
+            editor.pointerY = mouse.y;
             editor.destination = editor.dropAt(mouse.x, mouse.y);
         }
         onReleased: mouse => {
@@ -67,21 +73,23 @@ Item {
     }
     Rectangle {
         visible: editor.dragging
-        x: editor.destination.markerX - 1
-        y: 1; width: 2; height: editor.height - 2
+        x: editor.bar.vertical ? 1 : editor.destination.markerX - 1
+        y: editor.bar.vertical ? editor.destination.markerX - 1 : 1
+        width: editor.bar.vertical ? editor.width - 2 : 2
+        height: editor.bar.vertical ? 2 : editor.height - 2
         color: "#d1b5ff"
         radius: 1
     }
     Rectangle {
         visible: editor.dragging
         x: Math.max(0, Math.min(editor.width-width, editor.pointerX-width/2))
-        y: editor.height + 4
+        y: editor.bar.vertical ? Math.max(0, Math.min(editor.height - height, editor.pointerY)) : editor.height + 4
         width: caption.implicitWidth + 24; height: 28
         radius: 10; color: "#35304e"; border.color: "#b99ce4"
         Text {
             id: caption
             anchors.centerIn: parent
-            text: (editor.names[editor.draggedId] || editor.draggedId) + " → " + editor.destination.side
+            text: (editor.names[editor.draggedId] || editor.draggedId) + " → " + (editor.bar.vertical ? ({left:"top",center:"center",right:"bottom"})[editor.destination.side] : editor.destination.side)
             color: "#eee4ff"; font.pixelSize: 11
         }
     }

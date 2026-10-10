@@ -30,6 +30,22 @@ write preferences. Each page keeps its scroll position within the current window
 The bar preview appears within bar and item pages. Control feedback and the short
 page fade honor an explicit disabled Hyprland animation preference.
 
+**Bar & layout → Layout & spacing → Screen edge** selects Top, Left, Right,
+or Bottom. `bar.position` defaults to `top` for existing settings. On either
+side edge, the left item group sits at the top, the center group stays centered,
+and the right group sits at the bottom, keeping each group's existing order.
+Labels stay upright and wrap, icons stack over labels, and workspaces and tray
+icons stack vertically. Side bars expand to fit readable content (at least
+68 px); **Bar thickness** can increase that width. **Edge margin** applies to
+the chosen screen edge and **End margins** applies to the two ends. The existing
+`height`, `marginTop`, and `marginSide` keys preserve these preferences.
+
+Menus open toward the desktop from each edge; their glass connectors, hover
+bridges, screen coordinates, and input region follow the bar. The portrait
+Settings preview supports selecting and dragging items between Top, Center,
+and Bottom groups, using the same saved `left`, `center`, and `right` IDs.
+Position changes use the usual validated autosave and apply across monitors.
+
 Bar layout follows each module's enabled setting and data availability, rather
 than its inherited `Item.visible` value. Hiding the Settings preview or a
 workspace-specific bar keeps module positions, shared pills, and height intact.
