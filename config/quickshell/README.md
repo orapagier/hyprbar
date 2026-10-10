@@ -1,5 +1,7 @@
 # Native Quickshell panel
 
+**hyprbar** is Hyprshell's top bar, also called the bar, topbar, or panel here.
+
 The panel, launcher, calendar, audio, Wi-Fi, Bluetooth, notification inbox,
 power menu, media display, and status bindings are QML/JavaScript components.
 The desktop service bindings and menus are native QML. Python helpers handle

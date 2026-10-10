@@ -1,5 +1,9 @@
 # Settings implementation
 
+**hyprbar** means Hyprshell's top bar. This document also uses “bar” and
+“topbar”; settings labels, IPC methods, and configuration keys keep their
+existing names.
+
 The settings app is part of the existing Quickshell process. `SettingsWindow.qml`
 is created on demand by `SettingsController.qml` through the `bar settings` IPC
 method; `bin/hyprshell-settings` and the desktop entry provide normal

@@ -4,6 +4,9 @@ Hyprshell is a configurable desktop shell for **Hyprland on Arch Linux**, built
 with **Quickshell**. It brings the application launcher, status bar, desktop
 menus, notification inbox, and settings into one native Wayland interface.
 
+**hyprbar** is the name of Hyprshell's top bar. References to the “bar”,
+“top bar”, or “topbar” in this documentation mean hyprbar.
+
 The goal is a consistent desktop experience from boot and login through daily
 use, with a lightweight foundation that gives beauty and performance equal
 priority. Hyprshell builds on Hyprland and native Qt 6 components, brings

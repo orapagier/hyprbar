@@ -1,5 +1,8 @@
 # Desktop map
 
+**hyprbar** is the user's name for Hyprshell's top bar, also called the bar
+or topbar in existing settings and code.
+
 Paths below are relative to the resolved config/state roots or checkout. Prefer actual local source over upstream examples: this checkout uses Hyprland 0.56+ Lua APIs.
 
 | Concern | Live config / source in checkout |

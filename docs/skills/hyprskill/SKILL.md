@@ -1,11 +1,14 @@
 ---
 name: hyprskill
-description: Diagnose, customize, or maintain this user's Linux machine and desktop, including requests about my system, laptop, display, shortcuts, bar, menus, notifications, wallpaper, audio, Wi-Fi, Bluetooth, locking, or desktop settings. Knows the local Hyprshell setup without the user naming it. Excludes unrelated application or repository work.
+description: Diagnose, customize, or maintain this user's Linux machine and desktop, including requests about my system, laptop, display, shortcuts, hyprbar (the top bar), bar, menus, notifications, wallpaper, audio, Wi-Fi, Bluetooth, locking, or desktop settings. Knows the local Hyprshell setup without the user naming it. Excludes unrelated application or repository work.
 ---
 
 # Hyprskill
 
 This machine uses Arch Linux, Hyprland **Lua** configuration, and Hyprshell's native Qt 6 Quickshell desktop. Do not assume hyprland.conf, Waybar, Rofi, or a separate notification daemon.
+
+The user calls Hyprshell's top bar **hyprbar**. Treat “hyprbar”, “top bar”,
+“topbar”, and “bar” as the same desktop component.
 
 Resolve paths independently of the working directory:
 - Config root: `${XDG_CONFIG_HOME:-$HOME/.config}`.
