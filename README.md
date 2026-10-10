@@ -152,7 +152,8 @@ The installer:
    setups, preserving the destination machine's disk and encryption settings.
 
 The base package list is in [packages.txt](packages.txt). It includes Kitty,
-Nautilus, UWSM, portals, the Polkit agent, fonts and icons, screenshot and
+Nautilus with Android USB file transfer support (`gvfs-mtp`), UWSM, portals,
+the Polkit agent, fonts and icons, screenshot and
 brightness tools, NetworkManager, BlueZ, UPower, PipeWire, and WirePlumber.
 It also includes Plymouth. See [boot splash setup and portability](docs/boot-splash.md)
 for supported UKI, GRUB, and systemd-boot layouts and boot configuration backups.
@@ -219,7 +220,7 @@ These shortcuts are also installed by `--config-only`.
 
 The optional [application list](packages-apps.txt) includes Chromium, Distrobox,
 Podman, Hyprlock/Hypridle, archive tools, manuals and shell completion, clipboard and
-media utilities, Android file transfer support, Zenity for file picker dialogs,
+media utilities, Zenity for file picker dialogs,
 mpv, imv, Evince, Mousepad,
 and cmatrix. Review the list before installing it. Installing locking packages
 does not enable automatic locking.
@@ -702,6 +703,27 @@ tries to start the bar if it is unavailable; Settings requires the bar to be
 running. If utilities or the desktop entry are missing, reinstall with
 `./setup.sh --config-only`. Applications missing from the launcher may lack
 an installed desktop entry.
+
+### An Android phone does not appear in Files
+
+Nautilus needs `gvfs-mtp` to browse Android phones over USB. It is included in
+the base desktop setup; older installations may have installed it only with
+`--extra`. To add it to an existing Arch installation, run:
+
+```bash
+sudo pacman -Syu --needed gvfs-mtp
+```
+
+Unlock the phone, select **File transfer / Android Auto** in its USB options,
+and accept any file-access prompt. After installation, close Nautilus with
+`nautilus --quit`, reconnect the phone, and open Files again (`Super+E`). The
+phone should appear in the sidebar. If it does not, log out and back in to
+refresh the session's GVfs volume monitors.
+
+In a desktop terminal, `gio mount -li` shows detected volumes. If the phone is
+still absent, check that the cable supports data and try another USB port.
+The phone's storage is accessed through MTP, so it does not need a disk mount
+or an `/etc/fstab` entry.
 
 ### Notifications are missing
 

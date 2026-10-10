@@ -27,10 +27,11 @@ noto-fonts
 noto-fonts-emoji
 pop-icon-theme
 adwaita-cursors
-# Terminal and file manager for the desktop shortcuts
+# Terminal, file manager, and Android USB file transfer
 kitty
 nautilus
 gvfs
+gvfs-mtp
 xdg-user-dirs
 # Networking, pairing, and battery data
 networkmanager
