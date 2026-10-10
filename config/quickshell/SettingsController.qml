@@ -12,6 +12,7 @@ Item {
     property var audioServices: null
     property var notificationApps: []
     property var batteryInfo: ({})
+    property int currentWorkspace: 1
     readonly property var window: editor.item
     readonly property bool loaded: editor.active
     // Only failed, unsaved edits survive unloading; the controls do not.
@@ -62,6 +63,7 @@ Item {
             audioServices: controller.audioServices
             notificationApps: controller.notificationApps
             batteryInfo: controller.batteryInfo
+            currentWorkspace: controller.currentWorkspace
             onFocusRequested: controller.focusRequested(settingsWindow)
             onLockRequested: controller.lockRequested()
         }

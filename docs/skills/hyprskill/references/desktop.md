@@ -36,6 +36,13 @@ Quickshell owns the bar, menus, notification inbox, and optional Hypridle child.
 
 Settings are version 1 JSON with defaults and inheritance. Inspect `backend.py`'s CLI before using `--save-json` / `--expected-json`; preserve its validation, backups, conflict detection, and rollback. Hyprland settings overrides are managed by this backend; avoid competing writes to generated blocks. Adding a preference requires checking defaults, backend validation, UI model, and consumers. Read `docs/settings.md` only for settings work.
 
+Alt+T toggles hyprbar only on the focused monitor's active numbered workspace.
+Settings → Bar & layout → Topbar visibility provides Show on all / Hide on all
+(clearing individual choices) and a workspace selector with an individual switch.
+Saved `bar.workspaceOverrides` booleans take priority over the legacy visibility
+and selected-workspace defaults. The CLI toggle requires a workspace number:
+`backend.py --toggle-bar WORKSPACE`; keep toggles in the existing transaction.
+
 Default-app choices affect links and file associations; explicit shortcut commands
 remain configurable independently. Startup toggles take effect at the next login,
 without starting or stopping apps immediately. Sync stores validated application

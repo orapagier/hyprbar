@@ -17,6 +17,8 @@ ShellRoot {
     readonly property var statusData: desktopServices.statusData
     readonly property var mediaData: desktopServices.mediaData
     readonly property var notificationData: notificationInbox.statusData
+    readonly property int currentWorkspace: Hyprland.focusedMonitor && Hyprland.focusedMonitor.activeWorkspace ? Hyprland.focusedMonitor.activeWorkspace.id : 0
+    property var pendingBarToggles: []
     SettingsStore { id: preferences }
     SettingsController {
         id: settingsController
@@ -27,6 +29,7 @@ ShellRoot {
         audioServices: desktopServices
         notificationApps: notificationInbox.applications
         batteryInfo: desktopServices.batteryInfo
+        currentWorkspace: shell.currentWorkspace
         onLockRequested: locking.lockNow()
         // Reopening an existing window must activate it, even on another
         // workspace. Do not remap it or reset a user's tiled/floating choice.
@@ -58,11 +61,9 @@ ShellRoot {
             MenuController { id: menuState; dismissPinnedOnLeave: !panel.visible || openedByShortcut }
             screen: modelData
             visible: {
-                if (preferences.config.bar.visible === false) return false;
-                if ((preferences.config.bar.workspaceScope || "all") !== "selected") return true;
                 let monitor = Hyprland.monitorFor(panel.screen);
                 let ws = monitor && monitor.activeWorkspace;
-                return ws ? (preferences.config.bar.workspaceList || []).indexOf(ws.id) >= 0 : true;
+                return ws ? Settings.barVisible(preferences.config.bar, ws.id) : preferences.config.bar.visible !== false;
             }
             exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
             onVisibleChanged: if (!visible) menuState.close()
@@ -154,7 +155,7 @@ ShellRoot {
     }
     Process {
         id: barVisibilityWriter
-        command: ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--toggle-bar"]
+        onExited: barToggleQueue.restart()
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -163,6 +164,16 @@ ShellRoot {
                     else console.warn("Topbar toggle: " + result.message);
                 } catch (error) { console.warn("Topbar toggle failed: " + error); }
             }
+        }
+    }
+    Timer {
+        id: barToggleQueue
+        interval: 0
+        onTriggered: {
+            if (barVisibilityWriter.running || shell.pendingBarToggles.length === 0) return;
+            let workspace = shell.pendingBarToggles.shift();
+            barVisibilityWriter.command = ["python3", decodeURIComponent(Qt.resolvedUrl("settings/backend.py").toString().replace(/^file:\/\//, "")), "--toggle-bar", String(workspace)];
+            barVisibilityWriter.running = true;
         }
     }
     IpcHandler {
@@ -178,9 +189,17 @@ ShellRoot {
             settingsController.open();
         }
         function toggleBar(): void {
+            let workspace = shell.currentWorkspace;
+            if (workspace < 1 || workspace > 99) {
+                console.warn("Topbar toggle needs an active numbered workspace (1–99).");
+                return;
+            }
             let ui = settingsController.window;
-            if (ui) ui.updateBar("visible", ui.draft.bar.visible === false);
-            else if (!barVisibilityWriter.running) barVisibilityWriter.running = true;
+            if (ui) ui.toggleWorkspaceBar(workspace);
+            else {
+                shell.pendingBarToggles.push(workspace);
+                barToggleQueue.restart();
+            }
         }
         function toggleMenu(name: string): void {
             if (!["calendar", "notifications", "audio", "wifi", "bluetooth", "battery", "power", "launcher"].includes(name)) return;

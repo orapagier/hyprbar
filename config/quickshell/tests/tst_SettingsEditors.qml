@@ -14,6 +14,7 @@ Item {
         width: 820
         settings: Model.copy(scene.barDefaults)
         onEdited: (key, value) => settings = Object.assign({}, settings, {[key]: value})
+        onVisibilityEdited: bar => settings = bar
     }
     SettingsItemEditor {
         id: itemPage
@@ -41,27 +42,33 @@ Item {
             mouseClick(findChild(control(barPage, "height"), "sliderReset"));
             compare(barPage.settings.height, 32);
         }
-        function test_workspaceScopeShowsListAndParsesNumbers() {
-            let scope = control(barPage, "barWorkspaceScope");
-            let list = findChild(barPage, "barWorkspaceListControl");
-            verify(scope !== null);
-            verify(list !== null);
-            verify(!list.visible);
-            scope.activated(1);
-            compare(barPage.settings.workspaceScope, "selected");
-            compare(JSON.stringify(barPage.settings.workspaceList), "[1]");
-            wait(30);
-            verify(list.visible);
-            list.text = "2, 4, 4";
-            list.editingFinished();
-            compare(JSON.stringify(barPage.settings.workspaceList), "[2,4]");
-            list.text = "x";
-            list.editingFinished();
-            compare(JSON.stringify(barPage.settings.workspaceList), "[2,4]");
-            scope.activated(0);
+        function test_workspaceVisibilityPreservesOtherWorkspacesAndGlobalActionsResetChoices() {
+            barPage.settings = Object.assign({}, barPage.settings, {workspaceScope: "selected", workspaceList: [1]});
+            let workspace = control(barPage, "barWorkspace");
+            let toggle = control(barPage, "barWorkspaceVisible");
+            workspace.activated(2);
+            compare(barPage.selectedWorkspace, 3);
+            verify(!toggle.checked);
+            mouseClick(toggle);
+            verify(Model.barVisible(barPage.settings, 3));
+            verify(Model.barVisible(barPage.settings, 1));
+            verify(!Model.barVisible(barPage.settings, 2));
+            mouseClick(toggle);
+            verify(!Model.barVisible(barPage.settings, 3));
+            verify(Model.barVisible(barPage.settings, 1));
+            mouseClick(control(barPage, "barShowAll"));
             compare(barPage.settings.workspaceScope, "all");
-            wait(30);
-            verify(!list.visible);
+            compare(JSON.stringify(barPage.settings.workspaceOverrides), "{}");
+            verify(toggle.checked);
+            mouseClick(toggle);
+            verify(!Model.barVisible(barPage.settings, 3));
+            verify(Model.barVisible(barPage.settings, 1));
+            mouseClick(control(barPage, "barHideAll"));
+            compare(JSON.stringify(barPage.settings.workspaceOverrides), "{}");
+            verify(!toggle.checked);
+            mouseClick(toggle);
+            verify(Model.barVisible(barPage.settings, 3));
+            verify(!Model.barVisible(barPage.settings, 1));
         }
         function test_itemPercentagesAndResetUseOriginalSentinels() {
             barPage.visible = false; itemPage.visible = true;

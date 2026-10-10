@@ -147,14 +147,45 @@ class SettingsTests(unittest.TestCase):
 
     def test_shortcut_toggle_preserves_saved_settings(self):
         self.data['bar']['spacing'] = 17
+        self.data['bar'].update(workspaceScope='selected', workspaceList=[1])
         self.data['items'][0]['textColor'] = '#abcdef'
         backend.save(self.data)
-        for visible in (False, True):
-            self.assertTrue(backend.save(backend.DEFAULTS, toggle_bar=True)['ok'])
+        for visible in (True, False):
+            self.assertTrue(backend.save(backend.DEFAULTS, toggle_workspace=3)['ok'])
             saved = json.loads(self.path.read_text())
-            self.assertIs(saved['bar']['visible'], visible)
+            self.assertIs(backend.bar_visible(saved['bar'], 3), visible)
+            self.assertTrue(backend.bar_visible(saved['bar'], 1))
+            self.assertFalse(backend.bar_visible(saved['bar'], 2))
             self.assertEqual(saved['bar']['spacing'], 17)
             self.assertEqual(saved['items'][0]['textColor'], '#abcdef')
+            self.assertEqual(saved['bar']['workspaceList'], [1])
+
+    def test_workspace_toggle_from_all_visible_and_all_hidden(self):
+        for baseline in (True, False):
+            self.data['bar'].update(visible=baseline, workspaceOverrides={})
+            backend.save(self.data)
+            for visible in (not baseline, baseline):
+                result = subprocess.run(['python3', str(ROOT / 'config/quickshell/settings/backend.py'),
+                                         '--toggle-bar', '3'], capture_output=True, text=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                bar = json.loads(self.path.read_text())['bar']
+                self.assertIs(backend.bar_visible(bar, 3), visible)
+                self.assertIs(backend.bar_visible(bar, 1), baseline)
+                self.assertIs(bar['visible'], baseline)
+
+    def test_workspace_overrides_validation_and_legacy_inheritance(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['workspaceOverrides']
+        self.assertEqual(backend.validate(legacy)['bar']['workspaceOverrides'], {})
+        for invalid in ([], {'0': True}, {'100': False}, {'01': True}, {'1': 1}, {'1': 'true'}, {1: True}):
+            with self.subTest(overrides=invalid), self.assertRaises(ValueError):
+                data = copy.deepcopy(self.data)
+                data['bar']['workspaceOverrides'] = invalid
+                backend.save(data)
+        for invalid in (0, 100, True, '3'):
+            with self.subTest(workspace=invalid), self.assertRaises(ValueError):
+                backend.save(self.data, toggle_workspace=invalid)
+        self.assertFalse(self.path.exists())
 
     def test_random_vibrant_colors_validation_and_round_trip(self):
         legacy = copy.deepcopy(self.data)

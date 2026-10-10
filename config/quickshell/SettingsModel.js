@@ -22,6 +22,20 @@ var vibrantIds = ['launcher', 'settings', 'workspaces', 'media', 'calendar', 'tr
     'notifications', 'audio', 'wifi', 'bluetooth', 'battery', 'power'];
 
 function copy(value) { return JSON.parse(JSON.stringify(value)); }
+function barVisible(bar, workspace) {
+    let overrides = bar.workspaceOverrides || {};
+    if (typeof overrides[String(workspace)] === 'boolean') return overrides[String(workspace)];
+    return bar.visible !== false && ((bar.workspaceScope || 'all') === 'all' ||
+        (bar.workspaceList || []).indexOf(workspace) >= 0);
+}
+function withWorkspaceVisibility(bar, workspace, visible) {
+    let next = copy(bar);
+    next.workspaceOverrides = Object.assign({}, next.workspaceOverrides || {}, {[String(workspace)]: visible});
+    return next;
+}
+function withAllBarVisibility(bar, visible) {
+    return Object.assign(copy(bar), {visible: visible, workspaceScope: 'all', workspaceList: [], workspaceOverrides: {}});
+}
 function item(config, id) { return (config.items || []).find(i => i.id === id) || {}; }
 function popdownTranslucency(config, id) {
     let value = item(config, id).popdownTranslucency;

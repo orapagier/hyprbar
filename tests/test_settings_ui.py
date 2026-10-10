@@ -19,6 +19,12 @@ class AutosaveTests(unittest.TestCase):
     def test_lazy_loading_close_flush_failed_draft_and_reopen(self):
         self.run_ui_scenario('SettingsLifecycle', 'LIFECYCLE_OK', ('right', '#00ff00', 1))
 
+    def test_workspace_shortcut_queues_with_autosave_and_survives_reopening(self):
+        settings = self.run_ui_scenario('SettingsWorkspaceVisibility', 'WORKSPACE_VISIBILITY_OK', ('right', '', 1))
+        self.assertEqual(settings['bar']['workspaceOverrides'], {'1': False, '3': True})
+        self.assertEqual(settings['bar']['workspaceList'], [1])
+        self.assertEqual(settings['bar']['spacing'], 17)
+
     def test_search_navigation_scroll_and_responsive_layout(self):
         with tempfile.TemporaryDirectory(prefix='hyprshell-navigation-') as directory:
             root = Path(directory)
@@ -75,7 +81,8 @@ class AutosaveTests(unittest.TestCase):
             payload = root / 'config/quickshell'
             shutil.copytree(ROOT / 'config/quickshell', payload, ignore=shutil.ignore_patterns('__pycache__', 'audio-spectrum'))
             entry = payload / (scenario + '.qml')
-            entry.write_text((payload / 'tests' / (scenario + '.qml')).read_text().replace('import ".."', 'import "."'))
+            entry.write_text((payload / 'tests' / (scenario + '.qml')).read_text()
+                             .replace('import ".."', 'import "."').replace('import "../', 'import "./'))
             env = dict(os.environ, XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORMTHEME='', QT_QPA_PLATFORM='offscreen', QT_QUICK_BACKEND='software', PATH=str(commands) + os.pathsep + os.environ['PATH'])
             result = subprocess.run(['quickshell', '-p', str(entry)], env=env, capture_output=True, text=True, timeout=20)
             self.assertIn(marker, result.stdout + result.stderr, result.stdout + result.stderr)
@@ -83,3 +90,4 @@ class AutosaveTests(unittest.TestCase):
             settings = json.loads((root / 'config/hyprshell/settings.json').read_text())
             audio = next(i for i in settings['items'] if i['id'] == 'audio')
             self.assertEqual((audio['side'], audio['textColor'], audio['opacity']), expected_audio)
+            return settings

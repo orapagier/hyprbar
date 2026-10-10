@@ -442,22 +442,26 @@ and regenerates its Lua payload; setup restores both along with the Lua hook.
 
 ## Topbar visibility
 
-**Bar & layout → Topbar visibility → Show topbar** hides or shows the bar on
-all monitors. `bar.visible` defaults to true for existing settings. Hiding
-unmaps the panel and releases its reserved space so tiled windows can expand;
-showing it restores the usual bar height and margins. Popdowns close when the
-bar is hidden. Desktop services, Super+K, and the application launcher shortcut
-remain available. Open **Hyprshell Settings** from the application launcher to
-show the bar again. The choice uses the normal validated autosave path.
+**Bar & layout → Topbar visibility** provides **Show on all** and **Hide on
+all** buttons. Either button replaces the default visibility for all workspaces
+and clears individual choices. Choose a workspace (1–99) in **Individual
+workspace**, then toggle **Show hyprbar on workspace …** to change only that
+workspace. The selector initially follows the focused workspace; choosing a
+number lets you edit another workspace without visiting it. Settings autosaves
+these choices.
 
-**Workspaces** chooses **All workspaces** (default) or **Selected workspaces**.
-With a selected scope, enter comma-separated workspace numbers (1–99, for
-example `1,2,5`); the field appears only in that mode. Each screen's bar shows
-only while one of the listed workspaces is active on that screen, and hides
-(releasing its reserved space) otherwise. The list must be non-empty when the
-selected scope is saved. `bar.workspaceScope` is `"all"` or `"selected"`;
-`bar.workspaceList` is an array of whole numbers. Existing settings inherit
-the all-workspaces default.
+Alt+T always toggles only the active workspace on the focused monitor. For
+example, with hyprbar shown only on workspace 1, pressing Alt+T on workspace 3
+shows it on 3 while leaving 1 visible and other workspaces hidden. Choices survive
+shell restarts and travel with setup/GitHub settings sync. Global visibility is
+changed through Settings. Hiding a panel releases its reserved space and closes
+its popdowns; services and menu shortcuts remain available.
+
+`bar.workspaceOverrides` maps workspace-number strings to booleans and takes
+priority over the saved default. Older `bar.visible`, `bar.workspaceScope`
+(`"all"` or `"selected"`), and `bar.workspaceList` remain the default for workspaces
+without an override, preserving existing selected-workspace setups. Missing
+overrides inherit an empty map. Each screen uses its own active workspace.
 
 ## Popdown glass
 
@@ -474,7 +478,7 @@ Compositor layer blur supplies the frosted background.
 
 ### Bar and popdown shortcuts
 
-Alt+T toggles saved topbar visibility. Alt+C opens the calendar, Alt+S opens
+Alt+T toggles saved topbar visibility for the active workspace only. Alt+C opens the calendar, Alt+S opens
 Settings, Alt+N notifications, Alt+A audio, Alt+W Wi-Fi, Alt+V Bluetooth,
 Alt+B battery, and Alt+P power options. Either Alt key works for these shortcuts. Menu shortcuts toggle their card
 on the focused monitor and close menus on other monitors. Escape or an outside
@@ -483,8 +487,10 @@ center; showing the bar restores their item anchors and connectors.
 
 The shortcuts call `hyprshell-shortcut`, installed with the other launch helpers.
 Topbar toggles use the existing settings writer when Settings is loaded;
-otherwise `backend.py --toggle-bar` updates only visibility under the settings
-lock, preserving concurrent changes and all other preferences.
+otherwise `backend.py --toggle-bar WORKSPACE` updates only that workspace’s
+override under the settings lock, preserving concurrent changes and all other
+preferences. The shell captures the focused workspace when the key is pressed
+and queues repeated presses while the writer is busy.
 
 With the power menu open, press L to lock, X to shut down, R to reboot, S to
 sleep, or O to log out. Alt+P opens the menu first; Alt may remain held while

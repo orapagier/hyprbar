@@ -80,6 +80,12 @@ def validate(data):
         raise ValueError('Workspace list must not contain duplicates')
     if bar['workspaceScope'] == 'selected' and not workspace_list:
         raise ValueError('Choose at least one workspace for the selected scope')
+    overrides = bar['workspaceOverrides']
+    if not isinstance(overrides, dict) or any(
+        not isinstance(key, str) or not re.fullmatch(r'[1-9][0-9]?', key) or type(value) is not bool
+        for key, value in overrides.items()
+    ):
+        raise ValueError('Workspace overrides must map workspace numbers 1–99 to booleans')
     number(bar['popdownTranslucency'], 0, 1)
     if type(bar['adaptiveColors']) is not bool:
         raise ValueError('adaptiveColors must be boolean')
@@ -366,17 +372,27 @@ def lock(path):
         yield
 
 
-def save(data, expected=None, *, toggle_bar=False):
+def bar_visible(bar, workspace):
+    overrides = bar.get('workspaceOverrides', {})
+    if str(workspace) in overrides:
+        return overrides[str(workspace)]
+    return bar['visible'] and (bar['workspaceScope'] == 'all' or workspace in bar['workspaceList'])
+
+
+def save(data, expected=None, *, toggle_workspace=None):
     data = validate(data)
+    if toggle_workspace is not None:
+        if type(toggle_workspace) is not int or not 1 <= toggle_workspace <= 99:
+            raise ValueError('Choose a workspace number from 1 to 99')
     home = Path.home()
     config = Path(os.environ.get('XDG_CONFIG_HOME') or home / '.config')
     state = Path(os.environ.get('XDG_STATE_HOME') or home / '.local/state')
     target = config / 'hyprshell/settings.json'
     with lock(state / 'hyprshell/settings.lock'):
         current = validate(json.loads(target.read_text())) if target.exists() else validate(DEFAULTS)
-        if toggle_bar:
+        if toggle_workspace is not None:
             data = copy.deepcopy(current)
-            data['bar']['visible'] = not current['bar']['visible']
+            data['bar']['workspaceOverrides'][str(toggle_workspace)] = not bar_visible(current['bar'], toggle_workspace)
         if expected is not None and current != validate(expected):
             raise ValueError('Settings changed outside this window. Close and reopen settings before applying.')
         if data['locking'] != current['locking'] or data['power'] != current['power']:
@@ -443,7 +459,7 @@ def save(data, expected=None, *, toggle_bar=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--save-json')
-    parser.add_argument('--toggle-bar', action='store_true')
+    parser.add_argument('--toggle-bar', type=int, metavar='WORKSPACE')
     parser.add_argument('--lock', action='store_true')
     parser.add_argument('--idle', action='store_true')
     parser.add_argument('--expected-json')
@@ -453,8 +469,8 @@ def main():
             return run_locker()
         if args.idle:
             return run_idle()
-        if args.toggle_bar:
-            result = save(DEFAULTS, toggle_bar=True)
+        if args.toggle_bar is not None:
+            result = save(DEFAULTS, toggle_workspace=args.toggle_bar)
             print(json.dumps(result))
             return 0
         if not args.save_json:

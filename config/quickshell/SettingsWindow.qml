@@ -16,6 +16,7 @@ FloatingWindow {
     property var audioServices: null
     property var notificationApps: []
     property var batteryInfo: ({})
+    property int currentWorkspace: 1
     signal lockRequested()
     signal focusRequested()
     // A compositor close hides the native window without clearing the
@@ -149,6 +150,14 @@ FloatingWindow {
         let next = Model.copy(draft);
         next.bar[key] = value;
         draft = next;
+    }
+    function updateBarSettings(bar) {
+        let next = Model.copy(draft);
+        next.bar = bar;
+        draft = next;
+    }
+    function toggleWorkspaceBar(workspace) {
+        updateBarSettings(Model.withWorkspaceVisibility(draft.bar, workspace, !Model.barVisible(draft.bar, workspace)));
     }
     function updateHypr(key, value) {
         let next = Model.copy(draft);
@@ -698,6 +707,8 @@ FloatingWindow {
                             visible: window.section === -1
                             Layout.fillWidth: true
                             settings: window.draft.bar
+                            currentWorkspace: window.currentWorkspace
+                            onVisibilityEdited: bar => window.updateBarSettings(bar)
                             onEdited: (key, value) => window.updateBar(key, value)
                         }
                         SettingsItemEditor {

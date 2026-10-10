@@ -1,79 +1,66 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "SettingsStyle.js" as Style
+import "SettingsModel.js" as Model
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 
 ColumnLayout {
     id: root
     required property var settings
+    property int currentWorkspace: 1
+    property int selectedWorkspace: currentWorkspace >= 1 && currentWorkspace <= 99 ? currentWorkspace : 1
+    signal visibilityEdited(var bar)
     signal edited(string key, var value)
     spacing: 16
     SettingsCard {
         Layout.fillWidth: true
         title: "Topbar visibility"
-        subtitle: "Hide the topbar to give windows its screen space, or show it only on chosen workspaces. Open Hyprshell Settings from the application launcher to show it again."
-        SettingsSwitch {
-            objectName: "barVisibleControl"
+        subtitle: "Alt+T toggles only the current workspace. Use these buttons to show or hide hyprbar on all workspaces and clear individual choices."
+        RowLayout {
             Layout.fillWidth: true
-            text: "Show topbar"
-            checked: root.settings.visible !== false
-            onToggled: root.edited("visible", checked)
+            spacing: 12
+            SettingsButton {
+                objectName: "barShowAllControl"
+                Layout.fillWidth: true
+                text: "Show on all"
+                onClicked: root.visibilityEdited(Model.withAllBarVisibility(root.settings, true))
+            }
+            SettingsButton {
+                objectName: "barHideAllControl"
+                Layout.fillWidth: true
+                text: "Hide on all"
+                onClicked: root.visibilityEdited(Model.withAllBarVisibility(root.settings, false))
+            }
         }
         Label {
             Layout.fillWidth: true
-            text: "Workspaces"
+            text: "Individual workspace"
             color: Style.text
             font.pixelSize: Style.bodySize
         }
         SettingsComboBox {
-            objectName: "barWorkspaceScopeControl"
+            objectName: "barWorkspaceControl"
             Layout.fillWidth: true
-            model: ["All workspaces", "Selected workspaces"]
-            currentIndex: (root.settings.workspaceScope || "all") === "selected" ? 1 : 0
-            onActivated: index => {
-                root.edited("workspaceScope", index === 1 ? "selected" : "all");
-                if (index === 1 && (!root.settings.workspaceList || root.settings.workspaceList.length === 0))
-                    root.edited("workspaceList", [1]);
-            }
+            model: Array.from({length: 99}, (_, i) => "Workspace " + (i + 1))
+            currentIndex: root.selectedWorkspace - 1
+            onActivated: index => root.selectedWorkspace = index + 1
         }
-        TextField {
-            id: workspaceListField
-            objectName: "barWorkspaceListControl"
+        SettingsSwitch {
+            objectName: "barWorkspaceVisibleControl"
             Layout.fillWidth: true
-            visible: (root.settings.workspaceScope || "all") === "selected"
-            implicitHeight: 42
-            hoverEnabled: true
-            leftPadding: 14; rightPadding: 14
-            Accessible.name: "Workspace numbers"
-            color: "#e0e5f4"
-            font.pixelSize: Style.bodySize
-            selectionColor: Style.selection
-            selectedTextColor: "#ffffff"
-            placeholderText: "Workspace numbers (for example 1,2,3)"
-            placeholderTextColor: Style.muted
-            selectByMouse: true
-            text: (root.settings.workspaceList || []).join(",")
-            background: Rectangle {
-                radius: Style.controlRadius
-                color: workspaceListField.activeFocus ? Style.field : workspaceListField.hovered ? Style.hover : Style.field
-                border.width: workspaceListField.activeFocus ? 2 : 1
-                border.color: workspaceListField.activeFocus ? Style.accentText : Style.controlBorder
-                Behavior on color { ColorAnimation { duration: 130 } }
-            }
-            onEditingFinished: {
-                let parts = text.split(",").map(s => s.trim()).filter(s => s.length > 0);
-                let numbers = parts.map(s => Number(s));
-                if (parts.length === 0 || numbers.some(n => !Number.isInteger(n) || n < 1 || n > 99)) return;
-                numbers = [...new Set(numbers)];
-                if (JSON.stringify(numbers) !== JSON.stringify(root.settings.workspaceList || []))
-                    root.edited("workspaceList", numbers);
-            }
+            text: "Show hyprbar on workspace " + root.selectedWorkspace
+            checked: Model.barVisible(root.settings, root.selectedWorkspace)
+            onToggled: root.visibilityEdited(Model.withWorkspaceVisibility(root.settings, root.selectedWorkspace, checked))
         }
         Label {
             Layout.fillWidth: true
-            visible: (root.settings.workspaceScope || "all") === "selected"
-            text: "The topbar appears only when one of these workspaces is active on that screen. Changes save after you leave the field."
+            text: {
+                let choices = Object.keys(root.settings.workspaceOverrides || {}).sort((a, b) => Number(a) - Number(b));
+                let baseline = root.settings.visible === false ? "Hidden by default." :
+                    root.settings.workspaceScope === "selected" ? "Shown by default on workspaces " + (root.settings.workspaceList || []).join(", ") + "." : "Shown by default on all workspaces.";
+                return baseline + (choices.length ? " Individual choices: " + choices.map(w => w + (root.settings.workspaceOverrides[w] ? " on" : " off")).join(", ") + "." : "");
+            }
             wrapMode: Text.WordWrap
             color: Style.muted
             font.pixelSize: Style.captionSize
