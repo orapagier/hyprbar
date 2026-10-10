@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "defaults": {
+    "audio/mpeg": "fedora-vlc.desktop",
+    "audio/flac": "fedora-vlc.desktop",
+    "audio/ogg": "fedora-vlc.desktop",
+    "audio/mp4": "fedora-vlc.desktop",
+    "video/mp4": "fedora-vlc.desktop",
+    "video/webm": "fedora-vlc.desktop",
+    "video/x-matroska": "fedora-vlc.desktop"
+  },
+  "startup": {}
+}
