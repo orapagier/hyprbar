@@ -13,7 +13,17 @@ ColumnLayout {
         let desktopId = entry.id.endsWith(".desktop") ? entry.id : entry.id + ".desktop";
         // UWSM reads desktop metadata (including Terminal and working directory).
         // Services inherit the current manager environment after theme changes.
-        Quickshell.execDetached(["uwsm", "app", "-t", "service", "--", desktopId]);
+        // uwsM only accepts desktop IDs matching [A-Za-z0-9_][A-Za-z0-9_.-]*.desktop;
+        // a file name with a space in it (My Download Manager.desktop, say) is
+        // rejected before the entry is even looked up. Those are launched by
+        // Quickshell itself instead, which parses Exec and working directory;
+        // runInTerminal and %-field codes are ignored, which these rare names
+        // lose nothing from in practice.
+        if (/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.desktop$/.test(desktopId)) {
+            Quickshell.execDetached(["uwsm", "app", "-t", "service", "--", desktopId]);
+        } else {
+            entry.execute();
+        }
         launched();
     }
     spacing: 8

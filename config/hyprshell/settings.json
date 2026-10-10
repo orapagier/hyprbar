@@ -9,7 +9,7 @@
     "marginSide": 10,
     "spacing": 3,
     "clockFormat": "MMMM  dd   hh:mm AP   dddd",
-    "background": "off",
+    "background": "on",
     "iconSize": 15,
     "groupSpacing": 3,
     "popdownTranslucency": 0.05,
