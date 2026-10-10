@@ -12,13 +12,71 @@ ColumnLayout {
     SettingsCard {
         Layout.fillWidth: true
         title: "Topbar visibility"
-        subtitle: "Hide the topbar to give windows its screen space. Open Hyprshell Settings from the application launcher to show it again."
+        subtitle: "Hide the topbar to give windows its screen space, or show it only on chosen workspaces. Open Hyprshell Settings from the application launcher to show it again."
         SettingsSwitch {
             objectName: "barVisibleControl"
             Layout.fillWidth: true
             text: "Show topbar"
             checked: root.settings.visible !== false
             onToggled: root.edited("visible", checked)
+        }
+        Label {
+            Layout.fillWidth: true
+            text: "Workspaces"
+            color: Style.text
+            font.pixelSize: Style.bodySize
+        }
+        SettingsComboBox {
+            objectName: "barWorkspaceScopeControl"
+            Layout.fillWidth: true
+            model: ["All workspaces", "Selected workspaces"]
+            currentIndex: (root.settings.workspaceScope || "all") === "selected" ? 1 : 0
+            onActivated: index => {
+                root.edited("workspaceScope", index === 1 ? "selected" : "all");
+                if (index === 1 && (!root.settings.workspaceList || root.settings.workspaceList.length === 0))
+                    root.edited("workspaceList", [1]);
+            }
+        }
+        TextField {
+            id: workspaceListField
+            objectName: "barWorkspaceListControl"
+            Layout.fillWidth: true
+            visible: (root.settings.workspaceScope || "all") === "selected"
+            implicitHeight: 42
+            hoverEnabled: true
+            leftPadding: 14; rightPadding: 14
+            Accessible.name: "Workspace numbers"
+            color: "#e0e5f4"
+            font.pixelSize: Style.bodySize
+            selectionColor: Style.selection
+            selectedTextColor: "#ffffff"
+            placeholderText: "Workspace numbers (for example 1,2,3)"
+            placeholderTextColor: Style.muted
+            selectByMouse: true
+            text: (root.settings.workspaceList || []).join(",")
+            background: Rectangle {
+                radius: Style.controlRadius
+                color: workspaceListField.activeFocus ? Style.field : workspaceListField.hovered ? Style.hover : Style.field
+                border.width: workspaceListField.activeFocus ? 2 : 1
+                border.color: workspaceListField.activeFocus ? Style.accentText : Style.controlBorder
+                Behavior on color { ColorAnimation { duration: 130 } }
+            }
+            onEditingFinished: {
+                let parts = text.split(",").map(s => s.trim()).filter(s => s.length > 0);
+                let numbers = parts.map(s => Number(s));
+                if (parts.length === 0 || numbers.some(n => !Number.isInteger(n) || n < 1 || n > 99)) return;
+                numbers = [...new Set(numbers)];
+                if (JSON.stringify(numbers) !== JSON.stringify(root.settings.workspaceList || []))
+                    root.edited("workspaceList", numbers);
+            }
+        }
+        Label {
+            Layout.fillWidth: true
+            visible: (root.settings.workspaceScope || "all") === "selected"
+            text: "The topbar appears only when one of these workspaces is active on that screen. Changes save after you leave the field."
+            wrapMode: Text.WordWrap
+            color: Style.muted
+            font.pixelSize: Style.captionSize
         }
     }
     SettingsCard {

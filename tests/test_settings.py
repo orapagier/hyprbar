@@ -113,6 +113,38 @@ class SettingsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 backend.validate(self.data)
 
+    def test_workspace_scope_defaults_validation_and_round_trip(self):
+        legacy = copy.deepcopy(self.data)
+        del legacy['bar']['workspaceScope']
+        del legacy['bar']['workspaceList']
+        result = backend.validate(legacy)
+        self.assertEqual(result['bar']['workspaceScope'], 'all')
+        self.assertEqual(result['bar']['workspaceList'], [])
+        self.data['bar']['workspaceScope'] = 'selected'
+        self.data['bar']['workspaceList'] = [1, 3, 5]
+        self.assertTrue(backend.save(self.data)['ok'])
+        saved = json.loads(self.path.read_text())
+        self.assertEqual(saved['bar']['workspaceScope'], 'selected')
+        self.assertEqual(saved['bar']['workspaceList'], [1, 3, 5])
+        invalid_cases = [
+            {'workspaceScope': 'some', 'workspaceList': []},
+            {'workspaceScope': 'selected', 'workspaceList': []},
+            {'workspaceScope': 'all', 'workspaceList': [0]},
+            {'workspaceScope': 'all', 'workspaceList': [100]},
+            {'workspaceScope': 'all', 'workspaceList': [1, 1]},
+            {'workspaceScope': 'all', 'workspaceList': ['1']},
+            {'workspaceScope': 'all', 'workspaceList': 1},
+            {'workspaceScope': True, 'workspaceList': []},
+        ]
+        for case in invalid_cases:
+            self.data['bar'].update(case)
+            with self.assertRaises(ValueError, msg=case):
+                backend.validate(self.data)
+        self.data['bar']['workspaceScope'] = 'all'
+        self.data['bar']['workspaceList'] = []
+        self.assertTrue(backend.save(self.data)['ok'])
+        self.assertEqual(json.loads(self.path.read_text())['bar']['workspaceScope'], 'all')
+
     def test_shortcut_toggle_preserves_saved_settings(self):
         self.data['bar']['spacing'] = 17
         self.data['items'][0]['textColor'] = '#abcdef'

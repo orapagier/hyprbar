@@ -38,7 +38,7 @@ FloatingWindow {
         {group: "Desktop", pages: [
             {section: -8, title: "Appearance", symbol: "󰔎", keywords: "theme colors font cursor"},
             {section: -2, title: "Windows", symbol: "󰖲", keywords: "hyprland transparency blur gaps animations"},
-            {section: -1, title: "Bar & layout", symbol: "󰕮", keywords: "topbar hyprbar spacing"},
+            {section: -1, title: "Bar & layout", symbol: "󰕮", keywords: "topbar hyprbar spacing workspace workspaces"},
             {section: -13, title: "Applications", symbol: "󰀻", keywords: "default apps startup"},
             {section: -11, title: "Notifications", symbol: "󰂚", keywords: "delivery popups disturb"}
         ]},

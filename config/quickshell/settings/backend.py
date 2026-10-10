@@ -71,6 +71,15 @@ def validate(data):
     bar = result['bar']
     if type(bar['visible']) is not bool:
         raise ValueError('Bar visibility must be boolean')
+    if bar['workspaceScope'] not in ('all', 'selected'):
+        raise ValueError('Workspace scope must be "all" or "selected"')
+    workspace_list = bar['workspaceList']
+    if not isinstance(workspace_list, list) or any(type(w) is not int or not 1 <= w <= 99 for w in workspace_list):
+        raise ValueError('Workspace list must be whole numbers from 1 to 99')
+    if len(set(workspace_list)) != len(workspace_list):
+        raise ValueError('Workspace list must not contain duplicates')
+    if bar['workspaceScope'] == 'selected' and not workspace_list:
+        raise ValueError('Choose at least one workspace for the selected scope')
     number(bar['popdownTranslucency'], 0, 1)
     if type(bar['adaptiveColors']) is not bool:
         raise ValueError('adaptiveColors must be boolean')

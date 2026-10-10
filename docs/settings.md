@@ -443,6 +443,15 @@ bar is hidden. Desktop services, Super+K, and the application launcher shortcut
 remain available. Open **Hyprshell Settings** from the application launcher to
 show the bar again. The choice uses the normal validated autosave path.
 
+**Workspaces** chooses **All workspaces** (default) or **Selected workspaces**.
+With a selected scope, enter comma-separated workspace numbers (1–99, for
+example `1,2,5`); the field appears only in that mode. Each screen's bar shows
+only while one of the listed workspaces is active on that screen, and hides
+(releasing its reserved space) otherwise. The list must be non-empty when the
+selected scope is saved. `bar.workspaceScope` is `"all"` or `"selected"`;
+`bar.workspaceList` is an array of whole numbers. Existing settings inherit
+the all-workspaces default.
+
 ## Popdown glass
 
 **Bar & layout → Popdown glass → Popdown translucency** controls the background

@@ -7,7 +7,7 @@ import "../SettingsModel.js" as Model
 Item {
     id: scene
     width: 840; height: 1600
-    readonly property var barDefaults: ({height: 32, spacing: 3, marginTop: 5, marginSide: 10, adaptiveColors: true, background: "inherit", iconSize: 0, clockFormat: "hh:mm"})
+    readonly property var barDefaults: ({height: 32, spacing: 3, marginTop: 5, marginSide: 10, adaptiveColors: true, background: "inherit", iconSize: 0, clockFormat: "hh:mm", visible: true, workspaceScope: "all", workspaceList: []})
     readonly property var itemDefaults: ({id: "audio", enabled: true, side: "right", adaptiveColors: "inherit", background: "inherit", opacity: 1, backgroundOpacity: -1, radius: -1, fontSize: 0, iconSize: 0})
     SettingsBarEditor {
         id: barPage
@@ -40,6 +40,28 @@ Item {
             compare(barPage.settings.marginSide, 10);
             mouseClick(findChild(control(barPage, "height"), "sliderReset"));
             compare(barPage.settings.height, 32);
+        }
+        function test_workspaceScopeShowsListAndParsesNumbers() {
+            let scope = control(barPage, "barWorkspaceScope");
+            let list = findChild(barPage, "barWorkspaceListControl");
+            verify(scope !== null);
+            verify(list !== null);
+            verify(!list.visible);
+            scope.activated(1);
+            compare(barPage.settings.workspaceScope, "selected");
+            compare(JSON.stringify(barPage.settings.workspaceList), "[1]");
+            wait(30);
+            verify(list.visible);
+            list.text = "2, 4, 4";
+            list.editingFinished();
+            compare(JSON.stringify(barPage.settings.workspaceList), "[2,4]");
+            list.text = "x";
+            list.editingFinished();
+            compare(JSON.stringify(barPage.settings.workspaceList), "[2,4]");
+            scope.activated(0);
+            compare(barPage.settings.workspaceScope, "all");
+            wait(30);
+            verify(!list.visible);
         }
         function test_itemPercentagesAndResetUseOriginalSentinels() {
             barPage.visible = false; itemPage.visible = true;

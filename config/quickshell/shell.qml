@@ -57,7 +57,13 @@ ShellRoot {
             required property var modelData
             MenuController { id: menuState; dismissPinnedOnLeave: !panel.visible || openedByShortcut }
             screen: modelData
-            visible: preferences.config.bar.visible !== false
+            visible: {
+                if (preferences.config.bar.visible === false) return false;
+                if ((preferences.config.bar.workspaceScope || "all") !== "selected") return true;
+                let monitor = Hyprland.monitorFor(panel.screen);
+                let ws = monitor && monitor.activeWorkspace;
+                return ws ? (preferences.config.bar.workspaceList || []).indexOf(ws.id) >= 0 : true;
+            }
             exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
             onVisibleChanged: if (!visible) menuState.close()
             anchors { top: true; left: true; right: true }

@@ -2,6 +2,8 @@
   "version": 1,
   "bar": {
     "visible": true,
+    "workspaceScope": "all",
+    "workspaceList": [],
     "adaptiveColors": true,
     "randomVibrantColors": false,
     "height": 32,
