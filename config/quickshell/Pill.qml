@@ -1,4 +1,5 @@
 import QtQuick
+import "AdaptiveColors.js" as Colors
 
 Item {
     id: pill
@@ -38,6 +39,9 @@ Item {
     readonly property bool backgroundShown: settings.background === "on" || (settings.background !== "off" && backgroundVisible)
     readonly property bool bare: !backgroundShown && !settings.sharedBackgroundShown
     readonly property color glyphShadow: (0.2126 * effectiveForeground.r + 0.7152 * effectiveForeground.g + 0.0722 * effectiveForeground.b) > 0.5 ? Qt.rgba(0.025, 0.03, 0.05, 0.45) : Qt.rgba(1, 1, 1, 0.35)
+    readonly property bool glyphHalo: bare && !!adaptivePalette && adaptivePalette.glyphHalo === true
+    readonly property color textEdge: Colors.glyphEdge(textColor)
+    readonly property color iconEdge: Colors.glyphEdge(iconColor)
     readonly property bool hovered: pointer.containsMouse
     property bool selected: false
     property color hoverTint: tint
@@ -99,8 +103,8 @@ Item {
         visible: pill.shownIcon.length > 0
         text: pill.shownIcon
         color: pill.iconColor
-        style: pill.bare ? Text.Raised : Text.Normal
-        styleColor: pill.glyphShadow
+        style: pill.glyphHalo ? Text.Outline : pill.bare ? Text.Raised : Text.Normal
+        styleColor: pill.glyphHalo ? pill.iconEdge : pill.glyphShadow
         font.family: "GoMono Nerd Font"; font.pixelSize: pill.effectiveIconSize
         horizontalAlignment: Text.AlignHCenter
         renderType: Text.QtRendering
@@ -113,8 +117,8 @@ Item {
         text: pill.shownText
         textFormat: pill.textFormat
         color: pill.textColor
-        style: pill.bare ? Text.Raised : Text.Normal
-        styleColor: pill.glyphShadow
+        style: pill.glyphHalo ? Text.Outline : pill.bare ? Text.Raised : Text.Normal
+        styleColor: pill.glyphHalo ? pill.textEdge : pill.glyphShadow
         font.family: pill.family
         font.pixelSize: pill.labelIsIcon ? pill.effectiveGlyphSize : pill.settings.fontSize || pill.pixelSize
         font.bold: pill.bold

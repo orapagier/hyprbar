@@ -15,7 +15,7 @@ function contrast(a, b) {
 }
 function alpha(color, opacity) { return Qt.rgba(color.r, color.g, color.b, opacity); }
 
-// Preserve bright hues; contrast comes from the pill or a thin glyph outline.
+// Preserve bright hues when a pill can supply the contrasting backing.
 function vibrantForeground(sample, accent) {
     let foreground = Qt.hsva(accent.hsvHue, accent.hsvSaturation,
                              Math.max(0.92, accent.hsvValue), 1);
@@ -59,21 +59,57 @@ function vibrantPalette(sample, accent, minimum, maximum) {
     };
 }
 
+function regionContrast(foreground, minimum, maximum) {
+    let value = luminance(foreground), low = luminance(minimum), high = luminance(maximum);
+    // Include intermediate tones: an average or two endpoint comparisons can
+    // miss wallpaper pixels with exactly the glyph's brightness.
+    if (value >= low && value <= high) return 1;
+    return Math.min(contrast(foreground, minimum), contrast(foreground, maximum));
+}
+
+function glyphEdge(foreground) {
+    let dark = Qt.rgba(0.015, 0.02, 0.03, 1), light = Qt.rgba(1, 1, 1, 1);
+    return contrast(foreground, dark) >= contrast(foreground, light) ? dark : light;
+}
+
+function barePalette(sample, accent, minimum, maximum, style) {
+    let original = style === "muted" ? Qt.rgba(0.62, 0.62, 0.62, 1)
+                 : style === "vibrant" ? vibrantForeground(sample, accent) : accent;
+    let dark = Qt.rgba(0.015, 0.02, 0.03, 1), light = Qt.rgba(1, 1, 1, 1);
+    if (style === "muted") dark = Qt.rgba(0.02, 0.02, 0.02, 1);
+    let darkScore = regionContrast(dark, minimum, maximum), lightScore = regionContrast(light, minimum, maximum);
+    let target = darkScore > lightScore ? dark : light;
+    // On textured regions neither polarity may work everywhere. Choose the
+    // most readable fill for the average and protect its silhouette with an edge.
+    if (Math.max(darkScore, lightScore) < 4.5)
+        target = contrast(dark, sample) > contrast(light, sample) ? dark : light;
+    let achievable = regionContrast(target, minimum, maximum);
+    let textured = achievable < 4.5;
+    let goal = Math.min(5.2, (textured ? contrast(target, sample) : achievable) * 0.99);
+    let foreground = original;
+    for (let i = 0; i <= 64; ++i) {
+        foreground = mix(original, target, i / 64);
+        if ((textured ? contrast(foreground, sample) : regionContrast(foreground, minimum, maximum)) >= goal) break;
+    }
+    // Keep the regular palette fields for consumers, but never solve bare
+    // contrast by increasing a background that will not be drawn.
+    let result = style === "vibrant" ? vibrantPalette(sample, accent, minimum, maximum)
+                                     : palette(sample, accent, minimum, maximum, style);
+    result.foreground = foreground;
+    result.glyphHalo = regionContrast(foreground, minimum, maximum) < 4.5;
+    result.glyphOutline = glyphEdge(foreground);
+    return result;
+}
+
 function palette(sample, accent, minimum, maximum, style) {
     minimum = minimum || sample;
     maximum = maximum || sample;
-    if (style === "vibrant" || style === "vibrant-bare")
+    if (style === "vibrant-bare")
+        return barePalette(sample, accent, minimum, maximum, "vibrant");
+    if (style === "vibrant")
         return vibrantPalette(sample, accent, minimum, maximum);
     if (style && style.indexOf("bare-") === 0) {
-        // Without glass, measure contrast against the wallpaper itself.
-        let target = luminance(sample) > 0.179 ? Qt.rgba(0.025, 0.03, 0.045, 1) : Qt.rgba(1, 1, 1, 1);
-        if (style === "bare-muted" && luminance(sample) > 0.179) target = Qt.rgba(0.03, 0.03, 0.03, 1);
-        let foreground = style === "bare-muted" ? Qt.rgba(0.62, 0.62, 0.62, 1) : accent;
-        for (let i = 0; i < 50 && contrast(foreground, sample) < 5.2; ++i)
-            foreground = mix(foreground, target, 0.12);
-        let result = palette(sample, accent, minimum, maximum, style.slice(5));
-        result.foreground = foreground;
-        return result;
+        return barePalette(sample, accent, minimum, maximum, style.slice(5));
     }
     let light = luminance(sample) > 0.179;
     if (style === "muted") {

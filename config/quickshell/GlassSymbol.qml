@@ -8,12 +8,28 @@ Item {
     property real iconSize: 22
     property color accent: "#b4befe"
     property bool highlighted: false
+    property bool contrastEdge: false
+    property color edgeColor: "transparent"
     implicitWidth: 28; implicitHeight: 28
     scale: highlighted ? 1.06 : 1
     Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
     Item {
         width: symbol.iconSize; height: symbol.iconSize
         anchors.centerIn: parent
+        Shape {
+            visible: symbol.contrastEdge
+            width: symbol.viewBoxSize; height: symbol.viewBoxSize
+            scale: symbol.iconSize / symbol.viewBoxSize
+            transformOrigin: Item.TopLeft
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                fillRule: ShapePath.OddEvenFill
+                fillColor: "transparent"
+                strokeWidth: symbol.viewBoxSize * 0.09
+                strokeColor: symbol.edgeColor
+                PathSvg { path: symbol.vectorPath }
+            }
+        }
         // The offset silhouette forms the glass thickness. The same cutouts
         // are retained in every layer, so there is no backing pill.
         Shape {

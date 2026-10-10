@@ -20,6 +20,7 @@ Pill {
     content.horizontalAlignment: Text.AlignLeft
     clip: true
     AudioSpectrumBars {
+        objectName: "mediaSpectrum"
         visible: !media.settings.hideIcon
         x: Math.max(0, 9 + (media.settings.paddingLeft || 0))
         width: 58 * media.spectrumScale
@@ -30,5 +31,7 @@ Pill {
         levels: media.levels
         color: media.settings.iconColor || ((media.colorSampler || media.settings.vibrantColor) ? media.effectiveForeground : "#94e2d5")
         variableOpacity: !media.colorSampler
+        contrastEdge: media.glyphHalo
+        edgeColor: media.iconEdge
     }
 }

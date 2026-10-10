@@ -68,10 +68,13 @@ Item {
     }
     Canvas {
         id: strip
-        width: Math.min(1024, Math.max(1, Math.ceil(sampler.screenWidth / 2)))
-        height: 16
+        // Preserve small bright/dark details instead of averaging them away
+        // before bare-glyph contrast is measured.
+        width: Math.min(4096, Math.max(1, Math.ceil(sampler.screenWidth)))
+        height: Math.min(160, Math.max(1, Math.ceil(sampler.bandHeight)))
         onAvailableChanged: if (available) requestPaint()
         onWidthChanged: sampler.invalidate()
+        onHeightChanged: sampler.invalidate()
         onPaint: {
             if (wallpaper.status !== Image.Ready || sampler.screenWidth <= 0 || sampler.screenHeight <= 0) return;
             let iw = wallpaper.implicitWidth, ih = wallpaper.implicitHeight;

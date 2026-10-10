@@ -221,6 +221,8 @@ Item {
             height: arch.height
             accent: arch.settings.iconColor || arch.settings.textColor || arch.effectiveForeground
             highlighted: arch.hovered || arch.selected
+            contrastEdge: arch.glyphHalo
+            edgeColor: arch.iconEdge
         }
     }
     BarMenuButton {
@@ -243,6 +245,8 @@ Item {
             x: settingsCog.content.x; width: settingsCog.content.width; height: settingsCog.height
             accent: settingsCog.settings.iconColor || settingsCog.settings.textColor || settingsCog.effectiveForeground
             highlighted: settingsCog.hovered || settingsCog.selected
+            contrastEdge: settingsCog.glyphHalo
+            edgeColor: settingsCog.iconEdge
         }
         foreground: "#b4befe"
         tint: bar.rgba("#b4befe", 0.18); outline: bar.rgba("#b4befe", 0.26)
@@ -399,8 +403,8 @@ Item {
             visible: !!bar.notificationData && bar.notificationData.count > 0
             text: bar.notificationData ? String(bar.notificationData.count || "") : ""
             color: bell.effectiveForeground
-            style: bell.bare ? Text.Raised : Text.Normal
-            styleColor: bell.glyphShadow
+            style: bell.glyphHalo ? Text.Outline : bell.bare ? Text.Raised : Text.Normal
+            styleColor: bell.glyphHalo ? bell.textEdge : bell.glyphShadow
             renderType: Text.QtRendering
             font.family: "DejaVu Sans"
             font.pixelSize: 8

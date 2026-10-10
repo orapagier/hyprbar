@@ -42,9 +42,10 @@ Because edits autosave, already saved edits become the new reset point.
 inheriting item icons and labels distinct bright colors. The shuffled palette
 reshuffles when the wallpaper image changes, while staying stable during edits
 and matching the preview to the live bar on the same screen. Returning to a
-wallpaper restores its palette for the current session. Colors stay bright on pale and dark wallpapers. Pill backgrounds become darker
-and more opaque where needed for contrast; icons without pills use a subtle
-shadow with smooth glyph rendering. Restarting the shell reshuffles the palette. Turning it off restores the current
+wallpaper restores its palette for the current session. Pill backgrounds become darker
+and more opaque where needed for contrast. With pills hidden, vibrant accents
+become darker on light wallpaper and lighter on dark wallpaper to stay readable.
+Restarting the shell reshuffles the palette. Turning it off restores the current
 theme. Manual text/icon colors and explicit item adaptation on/off choices take
 priority. Pill backgrounds adapt with the vibrant accent for contrast, and tray artwork remains
 application-provided. The preference defaults to off on existing installations.
@@ -62,7 +63,14 @@ keeps the group's layout, padding, spacing, and individual actions.
 
 With backgrounds hidden, icons and text use smooth Qt glyph rendering and a
 subtle contrasting shadow, including manual colors. Wallpaper adaptation measures
-bare text against the wallpaper itself. An accent underline marks a hovered or
+bare colors against the area's darkest, brightest, and intermediate tones,
+including in vibrant mode. When a textured area cannot provide enough contrast
+with one color, a thin opposing edge protects the glyph silhouette. The same
+protection covers the media spectrum, glass launcher/cog, and notification count;
+uniform areas retain the softer shadow. Manual color choices remain overrides.
+Wallpaper sampling retains fine details at screen resolution (bounded at 4096
+columns and 160 rows) so small bright patches are not averaged out first.
+An accent underline marks a hovered or
 selected control and the active workspace without restoring a background pill.
 
 The editor keeps a draft and saves it automatically after 500 ms without an
