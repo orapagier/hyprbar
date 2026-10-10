@@ -22,6 +22,8 @@ xdg-utils
 wl-clipboard
 playerctl
 gvfs-mtp
+# Graphical file picker and dialogs for shell scripts
+zenity
 # Video/audio, images, PDFs, and a graphical text editor
 mpv
 imv

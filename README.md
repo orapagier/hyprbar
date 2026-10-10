@@ -219,7 +219,8 @@ These shortcuts are also installed by `--config-only`.
 
 The optional [application list](packages-apps.txt) includes Chromium, Distrobox,
 Podman, Hyprlock/Hypridle, archive tools, manuals and shell completion, clipboard and
-media utilities, Android file transfer support, mpv, imv, Evince, Mousepad,
+media utilities, Android file transfer support, Zenity for file picker dialogs,
+mpv, imv, Evince, Mousepad,
 and cmatrix. Review the list before installing it. Installing locking packages
 does not enable automatic locking.
 
