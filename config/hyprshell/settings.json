@@ -9,10 +9,11 @@
     "marginSide": 10,
     "spacing": 3,
     "clockFormat": "MMMM  dd   hh:mm AP   dddd",
-    "background": "on",
+    "background": "off",
     "iconSize": 15,
     "groupSpacing": 3,
-    "popdownTranslucency": 0.05
+    "popdownTranslucency": 0.05,
+    "sharedBackground": "inherit"
   },
   "items": [
     {
@@ -36,11 +37,12 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 15,
+      "iconSize": 0,
       "pillGroup": "centerpill",
       "paddingLeft": 7,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "settings",
@@ -63,11 +65,12 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 15,
+      "iconSize": 0,
       "pillGroup": "centerpill",
       "paddingLeft": 0,
       "paddingRight": 7,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "workspaces",
@@ -94,7 +97,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "media",
@@ -121,7 +125,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "calendar",
@@ -148,7 +153,8 @@
       "pillGroup": "centerpill",
       "paddingLeft": -5,
       "paddingRight": -2,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "tray",
@@ -175,7 +181,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "notifications",
@@ -202,7 +209,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "audio",
@@ -229,7 +237,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "wifi",
@@ -256,7 +265,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "bluetooth",
@@ -283,7 +293,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "battery",
@@ -310,7 +321,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     },
     {
       "id": "power",
@@ -337,7 +349,8 @@
       "pillGroup": "",
       "paddingLeft": 0,
       "paddingRight": 0,
-      "popdownTranslucency": -1
+      "popdownTranslucency": -1,
+      "sharedBackground": "inherit"
     }
   ],
   "hyprland": {

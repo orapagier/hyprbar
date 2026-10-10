@@ -10,6 +10,10 @@ Item {
     property real offsetY: 5
     property real bandHeight: 32
     property var pixels: []
+    readonly property var linearChannels: Array.from({length: 256}, (_, value) => {
+        let channel = value / 255;
+        return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+    })
     readonly property bool ready: pixels.length > 0
     width: 1; height: 1
     // Keep the Canvas attached to the scene so requestPaint works, without
@@ -33,17 +37,22 @@ Item {
         let y0 = Math.max(0, Math.min(strip.height - 1, Math.floor((rect.y - offsetY) / bandHeight * strip.height)));
         let y1 = Math.max(y0 + 1, Math.min(strip.height, Math.ceil((rect.y + rect.height - offsetY) / bandHeight * strip.height)));
         let r = 0, g = 0, b = 0, count = 0;
-        let lowR = 255, lowG = 255, lowB = 255, highR = 0, highG = 0, highB = 0;
+        let low = Infinity, high = -Infinity, lowIndex = 0, highIndex = 0;
         for (let y = y0; y < y1; ++y) for (let x = x0; x < x1; ++x) {
             let i = (y * strip.width + x) * 4;
             r += pixels[i]; g += pixels[i + 1]; b += pixels[i + 2]; ++count;
             if (includeBounds) {
-                lowR = Math.min(lowR, pixels[i]); lowG = Math.min(lowG, pixels[i + 1]); lowB = Math.min(lowB, pixels[i + 2]);
-                highR = Math.max(highR, pixels[i]); highG = Math.max(highG, pixels[i + 1]); highB = Math.max(highB, pixels[i + 2]);
+                // Use actual darkest/lightest pixels. Independent RGB extrema
+                // invented black/white bounds on colorful wallpaper regions.
+                let value = 0.2126 * linearChannels[pixels[i]] + 0.7152 * linearChannels[pixels[i + 1]] + 0.0722 * linearChannels[pixels[i + 2]];
+                if (value < low) { low = value; lowIndex = i; }
+                if (value > high) { high = value; highIndex = i; }
             }
         }
         let average = Qt.rgba(r / count / 255, g / count / 255, b / count / 255, 1);
-        return includeBounds ? {average: average, minimum: Qt.rgba(lowR/255, lowG/255, lowB/255, 1), maximum: Qt.rgba(highR/255, highG/255, highB/255, 1)} : average;
+        return includeBounds ? {average: average,
+            minimum: Qt.rgba(pixels[lowIndex]/255, pixels[lowIndex+1]/255, pixels[lowIndex+2]/255, 1),
+            maximum: Qt.rgba(pixels[highIndex]/255, pixels[highIndex+1]/255, pixels[highIndex+2]/255, 1)} : average;
     }
     function paletteFor(item, root, accent, style) {
         let x = offsetX, y = offsetY;

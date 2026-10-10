@@ -38,6 +38,26 @@ Item {
             tryCompare(sampler, "ready", true);
         }
         function sample(x) { return sampler.sampleRect(Qt.rect(x, 10, 30, 18)); }
+        function test_textureKeepsSaturatedAccentsAndUniformsKeepHue() {
+            for (let accent of ["#ffd45c", "#54e3da", "#86a6ff", "#ff6b9d"]) {
+                let original = Qt.color(accent);
+                let textured = Colors.palette(Qt.color("#888888"), original, Qt.color("#000000"), Qt.color("#ffffff"), "vibrant-bare");
+                verify(textured.glyphHalo);
+                fuzzyCompare(textured.foreground, Colors.vibrantForeground(Qt.color("#888888"), original), 0.001);
+                for (let wallpaper of ["#ffffff", "#000000", "#777777"]) {
+                    let sample = Qt.color(wallpaper);
+                    let result = Colors.palette(sample, original, sample, sample, "vibrant-bare");
+                    fuzzyCompare(result.foreground.hslHue, original.hslHue, 0.002);
+                    verify(result.foreground.hslSaturation >= original.hslSaturation - 0.01);
+                    verify(Colors.contrast(result.foreground, sample) >= 4.5);
+                }
+            }
+        }
+        function test_boundsUseActualPixelLuminance() {
+            let region = sampler.sampleRect(Qt.rect(450, 10, 300, 18), true);
+            fuzzyCompare(region.minimum, Qt.color("#0000ff"), 0.01);
+            fuzzyCompare(region.maximum, Qt.color("#ff0000"), 0.01);
+        }
         function test_bareMediaAndGlassUseContrastProtection() {
             bar.wallpaperSource = Qt.resolvedUrl("fixtures/wallpaper-fine-texture.svg");
             bar.settings = {bar:{background:"off", randomVibrantColors:true}};

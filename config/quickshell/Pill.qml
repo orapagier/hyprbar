@@ -53,9 +53,10 @@ Item {
     readonly property bool labelIsIcon: family === "GoMono Nerd Font"
     readonly property int effectiveIconSize: settings.iconSize || settings.fontSize || iconSize
     readonly property int effectiveGlyphSize: settings.iconSize || settings.fontSize || pixelSize
+    readonly property int effectiveTextSize: settings.fontSize || Math.max(8, Math.round(pixelSize * (settings.iconSize || 16) / 16))
     readonly property int iconWidth: shownIcon.length ? effectiveIconSize + 5 : 0
     implicitWidth: Math.min(maximumWidth, Math.max(minimumTextWidth, label.implicitWidth) + iconWidth + effectiveLeftPadding + effectiveRightPadding)
-    implicitHeight: Math.max(28, shownIcon.length ? effectiveIconSize + 8 : 0, labelIsIcon && shownText.length ? effectiveGlyphSize + 8 : 0)
+    implicitHeight: Math.max(28, shownIcon.length ? effectiveIconSize + 8 : 0, shownText.length ? label.implicitHeight + 8 : 0)
     Rectangle {
         visible: pill.backgroundShown
         anchors.fill: parent
@@ -120,7 +121,7 @@ Item {
         style: pill.glyphHalo ? Text.Outline : pill.bare ? Text.Raised : Text.Normal
         styleColor: pill.glyphHalo ? pill.textEdge : pill.glyphShadow
         font.family: pill.family
-        font.pixelSize: pill.labelIsIcon ? pill.effectiveGlyphSize : pill.settings.fontSize || pill.pixelSize
+        font.pixelSize: pill.labelIsIcon ? pill.effectiveGlyphSize : pill.effectiveTextSize
         font.bold: pill.bold
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter

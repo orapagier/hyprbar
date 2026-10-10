@@ -170,10 +170,10 @@ ColumnLayout {
             objectName: "fontSizeControl"
                 label: "Text size"
             settingValue: root.settings.fontSize > 0 ? root.settings.fontSize : undefined
-            inheritedText: "Original size"
-            defaultValue: 13
+            inheritedText: "Follow item size"
+            defaultValue: Math.max(8, Math.round(12 * (root.settings.iconSize || root.barSettings.iconSize || 16) / 16))
             from: 1; to: 48; suffix: " px"
-            resetDescription: "Restore original text size"
+            resetDescription: "Follow item size again"
             onEdited: value => root.edited("fontSize", value === "" ? 0 : value)
         }
     }

@@ -129,7 +129,7 @@ visible group member supplies the background colors, opacity, and radius.
 `adaptiveColors` and `background` on items accept `inherit`, `on`, or `off`.
 Empty text/icon/color strings inherit original values. `hideText` and
 `hideIcon` explicitly hide those parts. `backgroundOpacity: -1`, `radius: -1`,
-and `fontSize: 0` inherit component defaults. Manual color fields override
+and `fontSize: 0` follow the item's size (original text size at the default scale). Manual color fields override
 adaptive results without disabling adaptation for the other fields. Colors
 are RGB; alpha comes from the separate opacity controls. Font glyphs use the
 installed Nerd Font; image files are not accepted as custom icons yet.
@@ -203,14 +203,23 @@ Each reset arrow removes just that override and restores configuration inheritan
 Sliders use the same validated, debounced autosave and rollback path as other
 settings. There are no new overrides on upgrade or when merely opening the page.
 
-Icon sizing is available in **Overview and bar** and each item's editor.
-`bar.iconSize` sets all icons to 8–48 px; `0` keeps original sizes. Each item's
+Item sizing is available in **Overview and bar** and each item's editor.
+`bar.iconSize` sets icons to 8–48 px and scales labels proportionally from a
+16 px icon baseline; `0` keeps original sizes. Each item's
 `iconSize` overrides the global value, with `0` following the global setting.
 Reset arrows restore original sizes globally or inheritance individually.
-Glyph icons, the glass logo and cog, tray artwork, and the media spectrum resize
-in the live preview and the running bar. Labels and the battery percentage retain
-their own font sizes. Larger icons expand their hit areas and the bar height to
-avoid clipping. Items without a built-in icon use this size for icon overrides.
+Glyph icons, the glass logo and cog, tray artwork, the media spectrum, workspace
+numbers, the clock, percentages, media titles, and notification badges resize
+in the live preview and the running bar. An explicit item `fontSize` overrides
+automatic text scaling; reset **Text size** to follow item sizing again. Automatic
+label sizes have an 8 px minimum. Larger content expands hit areas and bar height
+to avoid clipping. Items without a built-in icon use this size for icon overrides.
+
+Hidden pills preserve accent hue and saturation, adjusting lightness on uniform
+wallpaper to provide at least 4.5:1 text contrast. Mixed regions retain colorful
+fills with contrasting glyph edges. Sampling uses actual pixel luminance bounds,
+including small wallpaper details; the glass logo and cog use richer, opaque
+faces while their pills are hidden. Shared visible pills retain their glass style.
 Old experimental motion preferences are ignored and removed on the next save;
 popdowns use the original fade-and-slide transition.
 

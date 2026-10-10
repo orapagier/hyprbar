@@ -6,7 +6,7 @@ Pill {
     property var levels: []
     readonly property real spectrumScale: (settings.iconSize || 16) / 16
     readonly property int spectrumWidth: settings.hideIcon ? 0 : Math.ceil(58 * spectrumScale)
-    implicitHeight: Math.max(28, settings.hideIcon ? 0 : (settings.iconSize || 16) + 8)
+    implicitHeight: Math.max(28, settings.hideIcon ? 0 : (settings.iconSize || 16) + 8, shownText.length ? content.implicitHeight + 8 : 0)
     foreground: "#cba6f7"
     tint: "#2ef5c2e7"
     outline: "#42f5c2e7"

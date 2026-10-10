@@ -9,6 +9,7 @@ Item {
     property color accent: "#b4befe"
     property bool highlighted: false
     property bool contrastEdge: false
+    property bool vivid: false
     property color edgeColor: "transparent"
     implicitWidth: 28; implicitHeight: 28
     scale: highlighted ? 1.06 : 1
@@ -58,14 +59,14 @@ Item {
             ShapePath {
                 fillRule: ShapePath.OddEvenFill
                 strokeWidth: symbol.viewBoxSize * 0.018
-                strokeColor: Qt.rgba(0.90, 0.96, 1, symbol.highlighted ? 0.95 : 0.75)
+                strokeColor: symbol.vivid ? symbol.accent : Qt.rgba(0.90, 0.96, 1, symbol.highlighted ? 0.95 : 0.75)
                 fillGradient: LinearGradient {
                     x1: 0; y1: 0; x2: symbol.viewBoxSize * 0.65; y2: symbol.viewBoxSize
-                    GradientStop { position: 0; color: "#f4f9ffff" }
-                    GradientStop { position: 0.22; color: Qt.lighter(symbol.accent, symbol.highlighted ? 1.6 : 1.35) }
-                    GradientStop { position: 0.46; color: Qt.rgba(symbol.accent.r, symbol.accent.g, symbol.accent.b, 0.72) }
-                    GradientStop { position: 0.72; color: Qt.rgba(symbol.accent.r * 0.5, symbol.accent.g * 0.5, symbol.accent.b * 0.5, 0.85) }
-                    GradientStop { position: 1; color: "#e0daeaff" }
+                    GradientStop { position: 0; color: symbol.vivid ? Qt.lighter(symbol.accent, 1.12) : "#f4f9ffff" }
+                    GradientStop { position: 0.22; color: Qt.lighter(symbol.accent, symbol.vivid ? 1.06 : symbol.highlighted ? 1.6 : 1.35) }
+                    GradientStop { position: 0.46; color: Qt.rgba(symbol.accent.r, symbol.accent.g, symbol.accent.b, symbol.vivid ? 1 : 0.72) }
+                    GradientStop { position: 0.72; color: symbol.vivid ? Qt.darker(symbol.accent, 1.06) : Qt.rgba(symbol.accent.r * 0.5, symbol.accent.g * 0.5, symbol.accent.b * 0.5, 0.85) }
+                    GradientStop { position: 1; color: symbol.vivid ? symbol.accent : "#e0daeaff" }
                 }
                 PathSvg { path: symbol.vectorPath }
             }

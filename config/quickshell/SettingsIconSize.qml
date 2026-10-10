@@ -9,13 +9,13 @@ ColumnLayout {
     signal edited(var value)
     SettingsSlider {
         Layout.fillWidth: true
-        label: control.individual ? "Icon size for this item" : "Icon size for all items"
+        label: control.individual ? "Size for this item" : "Size for all items"
         from: 8; to: 48; suffix: " px"
         settingValue: control.settingValue > 0 ? control.settingValue : undefined
         inheritedText: control.individual ? "Use global" : "Original sizes"
         defaultValue: control.inheritedSize || 16
-        resetDescription: control.individual ? "Use the global icon size" : "Restore original icon sizes"
-        description: control.individual ? "Overrides the global icon size. ↺ follows the global setting again. Text keeps its own font size." : "Resize glyphs, glass icons, tray artwork, and the media spectrum. Individual sizes take priority. The bar grows to fit larger icons."
+        resetDescription: control.individual ? "Use the global item size" : "Restore original item sizes"
+        description: control.individual ? "Resize this item's icons and text together. ↺ follows the global size. A custom text size takes priority." : "Resize icons and text together, including workspaces, the clock, tray artwork, and the media spectrum. Individual sizes take priority. The bar grows to fit."
         onEdited: value => control.edited(value === "" ? 0 : value)
     }
 }

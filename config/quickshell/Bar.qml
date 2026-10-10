@@ -207,7 +207,7 @@ Item {
         pixelSize: 20
         bold: false
         minimumTextWidth: settings.iconSize || settings.fontSize || 22
-        implicitHeight: Math.max(28, (settings.iconSize || settings.fontSize || 22) + 6)
+        implicitHeight: Math.max(28, (settings.iconSize || settings.fontSize || 22) + 6, content.implicitHeight + 8)
         leftPadding: 2
         rightPadding: 2
         backgroundVisible: false
@@ -223,6 +223,7 @@ Item {
             highlighted: arch.hovered || arch.selected
             contrastEdge: arch.glyphHalo
             edgeColor: arch.iconEdge
+            vivid: arch.bare
         }
     }
     BarMenuButton {
@@ -236,7 +237,7 @@ Item {
         family: "GoMono Nerd Font"; pixelSize: 16
         backgroundVisible: false
         minimumTextWidth: Math.max(16, settings.iconSize || settings.fontSize || 22)
-        implicitHeight: Math.max(28, (settings.iconSize || settings.fontSize || 22) + 6)
+        implicitHeight: Math.max(28, (settings.iconSize || settings.fontSize || 22) + 6, content.implicitHeight + 8)
         content.opacity: settingsCog.settings.text || settingsCog.settings.icon ? 1 : 0
         GlassCog {
             objectName: "settingsGlassCog"
@@ -247,6 +248,7 @@ Item {
             highlighted: settingsCog.hovered || settingsCog.selected
             contrastEdge: settingsCog.glyphHalo
             edgeColor: settingsCog.iconEdge
+            vivid: settingsCog.bare
         }
         foreground: "#b4befe"
         tint: bar.rgba("#b4befe", 0.18); outline: bar.rgba("#b4befe", 0.26)
@@ -281,7 +283,7 @@ Item {
                 required property var modelData
                 property bool active: modelData.active || false
                 anchors.verticalCenter: workspaceRow.verticalCenter
-                height: settings.iconSize && shownIcon.length ? Math.max(20, effectiveIconSize + 6) : 20
+                height: Math.max(20, shownText.length ? content.implicitHeight + 6 : 0, shownIcon.length ? effectiveIconSize + 6 : 0)
                 text: modelData.name || String(modelData.id)
                 leftPadding: 7
                 rightPadding: 7
@@ -407,7 +409,7 @@ Item {
             styleColor: bell.glyphHalo ? bell.textEdge : bell.glyphShadow
             renderType: Text.QtRendering
             font.family: "DejaVu Sans"
-            font.pixelSize: 8
+            font.pixelSize: Math.max(8, Math.round(8 * bell.effectiveGlyphSize / 15))
             font.bold: true
         }
     }

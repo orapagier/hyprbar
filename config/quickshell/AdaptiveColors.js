@@ -85,12 +85,23 @@ function barePalette(sample, accent, minimum, maximum, style) {
         target = contrast(dark, sample) > contrast(light, sample) ? dark : light;
     let achievable = regionContrast(target, minimum, maximum);
     let textured = achievable < 4.5;
-    let goal = Math.min(5.2, (textured ? contrast(target, sample) : achievable) * 0.99);
     let foreground = original;
-    for (let i = 0; i <= 64; ++i) {
-        foreground = mix(original, target, i / 64);
-        if ((textured ? contrast(foreground, sample) : regionContrast(foreground, minimum, maximum)) >= goal) break;
+    if (!textured) {
+        // Change lightness while retaining hue and saturation. Mixing toward
+        // white bleached colorful items, even when a richer shade was readable.
+        let goal = Math.min(4.6, achievable * 0.99);
+        let distance = 2;
+        for (let i = 0; i <= 128; ++i) {
+            let candidate = Qt.hsla(original.hslHue, original.hslSaturation, i / 128, 1);
+            let delta = Math.abs(candidate.hslLightness - original.hslLightness);
+            if (delta < distance && regionContrast(candidate, minimum, maximum) >= goal) {
+                foreground = candidate;
+                distance = delta;
+            }
+        }
     }
+    // A textured region cannot be made readable by washing out the fill.
+    // Preserve the accent and use a contrasting silhouette instead.
     // Keep the regular palette fields for consumers, but never solve bare
     // contrast by increasing a background that will not be drawn.
     let result = style === "vibrant" ? vibrantPalette(sample, accent, minimum, maximum)
