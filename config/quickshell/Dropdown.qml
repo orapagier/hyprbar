@@ -16,6 +16,7 @@ PanelWindow {
     property string alignment: "center"
     property color accent: "#b4befe"
     property bool connected: true
+    property bool movePointerOnOpen: !connected
     property bool pinned: false
     property real barBottom: 37
     readonly property bool opened: section.length > 0
@@ -74,7 +75,7 @@ PanelWindow {
         id: headerPointer
         interval: 100
         onTriggered: {
-            if (!dropdown.opened || dropdown.connected) return;
+            if (!dropdown.opened || !dropdown.movePointerOnOpen) return;
             let monitor = Hyprland.monitorFor(dropdown.screen);
             if (!monitor) return;
             let x = Math.round(monitor.x + popover.bodyX + popover.bodyWidth / 2);
@@ -84,14 +85,18 @@ PanelWindow {
     }
     onSectionChanged: {
         headerPointer.stop();
-        if (section.length && !connected) headerPointer.restart();
+        if (section.length && movePointerOnOpen) headerPointer.restart();
     }
     onOpenedChanged: {
         headerPointer.stop();
         if (opened) {
             focusScope.forceActiveFocus();
-            if (!connected) headerPointer.restart();
+            if (movePointerOnOpen) headerPointer.restart();
         }
+    }
+    onMovePointerOnOpenChanged: {
+        headerPointer.stop();
+        if (opened && movePointerOnOpen) headerPointer.restart();
     }
     Shortcut { sequence: "Escape"; enabled: dropdown.opened; onActivated: dropdown.closeRequested() }
     Component { id: launcherPage; LauncherMenu { onLaunched: dropdown.closeRequested() } }

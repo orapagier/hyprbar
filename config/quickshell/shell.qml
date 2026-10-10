@@ -55,7 +55,7 @@ ShellRoot {
         PanelWindow {
             id: panel
             required property var modelData
-            MenuController { id: menuState; dismissPinnedOnLeave: !panel.visible }
+            MenuController { id: menuState; dismissPinnedOnLeave: !panel.visible || openedByShortcut }
             screen: modelData
             visible: preferences.config.bar.visible !== false
             exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
@@ -112,6 +112,7 @@ ShellRoot {
                 screen: panel.screen
                 barBottom: panel.visible ? panel.margins.top + panel.height : 0
                 connected: panel.visible
+                movePointerOnOpen: !panel.visible || menuState.openedByShortcut
                 section: menuState.section
                 displayedSection: menuState.displayedSection
                 alignment: panel.visible ? bar.side(menuState.displayedSection) : "center"
@@ -133,7 +134,7 @@ ShellRoot {
             function refreshSettings() {
                 if (!panel.visible || (menuState.section && !bar.itemEnabled(menuState.section))) menuState.close();
             }
-            function toggleMenu(name) { keybindings.opened = false; menuState.activate(name); }
+            function toggleMenu(name) { keybindings.opened = false; menuState.activate(name, true); }
             function toggleLauncher() { toggleMenu("launcher"); }
             function toggleKeybindings() { menuState.close(); keybindings.opened = !keybindings.opened; }
         }

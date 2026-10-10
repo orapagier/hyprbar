@@ -6,7 +6,7 @@ import ".."
 Item {
     id: root
     width: 1366; height: 500
-    MenuController { id: state }
+    MenuController { id: state; dismissPinnedOnLeave: openedByShortcut }
     Bar {
         id: bar
         z: 1
@@ -163,11 +163,40 @@ Item {
             let trigger = findChild(bar, "audioTrigger");
             mouseClick(trigger, trigger.width / 2, trigger.height / 2);
             verify(state.pinned);
+            verify(!state.openedByShortcut);
             mouseMove(root, 5, 480);
             wait(380);
             compare(state.section, "audio");
             state.close();
             compare(state.section, "");
+        }
+        function test_shortcutMenuClosesOnPointerLeave() {
+            state.activate("audio", true);
+            verify(state.pinned);
+            verify(state.openedByShortcut);
+            compare(popover.bodyX, expectedBodyX(bar.side("audio")));
+            compare(popover.tipX, bar.menuRect("audio").x + bar.menuRect("audio").width / 2);
+            mouseMove(root, popover.bodyX + 150, popover.bodyY + 33);
+            wait(380);
+            compare(state.section, "audio");
+            mouseMove(root, 5, 480);
+            tryCompare(state, "section", "");
+            verify(!state.openedByShortcut);
+        }
+        function test_shortcutPromotesHoveredMenuAndTogglesClosed() {
+            hover("audio");
+            state.activate("audio", true);
+            verify(state.pinned);
+            verify(state.openedByShortcut);
+            state.activate("audio", true);
+            compare(state.section, "");
+            verify(!state.openedByShortcut);
+        }
+        function test_hoverSwitchClearsShortcutMode() {
+            state.activate("audio", true);
+            hover("wifi");
+            verify(!state.pinned);
+            verify(!state.openedByShortcut);
         }
         function test_connectorFollowsScreenResize() {
             hover("audio");

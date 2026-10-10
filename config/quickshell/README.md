@@ -96,6 +96,11 @@ switches menus. Click an icon to keep its menu open until a second click,
 an outside click, or Escape. Sound and microphone sliders support dragging
 and clicking the track.
 
+Opening a popdown with a keyboard shortcut moves the pointer to its header
+and lets it close when the pointer leaves, whether the topbar is visible or
+hidden. With the topbar visible, the popdown keeps its usual position and
+funnel connection; with it hidden, the popdown appears centered.
+
 ## Activate the native notification handler
 
 Run once in a Hyprland desktop terminal:

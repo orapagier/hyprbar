@@ -8,6 +8,7 @@ Item {
     onSectionChanged: if (section.length) displayedSection = section
     property string hoveredMenu: ""
     property bool pinned: false
+    property bool openedByShortcut: false
     property bool dismissPinnedOnLeave: false
     property bool pointerInMenu: false
 
@@ -27,24 +28,32 @@ Item {
         if (inside || hoveredMenu.length || (pinned && !dismissPinnedOnLeave)) closeDelay.stop();
         else if (section.length) closeDelay.restart();
     }
-    function activate(name) {
+    function activate(name, fromShortcut) {
         openDelay.stop();
         closeDelay.stop();
         if (section === name && pinned) close();
-        else { section = name; pinned = true; }
+        else {
+            openedByShortcut = fromShortcut === true;
+            section = name;
+            pinned = true;
+        }
     }
     function close() {
         openDelay.stop();
         closeDelay.stop();
         section = "";
         pinned = false;
+        openedByShortcut = false;
     }
     Timer {
         id: openDelay
         interval: 110
         onTriggered: {
             if (!controller.hoveredMenu.length) return;
-            if (controller.section !== controller.hoveredMenu) controller.pinned = false;
+            if (controller.section !== controller.hoveredMenu) {
+                controller.pinned = false;
+                controller.openedByShortcut = false;
+            }
             controller.section = controller.hoveredMenu;
         }
     }
