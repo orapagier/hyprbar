@@ -14,7 +14,7 @@ installer, desktop utilities, and wallpapers. It is intended for users who
 want a complete starting point that they can customize for their own machine.
 It installs onto an existing Arch system; it does not install the operating
 system, partition disks, install a bootloader, or install GPU drivers. It can
-configure an Arch logo splash for a supported existing boot setup.
+configure the animated Hyprshell Glass splash for a supported existing boot setup.
 
 ## Contents
 
@@ -132,7 +132,7 @@ The installer:
 5. Checks the native runtime, QML components, and Hyprland configuration.
 6. Enables networking, Bluetooth, and user audio services, and starts UPower.
 7. Refreshes fonts and user directories.
-8. Restores the saved Plymouth Arch logo splash on supported mkinitcpio boot
+8. Restores the saved Plymouth Hyprshell Glass splash on supported mkinitcpio boot
    setups, preserving the destination machine's disk and encryption settings.
 
 The base package list is in [packages.txt](packages.txt). It includes Kitty,

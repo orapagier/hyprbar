@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyprshell Glass — animation preview</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #090d16; color: #dde1ff; font: 13px system-ui, sans-serif; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  nav { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); display: flex;
+        align-items: center; gap: 12px; padding: 10px 16px; border: 1px solid #b4befe30;
+        border-radius: 14px; background: #171b2be6; }
+  button, select { font: inherit; color: inherit; border: 1px solid #b4befe45; border-radius: 8px;
+                   padding: 7px 10px; background: #282d42; cursor: pointer; }
+  label { display: flex; align-items: center; gap: 7px; }
+  @media(max-width: 650px) { nav { width: 95vw; flex-wrap: wrap; justify-content: center; } }
+</style>
+<canvas aria-label="Animated Hyprshell boot splash preview"></canvas>
+<nav aria-label="Preview controls">
+  <span>Hyprshell Glass</span>
+  <select aria-label="Preview state" id="mode">
+    <option value="boot">Boot</option><option value="password">Passphrase</option>
+    <option value="question">Question</option><option value="shutdown">Shutdown</option>
+  </select>
+  <label>Progress <input id="progress" type="range" min="0" max="100" value="62"></label>
+  <button id="replay">Replay entrance</button>
+</nav>
+<script>
+  const canvas = document.querySelector('canvas'), ctx = canvas.getContext('2d');
+  const mode = document.querySelector('#mode'), progress = document.querySelector('#progress');
+  const names = ['background', 'card', 'title', 'title-glow', 'track', 'fill', 'spark', 'loading', 'shutdown', 'footer'];
+  const assets = {};
+  let start = performance.now(), shown = .025, last = start;
+  document.querySelector('#replay').onclick = () => { start = performance.now(); shown = .025; };
+  function draw(name, x, y, width, height, opacity = 1) {
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(assets[name], x, y, width ?? assets[name].width, height ?? assets[name].height);
+    ctx.globalAlpha = 1;
+  }
+  function text(value, y) {
+    ctx.fillStyle = '#c4d4ef'; ctx.font = '16px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(value, 450, y, 650);
+  }
+  function refresh(now) {
+    const ratio = devicePixelRatio || 1, w = innerWidth, h = innerHeight;
+    if (canvas.width !== Math.round(w * ratio) || canvas.height !== Math.round(h * ratio)) {
+      canvas.width = Math.round(w * ratio); canvas.height = Math.round(h * ratio);
+    }
+    const scale = Math.min(w / 1920, h / 1080, 1.5), x = w / 2 - 450 * scale, y = h / 2 - 260 * scale;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    draw('background', 0, 0, w, h);
+    ctx.translate(x, y); ctx.scale(scale, scale);
+    draw('card', 0, 0);
+    const frame = (now - start) / 20, arrival = Math.min(1, frame / 45);
+    const titleY = 128 + 10 * (1 - arrival) + 1.4 * Math.sin(frame / 43);
+    draw('title-glow', 190, titleY, 520, 140, arrival * (.55 + .35 * Math.sin(frame / 32)));
+    draw('title', 190, titleY, 520, 140, arrival);
+    shown += (Math.max(.025, Math.min(.98, progress.value / 100)) - shown) * (1 - Math.pow(.925, (now - last) / 20));
+    last = now;
+    if (mode.value === 'password' || mode.value === 'question') {
+      text(mode.value === 'password' ? 'Unlock your encrypted disk' : 'Continue boot? [y/n]', 328);
+      text(mode.value === 'password' ? '••••••••' : 'y', 362);
+    } else {
+      draw('track', 270, 312);
+      draw('fill', 270, 312, 360 * shown, 6);
+      const travel = 360 * shown - 30;
+      if (travel > 0) draw('spark', 270 + travel * ((frame % 140) / 140), 312, 30, 6, .45);
+      draw(mode.value === 'shutdown' ? 'shutdown' : 'loading', 250, 336);
+    }
+    draw('footer', 250, (h - 74 * scale - y) / scale);
+    requestAnimationFrame(refresh);
+  }
+  Promise.all(names.map(name => new Promise((resolve, reject) => {
+    const item = new Image(); item.onload = () => { assets[name] = item; resolve(); };
+    item.onerror = reject; item.src = `../config/boot/hyprshell/${name}.png`;
+  }))).then(() => requestAnimationFrame(refresh)).catch(() => {
+    document.querySelector('nav span').textContent = 'Open this preview from the Hyprshell checkout';
+  });
+</script>
+</html>

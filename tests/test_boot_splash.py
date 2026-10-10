@@ -55,7 +55,7 @@ class BootSplashTests(unittest.TestCase):
         self.assertIn('keyboard encrypt lvm2 block filesystems fsck', hooks)
         cmdline = plan[self.path('/etc/kernel/cmdline')]
         self.assertEqual(cmdline, 'root=UUID=this-machine rw cryptdevice=UUID=encrypted:root resume=UUID=swap quiet splash loglevel=3\n')
-        self.assertIn('Theme=script\nShowDelay=0', plan[self.path('/etc/plymouth/plymouthd.conf')])
+        self.assertIn('Theme=hyprshell\nShowDelay=0', plan[self.path('/etc/plymouth/plymouthd.conf')])
 
     def test_systemd_encryption_and_multiline_hooks_are_preserved(self):
         self.put('/etc/mkinitcpio.conf', 'HOOKS=(\n base systemd # encrypted installation\n autodetect kms keyboard sd-vconsole sd-encrypt filesystems fsck\n)\n')
@@ -185,6 +185,40 @@ class BootSplashTests(unittest.TestCase):
         value = 'root=UUID=local rw acpi_osi="Windows 2020" quiet loglevel=7'
         self.assertEqual(boot.add_parameters(value, PREFERENCE['kernel_parameters']),
                          'root=UUID=local rw acpi_osi="Windows 2020" quiet splash loglevel=3')
+
+    def test_bundled_assets_are_installed_and_asset_changes_trigger_rebuild(self):
+        runner = Mock()
+        self.apply(runner)
+        title = self.path('/usr/share/plymouth/themes/hyprshell/title.png')
+        self.assertEqual(title.read_bytes(),
+                         (ROOT / 'config/boot/hyprshell/title.png').read_bytes())
+        self.assertFalse(self.path('/usr/share/plymouth/themes/hyprshell/sources').exists())
+        title.write_bytes(b'old title')
+        runner.reset_mock()
+        self.apply(runner)
+        runner.assert_called_once_with(['mkinitcpio', '-P'], check=True)
+        backups = list(self.path('/backups').glob('*/**/hyprshell/title.png'))
+        self.assertEqual([item.read_bytes() for item in backups], [b'old title'])
+
+    def test_failed_rebuild_restores_binary_assets_and_selected_theme(self):
+        self.apply()
+        title = self.path('/usr/share/plymouth/themes/hyprshell/title.png')
+        title.write_bytes(b'original binary\x00\xff')
+        runner = Mock(side_effect=subprocess.CalledProcessError(1, ['mkinitcpio', '-P']))
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.apply(runner)
+        self.assertEqual(title.read_bytes(), b'original binary\x00\xff')
+        self.assertIn('Theme=hyprshell', self.path('/etc/plymouth/plymouthd.conf').read_text())
+
+    def test_symlinked_theme_directory_is_rejected_before_writes(self):
+        theme = self.path('/usr/share/plymouth/themes/hyprshell')
+        theme.parent.mkdir(parents=True)
+        destination = self.path('/other-theme')
+        destination.mkdir()
+        theme.symlink_to(destination, target_is_directory=True)
+        with self.assertRaises(boot.UnsupportedBoot):
+            self.plan()
+        self.assertEqual(list(destination.iterdir()), [])
 
 
 if __name__ == '__main__':

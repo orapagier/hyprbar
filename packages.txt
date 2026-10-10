@@ -64,7 +64,7 @@ libnotify
 pacman-contrib
 sudo
 
-# Arch logo during boot (configured for existing mkinitcpio boot setups)
+# Hyprshell Glass during boot (configured for existing mkinitcpio boot setups)
 plymouth
 
 # GitHub sync and browser authentication

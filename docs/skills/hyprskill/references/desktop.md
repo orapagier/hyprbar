@@ -24,7 +24,7 @@ Paths below are relative to the resolved config/state roots or checkout. Prefer 
 | Portals | `xdg-desktop-portal/hyprland-portals.conf` |
 | Launch helpers | `$HOME/.local/bin/{start-quickshell-bar,hyprshell-settings,app-launcher}` / checkout `bin/` |
 | Install / package lists | checkout `setup.sh`, `tools/install_configs.py`, `packages.txt`, optional `packages-apps.txt` |
-| Boot splash | checkout `config/boot/plymouth.json`, `tools/install_boot_splash.py`, `docs/boot-splash.md`; root-owned live Plymouth, mkinitcpio, and bootloader settings; full setup restores the Arch logo while preserving local disk/encryption options |
+| Boot splash | checkout `config/boot/plymouth.json`, `config/boot/hyprshell/`, `tools/install_boot_splash.py`, `docs/boot-splash.md`; root-owned live Plymouth, mkinitcpio, and bootloader settings; full setup restores Hyprshell Glass with animated text and progress while preserving local disk/encryption options; `docs/boot-splash-preview.html` previews it without starting Plymouth |
 | App autostart overrides | `autostart/*.desktop` / checkout `config/autostart/*.desktop`; installer copies managed entries individually; `nm-applet.desktop` hides the duplicate network tray icon |
 | Sync | `quickshell/settings/github_sync.py`; copies live configs **into** checkout, stages allowed project paths, commits and pushes |
 

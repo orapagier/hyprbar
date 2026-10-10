@@ -85,6 +85,24 @@ def theme_config(text, theme):
     return text[:section.start(1)] + body + text[section.end(1):]
 
 
+def bundled_theme(root, theme):
+    """Install shipped assets in the same backup/rebuild transaction as boot config."""
+    source = REPO / 'config/boot' / theme
+    if not source.is_dir():
+        if not (root / f'usr/share/plymouth/themes/{theme}/{theme}.plymouth').is_file():
+            raise UnsupportedBoot(f'Install Plymouth and its {theme} theme first')
+        return {}
+    files = [item for item in sorted(source.iterdir())
+             if item.suffix in ('.plymouth', '.script', '.png')]
+    required = {theme + '.plymouth', theme + '.script'}
+    if not required.issubset({item.name for item in files}):
+        raise UnsupportedBoot(f'Incomplete bundled theme: {theme}')
+    if any(not item.is_file() or item.is_symlink() for item in files):
+        raise UnsupportedBoot('Bundled theme must contain regular files')
+    target = root / 'usr/share/plymouth/themes' / theme
+    return {target / item.name: item.read_bytes() for item in files}
+
+
 def build_plan(root, preference):
     """Inspect all targets before scheduling any write; root is injectable in tests."""
     def path(name):
@@ -200,7 +218,10 @@ def build_plan(root, preference):
 
     theme = path('/etc/plymouth/plymouthd.conf')
     plan[theme] = theme_config(theme.read_text() if theme.exists() else '', preference['theme'])
-    if any(target.is_symlink() for target in plan):
+    plan.update(bundled_theme(root, preference['theme']))
+    if any(target.is_symlink() or any(parent.is_symlink() for parent in target.parents
+                                     if parent != root and root in parent.parents)
+           for target in plan):
         raise UnsupportedBoot('Symlinked boot configuration needs manual setup')
     commands = [['mkinitcpio', '-P']]
     if use_grub:
@@ -222,8 +243,10 @@ def write_atomic(path, data, mode=0o644):
 
 
 def apply_plan(plan, commands, outputs, backup_root, runner=subprocess.run):
-    changed = {path: text for path, text in plan.items()
-               if not path.exists() or path.read_text() != text}
+    data_plan = {path: value.encode() if isinstance(value, str) else value
+                 for path, value in plan.items()}
+    changed = {path: data for path, data in data_plan.items()
+               if not path.exists() or path.read_bytes() != data}
     if not changed:
         print('Boot splash configuration is already current.')
         return
@@ -244,8 +267,8 @@ def apply_plan(plan, commands, outputs, backup_root, runner=subprocess.run):
             saved.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, saved)
     try:
-        for path, text in changed.items():
-            write_atomic(path, text.encode(), originals[path][1] if originals[path] else 0o644)
+        for path, data in changed.items():
+            write_atomic(path, data, originals[path][1] if originals[path] else 0o644)
         for command in commands:
             runner(command, check=True)
     except Exception:
@@ -257,7 +280,7 @@ def apply_plan(plan, commands, outputs, backup_root, runner=subprocess.run):
         print('Boot configuration restored after failure. Generated boot images may have changed; '
               'rerun sudo mkinitcpio -P (and grub-mkconfig if used) successfully before rebooting.')
         raise
-    print(f'Arch splash configured. Boot configuration backups: {backup}')
+    print(f'Hyprshell splash configured. Boot configuration backups: {backup}')
 
 
 def main():
@@ -272,12 +295,12 @@ def main():
             isinstance(value, str) and re.fullmatch(r'[a-zA-Z0-9_.=-]+', value) for value in parameters):
         parser.error('Invalid kernel parameters')
     try:
-        theme = preference['theme']
-        if not Path(f'/usr/share/plymouth/themes/{theme}/{theme}.plymouth').is_file():
-            raise UnsupportedBoot(f'Install Plymouth and its {theme} theme first')
+        if not Path('/usr/lib/plymouth/script.so').is_file():
+            raise UnsupportedBoot('Install the Plymouth script plugin first')
         plan, commands, outputs = build_plan(Path('/'), preference)
-        for path, text in plan.items():
-            action = 'Unchanged' if path.exists() and path.read_text() == text else 'Update'
+        for path, value in plan.items():
+            data = value.encode() if isinstance(value, str) else value
+            action = 'Unchanged' if path.exists() and path.read_bytes() == data else 'Update'
             print(f'{action}: {path}')
         if args.dry_run:
             for command in commands:

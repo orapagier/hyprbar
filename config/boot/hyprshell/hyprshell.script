@@ -1,0 +1,170 @@
+# Hyprshell Glass: pre-rendered glass, no compositor or session fonts required.
+Window.SetBackgroundTopColor(0.063, 0.071, 0.118);
+Window.SetBackgroundBottomColor(0.027, 0.043, 0.075);
+
+fun clamp(value, low, high) {
+    if (value < low) return low;
+    if (value > high) return high;
+    return value;
+}
+
+fun asset(name, x, y, z) {
+    local.item;
+    item.original = Image(name + ".png");
+    item.image = item.original.Scale(Math.Int(item.original.GetWidth() * scale),
+                                     Math.Int(item.original.GetHeight() * scale));
+    item.sprite = Sprite(item.image);
+    item.sprite.SetPosition(origin_x + x * scale, origin_y + y * scale, z);
+    return item;
+}
+
+scale = clamp(Window.GetWidth() / 1920, 0.1, 1.5);
+if (scale > Window.GetHeight() / 1080) scale = Window.GetHeight() / 1080;
+origin_x = Window.GetX() + Window.GetWidth() / 2 - 450 * scale;
+origin_y = Window.GetY() + Window.GetHeight() / 2 - 260 * scale;
+
+background.image = Image("background.png").Scale(Window.GetWidth(), Window.GetHeight());
+background.sprite = Sprite(background.image);
+background.sprite.SetPosition(Window.GetX(), Window.GetY(), -100);
+card = asset("card", 0, 0, 0);
+glow = asset("title-glow", 190, 128, 1);
+title = asset("title", 190, 128, 2);
+track = asset("track", 270, 312, 3);
+fill = asset("fill", 270, 312, 4);
+spark = asset("spark", 270, 312, 5);
+label_name = "loading";
+if (Plymouth.GetMode() == "shutdown") label_name = "shutdown";
+label = asset(label_name, 250, 336, 6);
+footer = asset("footer", 250, 0, 1);
+footer.sprite.SetY(Window.GetY() + Window.GetHeight() - 74 * scale);
+
+status = "normal";
+frame = 0;
+target = 0.025;
+shown = 0.025;
+last_width = -1;
+prompt = Sprite();
+entry = Sprite();
+message = Sprite();
+prompt.SetZ(20);
+entry.SetZ(20);
+message.SetZ(20);
+
+fun centered_text(sprite, text, y, red, green, blue) {
+    local.image;
+    local.factor;
+    if (text == "") text = " ";
+    image = Image.Text(text, red, green, blue, 1, "Sans 12");
+    factor = scale;
+    if (image.GetWidth() * factor > 650 * scale)
+        factor = 650 * scale / image.GetWidth();
+    image = image.Scale(Math.Int(image.GetWidth() * factor),
+                        Math.Int(image.GetHeight() * factor));
+    sprite.SetImage(image);
+    sprite.SetPosition(Window.GetX() + Window.GetWidth() / 2 - image.GetWidth() / 2,
+                       origin_y + y * scale, 20);
+    sprite.SetOpacity(1);
+}
+
+fun draw_progress() {
+    local.width;
+    local.travel;
+    width = Math.Int(clamp(shown, 0.003, 1) * 360 * scale);
+    if (width < 1) width = 1;
+    if (width != last_width) {
+        fill.image = fill.original.Scale(width, Math.Int(6 * scale));
+        fill.sprite.SetImage(fill.image);
+        global.last_width = width;
+    }
+    # A small light travels within the filled part, even during slow boot steps.
+    travel = width - spark.image.GetWidth();
+    if (travel > 0 && status == "normal") {
+        spark.sprite.SetX(origin_x + 270 * scale + travel * ((frame % 140) / 140));
+        spark.sprite.SetOpacity(0.45);
+    } else spark.sprite.SetOpacity(0);
+}
+
+fun refresh() {
+    global.frame++;
+    local.arrival;
+    local.drift;
+    arrival = clamp(frame / 45, 0, 1);
+    drift = 1.4 * Math.Sin(frame / 43) * scale;
+    title.sprite.SetY(origin_y + (128 + 10 * (1 - arrival)) * scale + drift);
+    glow.sprite.SetY(title.sprite.GetY());
+    title.sprite.SetOpacity(arrival);
+    glow.sprite.SetOpacity(arrival * (0.55 + 0.35 * Math.Sin(frame / 32)));
+    global.shown += (target - shown) * 0.075;
+    draw_progress();
+}
+
+fun boot_progress(duration, progress) {
+    # Plymouth estimates boot progress; never invent a percentage or a delay.
+    if (progress > target) global.target = clamp(progress, 0.025, 0.98);
+}
+
+fun show_normal() {
+    global.status = "normal";
+    prompt.SetOpacity(0);
+    entry.SetOpacity(0);
+    track.sprite.SetOpacity(1);
+    fill.sprite.SetOpacity(1);
+    label.sprite.SetOpacity(1);
+}
+
+fun show_dialog(text, answer) {
+    global.status = "dialog";
+    track.sprite.SetOpacity(0);
+    fill.sprite.SetOpacity(0);
+    spark.sprite.SetOpacity(0);
+    label.sprite.SetOpacity(0);
+    centered_text(prompt, text, 312, 0.85, 0.88, 1);
+    centered_text(entry, answer, 346, 0.7, 0.83, 0.95);
+}
+
+fun show_password(text, bullets) {
+    local.hidden;
+    hidden = "";
+    # Render masked input only, and bound it to the card width.
+    for (i = 0; i < bullets && i < 40; i++) hidden += "•";
+    if (bullets == 0) hidden = "Enter passphrase";
+    show_dialog(text, hidden);
+}
+
+fun show_question(text, answer) {
+    show_dialog(text, answer);
+}
+
+fun show_message(text) {
+    centered_text(message, text, 376, 0.75, 0.8, 0.9);
+}
+
+fun hide_message(text) {
+    message.SetOpacity(0);
+}
+
+fun finish() {
+    global.target = 1;
+    global.shown = 1;
+    title.sprite.SetOpacity(1);
+    title.sprite.SetY(origin_y + 128 * scale);
+    glow.sprite.SetOpacity(0.55);
+    glow.sprite.SetY(title.sprite.GetY());
+    if (Plymouth.GetMode() != "shutdown")
+        label.sprite.SetImage(Image("ready.png").Scale(Math.Int(400 * scale), Math.Int(32 * scale)));
+    draw_progress();
+    spark.sprite.SetOpacity(0);
+}
+
+# Start with a visible, stable frame before the first refresh callback.
+title.sprite.SetOpacity(0);
+glow.sprite.SetOpacity(0);
+draw_progress();
+Plymouth.SetRefreshFunction(refresh);
+Plymouth.SetBootProgressFunction(boot_progress);
+Plymouth.SetDisplayNormalFunction(show_normal);
+Plymouth.SetDisplayPasswordFunction(show_password);
+Plymouth.SetDisplayQuestionFunction(show_question);
+Plymouth.SetDisplayMessageFunction(show_message);
+Plymouth.SetHideMessageFunction(hide_message);
+Plymouth.SetQuitFunction(finish);

@@ -133,7 +133,7 @@ if (( DRY_RUN )); then
     if (( SKIP_BOOT_SPLASH )); then
       printf 'Boot splash: leave boot configuration unchanged\n'
     else
-      printf 'Boot splash: restore saved Arch Plymouth theme for supported mkinitcpio boot layouts; preserve local disk/encryption options\n'
+      printf 'Boot splash: restore saved Hyprshell Glass Plymouth theme for supported mkinitcpio boot layouts; preserve local disk/encryption options\n'
     fi
   fi
   printf 'Config destination: %s\nWallpaper destination: %s\n' "$CONFIG_DIR" "$HOME/Pictures/Wallpapers"
@@ -212,7 +212,7 @@ if ! has_login_manager; then
 fi
 
 if (( ! SKIP_BOOT_SPLASH )); then
-  log 'Restoring the saved Arch boot splash'
+  log 'Restoring the saved Hyprshell Glass boot splash'
   sudo python3 "$REPO_DIR/tools/install_boot_splash.py"
 fi
 

@@ -1,10 +1,26 @@
-# Arch boot splash
+# Hyprshell Glass boot splash
 
 Full `./setup.sh` installs Plymouth and restores the preference in
-`config/boot/plymouth.json`: the bundled `script` Arch logo theme, with
+`config/boot/plymouth.json`: the bundled `hyprshell` script theme, with
 `quiet splash loglevel=3`. The splash starts during Linux boot and continues
 toward the login screen. Firmware and bootloader screens are separate; a brief
 message or transition can still appear. Press Esc to see Plymouth boot details.
+
+![Hyprshell Glass preview](assets/boot-splash-preview.png)
+
+The theme matches the shell's dark glass menus: a translucent rounded card,
+lavender/cyan lighting, a fine reflective rim, gently floating and breathing
+Hyprshell lettering, and the description “A calm space. A fluid desktop.”
+The bar follows Plymouth's estimated boot progress with smooth interpolation
+and a moving highlight. It adds no artificial wait and displays no invented
+percentage. Passwords are masked; question prompts and boot messages remain
+visible. Shutdown uses “Until next time.”
+
+Glass and typography are rendered into small PNG layers ahead of time. No
+desktop compositor, wallpaper service, or session font is needed during boot.
+The theme scales with the display and uses the same assets at other resolutions.
+Open [the animated preview](boot-splash-preview.html) locally to review the
+motion and prompt layouts without starting a real Plymouth daemon.
 
 The boot helper supports standard **mkinitcpio** configurations with:
 
@@ -31,6 +47,19 @@ The helper inspects the complete plan before writing, backs up changed files
 under `/var/lib/hyprshell/boot-backups/`, and runs `mkinitcpio -P`. For GRUB it
 also regenerates `/boot/grub/grub.cfg`. A rerun with unchanged configuration
 does not rewrite files or rebuild images.
+
+Bundled theme files go into `/usr/share/plymouth/themes/hyprshell/` before the
+rebuild, in the same backup/rollback transaction as the configuration. Changed
+PNG or script assets also trigger a rebuild. Sources under
+`config/boot/hyprshell/sources/` stay in the repository; they are not installed
+in the initramfs. To edit the artwork, change the SVG sources and run
+`python3 tools/render_boot_theme.py` (requires `rsvg-convert` and Noto Sans).
+Then rerun the boot helper to install the updated assets and rebuild the image.
+
+The helper requires administrator access. A sandbox that only allows home
+directory writes can prepare and preview this change, but cannot activate the
+root-owned theme or regenerate the kernel image. Run the install command in a
+normal terminal, wait for a successful rebuild, and check the handoff on reboot.
 
 If rebuilding fails, the edited configuration is restored. Generated images
 may have been partially updated: complete `sudo mkinitcpio -P` successfully

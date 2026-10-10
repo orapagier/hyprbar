@@ -43,7 +43,7 @@ class InstallerTests(unittest.TestCase):
     def test_boot_splash_preview_and_opt_out(self):
         self.mock_package_database()
         result = self.run_setup('--dry-run')
-        self.assertIn('Boot splash: restore saved Arch Plymouth theme', result.stdout)
+        self.assertIn('Boot splash: restore saved Hyprshell Glass Plymouth theme', result.stdout)
         result = self.run_setup('--dry-run', '--skip-boot-splash')
         self.assertIn('Boot splash: leave boot configuration unchanged', result.stdout)
         result = self.run_setup('--config-only', '--dry-run')

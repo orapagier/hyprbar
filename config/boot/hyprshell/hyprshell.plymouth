@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=Hyprshell Glass
+Description=A calm space. A fluid desktop. Frosted glass with animated lettering and boot progress.
+ModuleName=script
+
+[script]
+Font=Sans 12
+ImageDir=/usr/share/plymouth/themes/hyprshell
+ScriptFile=/usr/share/plymouth/themes/hyprshell/hyprshell.script
