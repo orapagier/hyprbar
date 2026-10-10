@@ -4,14 +4,21 @@ Hyprshell is a configurable desktop shell for **Hyprland on Arch Linux**, built
 with **Quickshell**. It brings the application launcher, status bar, desktop
 menus, notification inbox, and settings into one native Wayland interface.
 
+The goal is a consistent desktop experience from boot and login through daily
+use, with a lightweight foundation that gives beauty and performance equal
+priority. Hyprshell builds on Hyprland and native Qt 6 components, brings
+desktop controls into a shared shell, and keeps additional applications
+optional. Development should favor efficient rendering, responsive controls,
+and minimal background work as the desktop grows.
+
 The bar uses translucent glass surfaces that adapt to the wallpaper beneath
 each item. Its layout and appearance can be changed through a graphical
 settings window, including the position of modules and selected Hyprland
 appearance options.
 
 This repository includes the shell, a Hyprland configuration, an Arch Linux
-installer, desktop utilities, and wallpapers. It is intended for users who
-want a complete starting point that they can customize for their own machine.
+installer, desktop utilities, and wallpapers. Together they provide a common
+desktop setup that users can install and customize through the same workflow.
 It installs onto an existing Arch system; it does not install the operating
 system, partition disks, install a bootloader, or install GPU drivers. It can
 configure the animated Hyprshell Glass splash for a supported existing boot setup.
@@ -23,7 +30,7 @@ the desktop preferences saved in this checkout.
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Restoring the saved setup on a new machine](#restoring-the-saved-setup-on-a-new-machine)
+- [A consistent desktop experience](#a-consistent-desktop-experience)
 - [First login and machine-specific configuration](#first-login-and-machine-specific-configuration)
 - [Using the desktop](#using-the-desktop)
 - [Keyboard and mouse shortcuts](#keyboard-and-mouse-shortcuts)
@@ -68,10 +75,9 @@ user autostart override in `config/autostart/nm-applet.desktop`. Hyprshell's
 Wi-Fi menu uses NetworkManager directly. Other apps' autostart entries are
 preserved.
 
-Desktop and machine customizations should be preserved in this repository,
-with any required installation steps wired into `setup.sh`, so a fresh Arch
-installation can restore the saved setup. Keep hardware-specific settings
-adaptable to a replacement laptop and keep credentials out of the repository.
+Desktop configuration and its installation steps live together in this
+repository. `setup.sh` installs the shell, themes, utilities, and saved
+preferences as one coordinated desktop setup.
 
 ## Requirements
 
@@ -230,54 +236,27 @@ uwsm start -e -D Hyprland hyprland.desktop
 Use `Super+T` to open a terminal and press and release `Super` to open the
 application launcher. The Windows key is normally the Super key.
 
-## Restoring the saved setup on a new machine
+## A consistent desktop experience
 
-On a fresh, bootable x86_64 Arch installation, full setup restores the saved
-boot appearance, SDDM login theme, and Hyprshell desktop from your checkout.
-It restores the configuration you saved; it does not clone the entire previous
-machine or guarantee identical behavior on different hardware.
+Full `./setup.sh` brings the bundled boot appearance, matching SDDM login
+theme, and Hyprshell desktop together on an installed Arch system. The
+configuration in the checkout defines the experience, so each installation
+starts with the same shell components, visual design, and desktop preferences.
 
-Before moving, use **Settings → Sync to GitHub** on the original machine and
-check that it succeeds. On the new machine, clone **your synced repository**
-using the installation steps above. A clone receives pushed commits; changes
-that exist only in the old machine's checkout or installed files are not
-available there. Then run:
-
-```bash
-./setup.sh --extra --dry-run
-./setup.sh --extra
-```
-
-`--extra` includes the optional applications and Hyprlock needed by this
-checkout's saved automatic-locking preference. Plain `./setup.sh` installs the
-base desktop, boot splash, and login theme, but skips the optional application
-list. Reboot after successful setup and select **Hyprland (uwsm-managed)**.
-
-| Saved configuration | What setup restores |
+| Component | Included setup |
 | --- | --- |
-| Boot splash | Bundled Plymouth artwork, animation, and quiet-boot preferences on supported mkinitcpio UKI, GRUB, or systemd-boot layouts. Supported UKI presets receive the matching static BMP. |
-| Login appearance | Bundled animated `hyprshell-glass` SDDM theme. Setup installs SDDM when no login manager is found; an existing different manager keeps its appearance. |
-| Desktop | Quickshell bar, launcher, menus, notification policy, saved layout and appearance, Hyprland Lua sections, shortcuts, input, power, locking, and cleanup preferences. |
-| Application preferences | Saved light/dark mode and any saved font/cursor choices are applied at desktop startup when available. Default-app and login-startup choices are restored for installed application entries. |
-| Utilities and wallpapers | Managed launch helpers, Bash shortcuts, portal and autostart files, application shortcuts, and bundled wallpapers. Startup selects `default.jpg`; a cycled wallpaper is not saved as the next login's selection. |
+| Boot splash | Plymouth Glass artwork, animated title and progress, quiet-boot preferences, and matching static UKI artwork on supported boot layouts. |
+| Login screen | Animated `hyprshell-glass` SDDM theme with the same visual language as the boot splash and desktop. |
+| Desktop shell | Quickshell bar, launcher, menus, notification inbox, settings, and wallpaper-adaptive glass surfaces. |
+| Desktop preferences | Saved layout and appearance, Hyprland configuration, shortcuts, display settings when saved, input, power, locking, and cleanup preferences. |
+| Application integration | Saved application appearance, default-app and login-startup choices, portals, and managed autostart entries. |
+| Utilities and wallpapers | Launch helpers, Bash shortcuts, application shortcuts, and bundled wallpapers. |
 
-Review the saved display rules on the new hardware, especially this checkout's
-explicit `eDP-1` mode. Boot setup requires an existing supported boot layout,
-a writable boot partition, and suitable graphics drivers; other layouts need
-manual integration or `--skip-boot-splash`. Hardware changes can affect display
-scaling, splash transitions, audio devices, brightness, Bluetooth, and battery
-information. Setup preserves the destination machine's timezone unless you
-pass `--timezone ZONE`.
-
-Keep separate backups or installation steps for personal files, credentials,
-Wi-Fi connections, Bluetooth pairings, browser profiles, app-specific settings,
-audio routing/volumes, notification history, and recovery checkpoints. Apps
-outside the package lists and Distrobox containers are not recreated. For
-example, `Super+B` invokes Brave, which neither package list installs, and this
-checkout's saved media defaults refer to `fedora-vlc.desktop`, which is skipped
-until that container-exported application is available. Additional wallpapers
-are included in sync only when their filenames are already managed by the
-repository. Running windows and other session state are not restored.
+Use `./setup.sh --extra` to include the optional daily-driver applications and
+Hyprlock. The base installation keeps the desktop dependencies focused on the
+shell and its integrations. After installation, Settings lets users adjust
+the experience through the same interface, while the configuration and
+installer remain available for further customization.
 
 ## First login and machine-specific configuration
 
