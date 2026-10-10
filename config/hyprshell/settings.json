@@ -2,6 +2,10 @@
   "version": 1,
   "bar": {
     "visible": true,
+    "workspaceScope": "selected",
+    "workspaceList": [
+      1
+    ],
     "adaptiveColors": true,
     "randomVibrantColors": true,
     "height": 32,
@@ -37,7 +41,7 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0,
+      "iconSize": 15,
       "pillGroup": "centerpill",
       "paddingLeft": 7,
       "paddingRight": 0,
@@ -65,7 +69,7 @@
       "background": "inherit",
       "spacingLeft": 0,
       "spacingRight": 0,
-      "iconSize": 0,
+      "iconSize": 16,
       "pillGroup": "centerpill",
       "paddingLeft": 0,
       "paddingRight": 7,
